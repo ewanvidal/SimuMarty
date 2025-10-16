@@ -7,10 +7,14 @@ Simulateur Web 3D du Robot Marty avec React Three Fiber
 
 📋 Description du Projet
 
-SimuMarty est une application web moderne de simulation robotique éducative permettant aux étudiants d'apprendre la programmation robotique sur un modèle virtuel 3D du robot Marty. Le projet répond aux défis de l'enseignement de la robotique : coûts élevés, maintenance complexe, disponibilité limitée et risques de dommages des équipements physiques.
+SimuMarty est une application web moderne de simulation robotique éducative
+permettant aux étudiants d'apprendre la programmation robotique sur un modèle
+virtuel 3D du robot Marty. Le projet répond aux défis de l'enseignement de la
+robotique : coûts élevés, maintenance complexe, disponibilité limitée et risques
+de dommages des équipements physiques.
 
-Le projet est divisé en deux composants complémentaires :
-🔧 MartyEngine - Moteur de Simulation 3D et Physique
+Le projet est divisé en deux composants complémentaires : 🔧 MartyEngine -
+Moteur de Simulation 3D et Physique
 
 Développé par Natthan GUILLOT
 
@@ -34,8 +38,7 @@ Interface utilisateur immersive comprenant :
     Exercices progressifs et tutoriels interactifs
     Debugger visuel avec visualisation 3D des trajectoires
 
-🚀 Technologies
-Stack Technique
+🚀 Technologies Stack Technique
 
     Frontend Framework : React 18+ avec TypeScript
     3D Rendering : React Three Fiber (Three.js + React)
@@ -64,6 +67,7 @@ Bibliothèques Principales
   "vite": "^5.x"
 }
 ```
+
 📁 Structure du Projet
 
 ```
@@ -124,8 +128,7 @@ simumarty/
 └── README.md
 ```
 
-🎯 Fonctionnalités Principales
-MartyEngine
+🎯 Fonctionnalités Principales MartyEngine
 
     ✅ Modèle 3D haute qualité du robot Marty
     ✅ Animations réalistes (marche, rotation, gestes)
@@ -151,34 +154,34 @@ MartyStudio
 
 🛠️ Installation
 
-Installation
-bash
+Installation bash
 
 # Cloner le repository
-git clone https://github.com/votre-username/simumarty.git
-cd simumarty
+
+git clone https://github.com/votre-username/simumarty.git cd simumarty
 
 # Installer les dépendances
+
 npm install
 
 # Lancer en mode développement
+
 npm run dev
 
 # Build pour production
+
 npm run build
 
 # Preview de production
+
 npm run preview
 
 L'application sera accessible sur http://localhost:5173
 
 🎓 Contexte Académique
 
-Établissement : Polytech Dijon
-Promotion : 70
-Année : 2025-2026
-Type : Projet de fin d'études
-Équipe
+Établissement : Polytech Dijon Promotion : 70 Année : 2025-2026 Type : Projet de
+fin d'études Équipe
 
 Natthan GUILLOT (Natthan)
 
@@ -203,10 +206,12 @@ Ce projet vise à :
 - Offrir une alternative économique aux robots physiques
 - Permettre l'expérimentation sans risque de dommage
 - Faciliter l'accès à distance à l'enseignement robotique
-- Développer des compétences en : Développement web moderne (React, TypeScript), Graphisme 3D (Blender, Three.js), Architecture logicielle, Travail collaboratif (Git, Jira)
+- Développer des compétences en : Développement web moderne (React, TypeScript),
+  Graphisme 3D (Blender, Three.js), Architecture logicielle, Travail
+  collaboratif (Git, Jira)
 
-Ce projet est développé dans un cadre académique à Polytech Dijon.
-Tous droits réservés © 2025-2026 Natthan GUILLOT & Ewan VIDAL
+Ce projet est développé dans un cadre académique à Polytech Dijon. Tous droits
+réservés © 2025-2026 Natthan GUILLOT & Ewan VIDAL
 
 📞 Contact
 
