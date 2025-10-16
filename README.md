@@ -49,8 +49,8 @@ Stack Technique
     API : REST + WebSocket
 
 Bibliothèques Principales
-json
 
+```json
 {
   "@react-three/fiber": "^8.x",
   "@react-three/drei": "^9.x",
@@ -63,9 +63,10 @@ json
   "tailwindcss": "^3.x",
   "vite": "^5.x"
 }
-
+```
 📁 Structure du Projet
 
+```
 simumarty/
 ├── src/
 │   ├── engine/                    # MartyEngine (Natthan)
@@ -121,6 +122,7 @@ simumarty/
 ├── vite.config.ts
 ├── tailwind.config.js
 └── README.md
+```
 
 🎯 Fonctionnalités Principales
 MartyEngine
@@ -197,15 +199,11 @@ Encadrement
 
 Ce projet vise à :
 
-    Démocratiser l'apprentissage de la robotique
-    Offrir une alternative économique aux robots physiques
-    Permettre l'expérimentation sans risque de dommage
-    Faciliter l'accès à distance à l'enseignement robotique
-    Développer des compétences en :
-        Développement web moderne (React, TypeScript)
-        Graphisme 3D (Blender, Three.js)
-        Architecture logicielle
-        Travail collaboratif (Git, Jira)
+- Démocratiser l'apprentissage de la robotique
+- Offrir une alternative économique aux robots physiques
+- Permettre l'expérimentation sans risque de dommage
+- Faciliter l'accès à distance à l'enseignement robotique
+- Développer des compétences en : Développement web moderne (React, TypeScript), Graphisme 3D (Blender, Three.js), Architecture logicielle, Travail collaboratif (Git, Jira)
 
 Ce projet est développé dans un cadre académique à Polytech Dijon.
 Tous droits réservés © 2025-2026 Natthan GUILLOT & Ewan VIDAL
