@@ -1,0 +1,735 @@
+openapi: 3.0.3
+info:
+  title: MartyEngine REST API
+  description: |
+    API REST pour le contrôle et la supervision du robot Marty virtuel.
+    Basée sur l'API RIC (Robotical Interface Controller) de Marty V2.
+    Compatible avec MartyPy v3.6+
+    
+    Développé par Natthan GUILLOT - Polytech Dijon 2025-2026
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:5173/api
+    description: Serveur de développement
+
+tags:
+  - name: Robot
+    description: Contrôle et état du robot
+  - name: Models
+    description: Gestion des modèles 3D
+  - name: Simulation
+    description: Contrôle de la simulation
+  - name: Health
+    description: Monitoring et santé du système
+
+paths:
+  # === ROBOT ENDPOINTS ===
+  /robot/state:
+    get:
+      tags: [Robot]
+      summary: Obtenir l'état complet du robot
+      description: Retourne la position de toutes les articulations, la batterie et les capteurs
+      responses:
+        '200':
+          description: État actuel du robot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RobotState'
+              example:
+                robotId: "marty-001"
+                joints:
+                  - IDNo: 0
+                    name: "left hip"
+                    pos: 45.5
+                    current: 120
+                    enabled: true
+                    commsOK: true
+                    flags: 129
+                  - IDNo: 3
+                    name: "right hip"
+                    pos: -45.5
+                    current: 115
+                    enabled: true
+                    commsOK: true
+                    flags: 129
+                position:
+                  x: 0.0
+                  y: 0.15
+                  z: 0.0
+                orientation:
+                  roll: 0.0
+                  pitch: 0.0
+                  yaw: 90.0
+                battery:
+                  battRemainCapacityPercent: 87
+                  battTempDegC: 28.5
+                  battCurrentMA: -150
+                  powerUSBIsConnected: false
+                  power5VIsOn: true
+                sensors:
+                  accelerometer: { x: 0.02, y: 0.98, z: 0.01 }
+                status:
+                  flags: 0
+                  workQCount: 0
+                  isMoving: false
+                  isPaused: false
+                  isFwUpdating: false
+                ts: "2025-10-16T14:30:00Z"
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /robot/move:
+    post:
+      tags: [Robot]
+      summary: Envoyer une commande de mouvement
+      description: Commande pour déplacer le robot (marche, rotation, geste)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RobotCommand'
+            examples:
+              walk:
+                summary: Faire marcher le robot
+                value:
+                  endpoint: "traj/step"
+                  params:
+                    numSteps: 4
+                    startFoot: "auto"
+                    turn: 15
+                    stepLength: 30
+                    moveTime: 1500
+              kick:
+                summary: Taper dans un ballon
+                value:
+                  endpoint: "traj/kick"
+                  params:
+                    side: "right"
+                    twist: 5
+                    moveTime: 2500
+              lean:
+                summary: Se pencher en avant
+                value:
+                  endpoint: "traj/lean"
+                  params:
+                    direction: "forward"
+                    amount: 29
+                    moveTime: 1000
+              eyes:
+                summary: Expression des yeux
+                value:
+                  endpoint: "traj/eyesExcited"
+                  params: {}
+              ledColor:
+                summary: Changer couleur LED
+                value:
+                  endpoint: "led/eyes/color"
+                  params:
+                    color: "red"
+                    region: "all"
+      responses:
+        '202':
+          description: Commande acceptée et en cours d'exécution
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandResult'
+              example:
+                rslt: "ok"
+                duration: 3500
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /robot/joints/{jointId}:
+    put:
+      tags: [Robot]
+      summary: Contrôler une articulation spécifique
+      description: Définir l'angle cible d'une articulation
+      parameters:
+        - name: jointId
+          in: path
+          required: true
+          description: ID de l'articulation (0-8) ou nom
+          schema:
+            oneOf:
+              - type: integer
+                minimum: 0
+                maximum: 8
+              - type: string
+                enum:
+                  - left hip
+                  - left twist
+                  - left knee
+                  - right hip
+                  - right twist
+                  - right knee
+                  - left arm
+                  - right arm
+                  - eyes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [angle]
+              properties:
+                angle:
+                  type: number
+                  minimum: -180
+                  maximum: 180
+                  description: Angle cible en degrés
+                moveTime:
+                  type: integer
+                  minimum: 100
+                  default: 1000
+                  description: Durée du mouvement en ms
+            example:
+              angle: 45.0
+              moveTime: 1000
+      responses:
+        '200':
+          description: Articulation mise à jour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JointState'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: Articulation non trouvée
+
+  /robot/stop:
+    post:
+      tags: [Robot]
+      summary: Arrêter tous les mouvements
+      description: Arrêt d'urgence - stoppe toutes les commandes en cours
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                stopType:
+                  type: string
+                  enum:
+                    - clear queue
+                    - clear and stop
+                    - clear and disable
+                    - clear and zero
+                    - pause
+                    - pause and disable
+                  default: "clear and stop"
+      responses:
+        '200':
+          description: Robot arrêté avec succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandResult'
+
+  /robot/reset:
+    post:
+      tags: [Robot]
+      summary: Réinitialiser le robot
+      description: Remet le robot dans sa position initiale
+      responses:
+        '200':
+          description: Robot réinitialisé
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  # === MODELS ENDPOINTS ===
+  /models:
+    get:
+      tags: [Models]
+      summary: Lister les modèles 3D disponibles
+      description: Retourne la liste des robots et environnements disponibles
+      responses:
+        '200':
+          description: Liste des modèles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  robots:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ModelInfo'
+                  environments:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ModelInfo'
+              example:
+                robots:
+                  - id: "marty-v2"
+                    name: "Marty Robot v2"
+                    version: "2.0.0"
+                    format: "glb"
+                    size: 2548000
+                    url: "/models/marty-v2.glb"
+                environments:
+                  - id: "maze-basic"
+                    name: "Labyrinthe basique"
+                    version: "1.0.0"
+                    format: "glb"
+                    size: 1024000
+                    url: "/models/environments/maze-basic.glb"
+
+  /models/{modelId}:
+    get:
+      tags: [Models]
+      summary: Obtenir un modèle 3D spécifique
+      parameters:
+        - name: modelId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Informations du modèle
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelInfo'
+        '404':
+          description: Modèle non trouvé
+
+  # === SIMULATION ENDPOINTS ===
+  /simulation/start:
+    post:
+      tags: [Simulation]
+      summary: Démarrer la simulation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                environment:
+                  type: string
+                  description: ID de l'environnement à charger
+                physics:
+                  type: boolean
+                  default: true
+                gravity:
+                  type: number
+                  default: -9.81
+            example:
+              environment: "maze-basic"
+              physics: true
+              gravity: -9.81
+      responses:
+        '200':
+          description: Simulation démarrée
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  simulationId:
+                    type: string
+                  status:
+                    type: string
+                    enum: [running, paused, stopped]
+                  startTime:
+                    type: string
+                    format: date-time
+
+  /simulation/pause:
+    post:
+      tags: [Simulation]
+      summary: Mettre en pause la simulation
+      responses:
+        '200':
+          description: Simulation en pause
+
+  /simulation/resume:
+    post:
+      tags: [Simulation]
+      summary: Reprendre la simulation
+      responses:
+        '200':
+          description: Simulation reprise
+
+  /simulation/stop:
+    post:
+      tags: [Simulation]
+      summary: Arrêter la simulation
+      responses:
+        '200':
+          description: Simulation arrêtée
+
+  /simulation/status:
+    get:
+      tags: [Simulation]
+      summary: Obtenir le statut de la simulation
+      responses:
+        '200':
+          description: Statut actuel
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [running, paused, stopped]
+                  elapsedTime:
+                    type: number
+                    description: Temps écoulé en secondes
+                  fps:
+                    type: number
+                    description: Images par seconde
+                  physicsEnabled:
+                    type: boolean
+
+  # === HEALTH ENDPOINTS ===
+  /health:
+    get:
+      tags: [Health]
+      summary: Vérifier la santé du service
+      description: État système, performances et composants
+      responses:
+        '200':
+          description: Service opérationnel
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+              example:
+                status: "healthy"
+                version: "1.0.0"
+                uptime: 3600
+                system:
+                  heapFree: 45120
+                  heapMin: 32768
+                  loopMsAvg: 12.5
+                  loopMsMax: 18.2
+                  cpuLoad: 35.7
+                components:
+                  engine: "up"
+                  websocket: "up"
+                  physics: "up"
+
+components:
+  schemas:
+    JointInfo:
+      type: object
+      required: [IDNo, name, pos, current, enabled, commsOK, flags]
+      description: État d'une articulation (basé sur MartyPy JointInfo)
+      properties:
+        IDNo:
+          type: integer
+          minimum: 0
+          maximum: 8
+          description: ID de l'articulation (0-8)
+        name:
+          type: string
+          enum:
+            - left hip
+            - left twist
+            - left knee
+            - right hip
+            - right twist
+            - right knee
+            - left arm
+            - right arm
+            - eyes
+          description: Nom de l'articulation
+        pos:
+          type: number
+          description: Position actuelle en degrés
+        current:
+          type: number
+          description: Courant en milli-Amps
+        enabled:
+          type: boolean
+          description: Moteur activé
+        commsOK:
+          type: boolean
+          description: Communication OK avec le servo
+        flags:
+          type: integer
+          description: Flags de statut (JointStatus bitmask)
+
+    Vector3D:
+      type: object
+      required: [x, y, z]
+      properties:
+        x:
+          type: number
+        y:
+          type: number
+        z:
+          type: number
+
+    Orientation:
+      type: object
+      required: [roll, pitch, yaw]
+      properties:
+        roll:
+          type: number
+          description: Rotation en X (degrés)
+        pitch:
+          type: number
+          description: Rotation en Y (degrés)
+        yaw:
+          type: number
+          description: Rotation en Z (degrés)
+
+    RobotState:
+      type: object
+      required: [robotId, joints, position, orientation, ts]
+      description: État complet du robot (basé sur MartyPy)
+      properties:
+        robotId:
+          type: string
+          description: Identifiant unique du robot
+        joints:
+          type: array
+          items:
+            $ref: '#/components/schemas/JointInfo'
+          description: État des 9 articulations
+        position:
+          $ref: '#/components/schemas/Vector3D'
+        orientation:
+          $ref: '#/components/schemas/Orientation'
+        battery:
+          $ref: '#/components/schemas/PowerStatus'
+        sensors:
+          type: object
+          properties:
+            accelerometer:
+              $ref: '#/components/schemas/Vector3D'
+        status:
+          $ref: '#/components/schemas/RobotStatus'
+        ts:
+          type: string
+          format: date-time
+          description: Timestamp de l'état
+
+    RobotStatus:
+      type: object
+      required: [flags, workQCount, isMoving, isPaused, isFwUpdating]
+      description: Statut global du robot (basé sur MartyPy RobotStatus)
+      properties:
+        flags:
+          type: integer
+          description: Flags de statut robot
+        workQCount:
+          type: integer
+          description: Nombre de commandes en queue
+          minimum: 0
+        isMoving:
+          type: boolean
+          description: Robot en mouvement
+        isPaused:
+          type: boolean
+          description: Robot en pause
+        isFwUpdating:
+          type: boolean
+          description: Mise à jour firmware en cours
+
+    SystemStatus:
+      type: object
+      required: [heapFree, heapMin, loopMsAvg, loopMsMax]
+      description: Métriques système et performances
+      properties:
+        heapFree:
+          type: integer
+          description: Mémoire heap libre (bytes)
+        heapMin:
+          type: integer
+          description: Mémoire heap minimum (bytes)
+        loopMsAvg:
+          type: number
+          description: Temps de boucle moyen (ms)
+        loopMsMax:
+          type: number
+          description: Temps de boucle maximum (ms)
+        cpuLoad:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: Charge CPU (%)
+        uptime:
+          type: integer
+          description: Temps de fonctionnement (secondes)
+
+    PowerStatus:
+      type: object
+      required: [battRemainCapacityPercent]
+      description: État batterie et alimentation (basé sur MartyPy PowerStatus)
+      properties:
+        battRemainCapacityPercent:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: Charge batterie (%)
+        battTempDegC:
+          type: number
+          description: Température batterie (°C)
+        battRemainCapacityMAH:
+          type: number
+          description: Capacité restante (mAh)
+        battFullCapacityMAH:
+          type: number
+          description: Capacité totale (mAh)
+        battCurrentMA:
+          type: number
+          description: Courant (mA, négatif = décharge)
+        power5VOnTimeSecs:
+          type: integer
+          description: Temps allumé (secondes)
+        powerUSBIsConnected:
+          type: boolean
+          description: USB connecté
+        power5VIsOn:
+          type: boolean
+          description: Rail 5V actif
+
+    RobotCommand:
+      type: object
+      required: [endpoint]
+      description: Commande robot (basé sur API RIC MartyPy)
+      properties:
+        endpoint:
+          type: string
+          description: Endpoint RIC
+          enum:
+            - traj/getReady
+            - traj/standStraight
+            - traj/step
+            - traj/kick
+            - traj/wave
+            - traj/lean
+            - traj/sidestep
+            - traj/circle
+            - traj/dance
+            - traj/wiggle
+            - traj/joint
+            - traj/eyesAngry
+            - traj/eyesExcited
+            - traj/eyesNormal
+            - traj/eyesWide
+            - traj/wiggleEyes
+            - audio/vol
+            - filerun
+            - led/{name}/off
+            - led/{name}/pattern
+            - led/{name}/color
+            - traj/pause
+            - traj/resume
+            - traj/stop
+        params:
+          type: object
+          description: Paramètres spécifiques à la commande
+          additionalProperties: true
+
+    CommandResult:
+      type: object
+      required: [rslt]
+      description: Résultat d'une commande (basé sur RicResponse)
+      properties:
+        rslt:
+          type: string
+          enum: [ok, fail]
+        message:
+          type: string
+        duration:
+          type: integer
+          description: Durée estimée en ms
+
+    ModelInfo:
+      type: object
+      required: [id, name, version, format, url]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        version:
+          type: string
+        format:
+          type: string
+          enum: [gltf, glb]
+        size:
+          type: integer
+          description: Taille du fichier en octets
+        url:
+          type: string
+          format: uri
+        thumbnail:
+          type: string
+          format: uri
+
+    HealthStatus:
+      type: object
+      required: [status, version, uptime, components]
+      description: État de santé du service et métriques système
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+          description: État global du service
+        version:
+          type: string
+          description: Version du service
+        uptime:
+          type: integer
+          description: Temps de fonctionnement (secondes)
+        system:
+          $ref: '#/components/schemas/SystemStatus'
+        components:
+          type: object
+          description: État des composants
+          properties:
+            engine:
+              type: string
+              enum: [up, down, unknown]
+            websocket:
+              type: string
+              enum: [up, down, unknown]
+            physics:
+              type: string
+              enum: [up, down, unknown]
+
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+
+  responses:
+    BadRequest:
+      description: Requête invalide
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: "INVALID_REQUEST"
+            message: "Le paramètre 'angle' doit être entre -180 et 180"
+
+    ServiceUnavailable:
+      description: Service temporairement indisponible
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: "SERVICE_UNAVAILABLE"
+            message: "Le moteur de simulation est en cours de redémarrage"

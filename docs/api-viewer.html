@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MartyEngine REST API - Documentation</title>
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui.css" />
+    <style>
+        html {
+            box-sizing: border-box;
+            overflow: -moz-scrollbars-vertical;
+            overflow-y: scroll;
+        }
+        *, *:before, *:after {
+            box-sizing: inherit;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        .topbar {
+            background-color: #1b1b1b;
+            padding: 20px 0;
+        }
+        .topbar-wrapper {
+            max-width: 1460px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        .topbar-wrapper .link {
+            color: #fff;
+            font-size: 1.5em;
+            font-weight: bold;
+            text-decoration: none;
+        }
+        .topbar-wrapper .link span {
+            color: #89b4f8;
+        }
+        .info {
+            margin: 20px auto;
+            max-width: 1460px;
+            padding: 0 20px;
+        }
+        .info h2 {
+            color: #000000;
+            font-size: 1.3em;
+            margin-bottom: 10px;
+        }
+        .info p {
+            color: #3b4151;
+            line-height: 1.6;
+        }
+        .info .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border-radius: 3px;
+            font-size: 0.9em;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <div class="topbar-wrapper" style="display: flex; justify-content: space-between; align-items: center;">
+            <a href="/" class="link">
+                🤖 SimuMarty - <span>MartyEngine REST API</span>
+            </a>
+            <nav>
+                <a href="api-viewer.html" style="color: #89b4f8; text-decoration: none; margin-left: 20px; border: 1px solid #89b4f8; padding: 8px 16px; border-radius: 4px;">📄 REST API</a>
+                <a href="api-websocket-viewer.html" style="color: #89b4f8; text-decoration: none; margin-left: 20px; border: 1px solid #89b4f8; padding: 8px 16px; border-radius: 4px;">⚡ WebSocket API</a>
+            </nav>
+        </div>
+    </div>
+
+    <div id="swagger-ui"></div>
+
+    <script src="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui-bundle.js"></script>
+    <script src="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui-standalone-preset.js"></script>
+    <script>
+        window.onload = function() {
+            // Charger le fichier YAML local
+            const ui = SwaggerUIBundle({
+                url: "./api-rest.yaml",
+                dom_id: '#swagger-ui',
+                deepLinking: true,
+                presets: [
+                    SwaggerUIBundle.presets.apis,
+                    SwaggerUIStandalonePreset
+                ],
+                plugins: [
+                    SwaggerUIBundle.plugins.DownloadUrl
+                ],
+                layout: "StandaloneLayout",
+                defaultModelsExpandDepth: 1,
+                defaultModelExpandDepth: 1,
+                docExpansion: "list",
+                filter: true,
+                showRequestHeaders: true,
+                tryItOutEnabled: true,
+                validatorUrl: null,
+                // Configuration française
+                syntaxHighlight: {
+                    theme: "monokai"
+                }
+            });
+
+            window.ui = ui;
+        };
+    </script>
+</body>
+</html>

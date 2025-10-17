@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MartyEngine WebSocket API - Documentation</title>
+    <link rel="stylesheet" href="https://unpkg.com/@asyncapi/react-component@1.0.0-next.46/styles/default.min.css">
+    <style>
+        html {
+            box-sizing: border-box;
+            overflow: -moz-scrollbars-vertical;
+            overflow-y: scroll;
+        }
+        *, *:before, *:after {
+            box-sizing: inherit;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        .topbar {
+            background-color: #1b1b1b;
+            padding: 20px 0;
+        }
+        .topbar-wrapper {
+            max-width: 1460px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .topbar-wrapper .link {
+            color: #fff;
+            font-size: 1.5em;
+            font-weight: bold;
+            text-decoration: none;
+        }
+        .topbar-wrapper .link span {
+            color: #89b4f8;
+        }
+        .topbar-wrapper nav a {
+            color: #89b4f8;
+            text-decoration: none;
+            margin-left: 20px;
+            font-size: 1em;
+            border: 1px solid #89b4f8;
+            padding: 8px 16px;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+        .topbar-wrapper nav a:hover {
+            background-color: #89b4f8;
+            color: #1b1b1b;
+        }
+        #asyncapi {
+            margin: 20px auto;
+            max-width: 1460px;
+            padding: 0 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <div class="topbar-wrapper">
+            <a href="/" class="link">
+                🤖 SimuMarty - <span>MartyEngine WebSocket API</span>
+            </a>
+            <nav>
+                <a href="api-viewer.html">📄 REST API</a>
+                <a href="api-websocket-viewer.html">⚡ WebSocket API</a>
+            </nav>
+        </div>
+    </div>
+
+    <div id="asyncapi"></div>
+
+    <script src="https://unpkg.com/@asyncapi/react-component@1.0.0-next.46/browser/standalone/index.js"></script>
+    <script>
+        fetch('./api-websocket.yaml')
+            .then(response => response.text())
+            .then(schema => {
+                AsyncApiStandalone.render({
+                    schema: schema,
+                    config: {
+                        show: {
+                            sidebar: true,
+                            info: true,
+                            servers: true,
+                            operations: true,
+                            messages: true,
+                            schemas: true,
+                            errors: true,
+                        },
+                        expand: {
+                            messageExamples: true,
+                        },
+                        sidebar: {
+                            showServers: 'byDefault',
+                            showOperations: 'byDefault',
+                        },
+                    },
+                }, document.getElementById('asyncapi'));
+            })
+            .catch(error => {
+                console.error('Error loading AsyncAPI spec:', error);
+                document.getElementById('asyncapi').innerHTML = `
+                    <div style="color: red; padding: 20px;">
+                        <h2>Erreur de chargement</h2>
+                        <p>Impossible de charger la spécification AsyncAPI : ${error.message}</p>
+                        <p>Assurez-vous que le fichier api-websocket.yaml est accessible.</p>
+                    </div>
+                `;
+            });
+    </script>
+</body>
+</html>

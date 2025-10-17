@@ -152,16 +152,25 @@ export interface RobotStatus {
   isMoving: boolean;
   isPaused: boolean;
   isFwUpdating: boolean;
-  heapFree?: number;
-  heapMin?: number;
   pixRGBT?: Array<{
     r: number;
     g: number;
     b: number;
     state: 'off' | 'on' | 'breathe' | 'override';
   }>;
-  loopMsAvg?: number;
-  loopMsMax?: number;
+}
+
+/**
+ * Métriques système et performances
+ * Performances du firmware, mémoire, timing
+ */
+export interface SystemStatus {
+  heapFree: number; // Mémoire heap libre (bytes)
+  heapMin: number; // Mémoire heap minimum atteinte (bytes)
+  loopMsAvg: number; // Temps moyen de boucle (ms)
+  loopMsMax: number; // Temps maximum de boucle (ms)
+  cpuLoad?: number; // Charge CPU (%)
+  uptime?: number; // Temps de fonctionnement (secondes)
 }
 
 /**

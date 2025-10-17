@@ -41,6 +41,14 @@ Controller)
 - **ROS Serial** : Topics, publications périodiques (servos, accel, power,
   status)
 - **Connexion** : Configuration WiFi/USB/Exp/Test
+- **WebSocket** : Messages, types, erreurs, configuration
+  - `WebSocketMessageType` : Types de messages (ack, heartbeat, smartServos,
+    command, etc.)
+  - `WebSocketMessage<T>` : Structure de base pour tous les messages
+  - Messages spécifiques : `ConnectAckMessage`, `ServosStateMessage`,
+    `CommandMessage`, etc.
+  - `WebSocketErrorCode` : Codes d'erreur WebSocket
+  - `WebSocketConfig` : Configuration de connexion WebSocket
 
 ### 3. `sensors.types.ts`
 
@@ -70,15 +78,31 @@ import type {
   ApiEndpoint,
   DiscoColor,
   EnvironmentType,
+  // Types WebSocket
+  WebSocketMessage,
+  WebSocketMessageType,
+  ServosStateMessage,
+  CommandMessage,
+  AnyWebSocketMessage,
 } from '@/shared/types';
 
-// Exemple d'utilisation
+// Exemple d'utilisation REST
 const walkCommand: WalkParams = {
   numSteps: 4,
   startFoot: 'auto',
   turn: 15,
   stepLength: 30,
   moveTime: 1500,
+};
+
+// Exemple d'utilisation WebSocket
+const commandMsg: CommandMessage = {
+  type: WebSocketMessageType.COMMAND,
+  payload: {
+    endpoint: ApiEndpoint.TRAJ_KICK,
+    params: { side: 'right', twist: 5, moveTime: 2500 },
+  },
+  timestamp: Date.now(),
 };
 
 // Accès aux constantes
@@ -108,12 +132,11 @@ interface WebSocketMessage {
 {
   "type": "command",
   "payload": {
-    "endpoint": "traj/walk",
+    "endpoint": "traj/kick",
     "params": {
-      "numSteps": 4,
-      "turn": 15,
-      "stepLength": 30,
-      "moveTime": 1500
+      "side": "right",
+      "twist": 5,
+      "moveTime": 2500
     }
   },
   "timestamp": 1729166400000
@@ -121,18 +144,36 @@ interface WebSocketMessage {
 ```
 
 Types concernés :
-- `ApiEndpoint` : endpoints REST disponibles
-- `WalkParams`, `KickParams`, etc. : paramètres de commandes
-- `RestParams` : paramètres génériques
+- `WebSocketMessageType.COMMAND` : Type de message commande
+- `CommandMessage` : Structure du message
+- `ApiEndpoint` : Endpoints REST disponibles
+- `WalkParams`, `KickParams`, etc. : Paramètres de commandes
+- `RestParams` : Paramètres génériques
 
-#### Messages de l'Engine → Studio (État)
+#### Messages de l'Engine → Studio (Télémétrie)
+
+##### Accusé de réception (ack)
+
+```json
+{
+  "type": "ack",
+  "payload": {
+    "status": "connected",
+    "serverVersion": "1.0.0",
+    "subscriptionRate": 10
+  },
+  "timestamp": 1729166400000
+}
+```
+
+Type : `ConnectAckMessage`
 
 ##### Publication périodique des servos (10 Hz par défaut)
 
 ```json
 {
-  "topic": "smartServos",
-  "servos": [
+  "type": "smartServos",
+  "payload": [
     {
       "IDNo": 0,
       "name": "left hip",
@@ -147,48 +188,48 @@ Types concernés :
 }
 ```
 
-Type : `ServosPublication`
+Type : `ServosStateMessage`
 
-##### État du robot
+##### État du robot (10 Hz)
 
 ```json
 {
-  "topic": "robotStatus",
-  "status": {
+  "type": "robotStatus",
+  "payload": {
     "flags": 0,
     "workQCount": 2,
     "isMoving": true,
     "isPaused": false,
-    "isFwUpdating": false,
-    "loopMsAvg": 12.5,
-    "loopMsMax": 18.2
+    "isFwUpdating": false
   },
   "timestamp": 1729166400000
 }
 ```
 
-Type : `RobotStatusPublication`
+Type : `RobotStatusMessage`
 
-##### Accéléromètre
+##### Accéléromètre (10 Hz)
 
 ```json
 {
-  "topic": "accel",
-  "x": 0.02,
-  "y": 0.98,
-  "z": 0.01,
+  "type": "accel",
+  "payload": {
+    "x": 0.02,
+    "y": 0.98,
+    "z": 0.01
+  },
   "timestamp": 1729166400000
 }
 ```
 
-Type : `AccelPublication`
+Type : `AccelMessage`
 
-##### Batterie et alimentation
+##### Batterie et alimentation (1 Hz)
 
 ```json
 {
-  "topic": "powerStatus",
-  "power": {
+  "type": "powerStatus",
+  "payload": {
     "battRemainCapacityPercent": 87,
     "battTempDegC": 28.5,
     "battCurrentMA": -150,
@@ -199,7 +240,26 @@ Type : `AccelPublication`
 }
 ```
 
-Type : `PowerPublication`
+Type : `PowerStatusMessage`
+
+##### Métriques système (1 Hz)
+
+```json
+{
+  "type": "systemStatus",
+  "payload": {
+    "heapFree": 45120,
+    "heapMin": 32768,
+    "loopMsAvg": 12.5,
+    "loopMsMax": 18.2,
+    "cpuLoad": 35.7,
+    "uptime": 3600
+  },
+  "timestamp": 1729166400000
+}
+```
+
+Type : `SystemStatusMessage`
 
 #### Configuration de la Connexion
 

@@ -1,0 +1,652 @@
+asyncapi: 2.5.0
+info:
+  title: MartyEngine WebSocket API
+  version: 1.0.0
+  description: |
+    API WebSocket temps réel pour la communication bidirectionnelle avec le robot Marty.
+    Basée sur l'API RIC (Robotical Interface Controller) de Marty V2.
+    Compatible avec MartyPy v3.6+
+    
+    Fournit les données de télémétrie (10Hz par défaut) et permet l'envoi de commandes asynchrones.
+    Développé par Natthan GUILLOT - Polytech Dijon 2025-2026
+  contact:
+    name: Natthan GUILLOT
+    email: natthan.guillot@u-bourgogne.fr
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  development:
+    url: ws://localhost:5173/ws
+    protocol: ws
+    description: Serveur de développement
+  production:
+    url: wss://simumarty.polytech-dijon.fr/ws (placeholder)
+    protocol: wss
+    description: Production (WebSocket sécurisé)
+
+defaultContentType: application/json
+
+channels:
+  # === LIFECYCLE ===
+  system/connect:
+    description: Événement de connexion initiale
+    subscribe:
+      message:
+        $ref: '#/components/messages/ConnectAck'
+    bindings:
+      ws:
+        method: GET
+
+  system/disconnect:
+    description: Événement de déconnexion
+    subscribe:
+      message:
+        $ref: '#/components/messages/DisconnectNotification'
+
+  system/heartbeat:
+    description: Ping/Pong pour maintenir la connexion
+    publish:
+      message:
+        $ref: '#/components/messages/Heartbeat'
+    subscribe:
+      message:
+        $ref: '#/components/messages/HeartbeatAck'
+
+  # === TELEMETRY (Server → Client) ===
+  robot/servos:
+    description: |
+      État des servomoteurs (10Hz par défaut, configurable).
+      Correspond au topic 'smartServos' de MartyPy ROS Serial.
+    subscribe:
+      message:
+        $ref: '#/components/messages/ServosState'
+
+  robot/status:
+    description: |
+      Statut global du robot (10Hz).
+      Correspond au topic 'robotStatus' de MartyPy ROS Serial.
+    subscribe:
+      message:
+        $ref: '#/components/messages/RobotStatus'
+
+  robot/accel:
+    description: |
+      Données accéléromètre 3 axes (10Hz).
+      Correspond au topic 'accel' de MartyPy ROS Serial.
+    subscribe:
+      message:
+        $ref: '#/components/messages/AccelData'
+
+  robot/power:
+    description: |
+      État batterie et alimentation (1Hz).
+      Correspond au topic 'powerStatus' de MartyPy ROS Serial.
+    subscribe:
+      message:
+        $ref: '#/components/messages/PowerStatus'
+
+  robot/addons:
+    description: |
+      Données des add-ons (capteurs, LEDs) (10Hz).
+      Correspond au topic 'addOns' de MartyPy ROS Serial.
+    subscribe:
+      message:
+        $ref: '#/components/messages/AddonsData'
+
+  # === SYSTEM TELEMETRY ===
+  system/status:
+    description: |
+      Métriques système et performances (1Hz).
+      Informations sur le heap, timing des boucles, etc.
+    subscribe:
+      message:
+        $ref: '#/components/messages/SystemStatus'
+
+  # === COMMANDS (Client → Server) ===
+  robot/command:
+    description: |
+      Canal pour envoyer des commandes au robot.
+      Compatible avec les endpoints RIC de MartyPy.
+    publish:
+      message:
+        $ref: '#/components/messages/Command'
+
+  robot/ack:
+    description: Accusé de réception de commande
+    subscribe:
+      message:
+        $ref: '#/components/messages/CommandAck'
+
+  # === EVENTS ===
+  system/error:
+    description: Erreurs système et applicatives
+    subscribe:
+      message:
+        $ref: '#/components/messages/ErrorNotification'
+
+components:
+  messages:
+    # === LIFECYCLE MESSAGES ===
+    ConnectAck:
+      name: ConnectAck
+      title: Confirmation de connexion
+      summary: Envoyé au client après connexion réussie
+      payload:
+        type: object
+        required: [type, payload, timestamp]
+        properties:
+          type:
+            type: string
+            const: "ack"
+          payload:
+            type: object
+            required: [status]
+            properties:
+              status:
+                type: string
+                enum: [connected]
+              serverVersion:
+                type: string
+              subscriptionRate:
+                type: integer
+                description: Fréquence de publication en Hz
+          timestamp:
+            type: integer
+            description: Unix timestamp en millisecondes
+      examples:
+        - payload:
+            type: "ack"
+            payload:
+              status: "connected"
+              serverVersion: "1.0.0"
+              subscriptionRate: 10
+            timestamp: 1729166400000
+
+    DisconnectNotification:
+      name: DisconnectNotification
+      title: Notification de déconnexion
+      payload:
+        type: object
+        required: [event, reason, timestamp]
+        properties:
+          event:
+            type: string
+            const: "disconnect"
+          reason:
+            type: string
+            enum:
+              - client_request
+              - timeout
+              - server_shutdown
+              - error
+          message:
+            type: string
+          timestamp:
+            type: string
+            format: date-time
+
+    Heartbeat:
+      name: Heartbeat
+      title: Ping keepalive
+      payload:
+        type: object
+        required: [event, timestamp]
+        properties:
+          event:
+            type: string
+            const: "ping"
+          timestamp:
+            type: string
+            format: date-time
+
+    HeartbeatAck:
+      name: HeartbeatAck
+      title: Pong keepalive
+      payload:
+        type: object
+        required: [event, timestamp]
+        properties:
+          event:
+            type: string
+            const: "pong"
+          timestamp:
+            type: string
+            format: date-time
+
+    # === TELEMETRY MESSAGES ===
+    ServosState:
+      name: ServosState
+      title: État des servomoteurs
+      summary: Publication périodique (10Hz) de l'état des 9 servos
+      payload:
+        type: object
+        required: [type, payload, timestamp]
+        properties:
+          type:
+            type: string
+            const: "smartServos"
+          payload:
+            type: array
+            description: État des 9 articulations
+            minItems: 9
+            maxItems: 9
+            items:
+              type: object
+              required: [IDNo, name, pos, current, enabled, commsOK, flags]
+              properties:
+                IDNo:
+                  type: integer
+                  minimum: 0
+                  maximum: 8
+                  description: ID de l'articulation (0-8)
+                name:
+                  type: string
+                  enum:
+                    - left hip
+                    - left twist
+                    - left knee
+                    - right hip
+                    - right twist
+                    - right knee
+                    - left arm
+                    - right arm
+                    - eyes
+                pos:
+                  type: number
+                  description: Position en degrés
+                current:
+                  type: number
+                  description: Courant en mA
+                enabled:
+                  type: boolean
+                commsOK:
+                  type: boolean
+                flags:
+                  type: integer
+                  description: Status flags (JointStatus bitmask)
+          timestamp:
+            type: integer
+            description: Unix timestamp en ms
+      examples:
+        - payload:
+            type: "smartServos"
+            payload:
+              - IDNo: 0
+                name: "left hip"
+                pos: 45.2
+                current: 120
+                enabled: true
+                commsOK: true
+                flags: 129
+              - IDNo: 3
+                name: "right hip"
+                pos: -45.2
+                current: 115
+                enabled: true
+                commsOK: true
+                flags: 129
+            timestamp: 1729166400000
+
+    RobotStatus:
+      name: RobotStatus
+      title: Statut global du robot
+      summary: État général du robot (10Hz)
+      payload:
+        type: object
+        required: [type, payload, timestamp]
+        properties:
+          type:
+            type: string
+            const: "robotStatus"
+          payload:
+            type: object
+            required: [flags, workQCount, isMoving, isPaused, isFwUpdating]
+            properties:
+              flags:
+                type: integer
+                description: Flags d'état du robot
+              workQCount:
+                type: integer
+                minimum: 0
+                description: Nombre de commandes en queue
+              isMoving:
+                type: boolean
+                description: Le robot est en mouvement
+              isPaused:
+                type: boolean
+                description: Le robot est en pause
+              isFwUpdating:
+                type: boolean
+                description: Mise à jour firmware en cours
+          timestamp:
+            type: integer
+      examples:
+        - payload:
+            type: "robotStatus"
+            payload:
+              flags: 0
+              workQCount: 2
+              isMoving: true
+              isPaused: false
+              isFwUpdating: false
+            timestamp: 1729166400000
+
+    SystemStatus:
+      name: SystemStatus
+      title: Métriques système
+      summary: Performances et état système (1Hz)
+      payload:
+        type: object
+        required: [type, payload, timestamp]
+        properties:
+          type:
+            type: string
+            const: "systemStatus"
+          payload:
+            type: object
+            required: [heapFree, heapMin, loopMsAvg, loopMsMax]
+            properties:
+              heapFree:
+                type: integer
+                description: Mémoire heap libre (bytes)
+              heapMin:
+                type: integer
+                description: Mémoire heap minimum atteinte (bytes)
+              loopMsAvg:
+                type: number
+                description: Temps moyen de boucle (ms)
+              loopMsMax:
+                type: number
+                description: Temps maximum de boucle (ms)
+              cpuLoad:
+                type: number
+                minimum: 0
+                maximum: 100
+                description: Charge CPU (%)
+              uptime:
+                type: integer
+                description: Temps de fonctionnement (secondes)
+          timestamp:
+            type: integer
+      examples:
+        - payload:
+            type: "systemStatus"
+            payload:
+              heapFree: 45120
+              heapMin: 32768
+              loopMsAvg: 12.5
+              loopMsMax: 18.2
+              cpuLoad: 35.7
+              uptime: 3600
+            timestamp: 1729166400000
+
+    AccelData:
+      name: AccelData
+      title: Données accéléromètre
+      summary: Lecture accéléromètre 3 axes (10Hz)
+      payload:
+        type: object
+        required: [type, payload, timestamp]
+        properties:
+          type:
+            type: string
+            const: "accel"
+          payload:
+            type: object
+            required: [x, y, z]
+            properties:
+              x:
+                type: number
+                description: Axe X en g
+              y:
+                type: number
+                description: Axe Y en g
+              z:
+                type: number
+                description: Axe Z en g
+          timestamp:
+            type: integer
+      examples:
+        - payload:
+            type: "accel"
+            payload:
+              x: 0.02
+              y: 0.98
+              z: 0.01
+            timestamp: 1729166400000
+
+    PowerStatus:
+      name: PowerStatus
+      title: État batterie et alimentation
+      summary: Statut batterie (1Hz)
+      payload:
+        type: object
+        required: [type, payload, timestamp]
+        properties:
+          type:
+            type: string
+            const: "powerStatus"
+          payload:
+            type: object
+            required: [battRemainCapacityPercent]
+            properties:
+              battRemainCapacityPercent:
+                type: number
+                minimum: 0
+                maximum: 100
+              battTempDegC:
+                type: number
+              battRemainCapacityMAH:
+                type: number
+              battFullCapacityMAH:
+                type: number
+              battCurrentMA:
+                type: number
+                description: Courant en mA (négatif = décharge)
+              power5VOnTimeSecs:
+                type: integer
+              powerUSBIsConnected:
+                type: boolean
+              power5VIsOn:
+                type: boolean
+          timestamp:
+            type: integer
+      examples:
+        - payload:
+            type: "powerStatus"
+            payload:
+              battRemainCapacityPercent: 87
+              battTempDegC: 28.5
+              battCurrentMA: -150
+              powerUSBIsConnected: false
+              power5VIsOn: true
+            timestamp: 1729166400000
+
+    AddonsData:
+      name: AddonsData
+      title: Données add-ons
+      summary: État des capteurs et add-ons (10Hz)
+      payload:
+        type: object
+        required: [type, payload, timestamp]
+        properties:
+          type:
+            type: string
+            const: "addOns"
+          payload:
+            type: array
+            items:
+              type: object
+              required: [IDNo, name, type, whoAmITypeCode, valid, data]
+              properties:
+                IDNo:
+                  type: integer
+                name:
+                  type: string
+                type:
+                  type: string
+                  enum:
+                    - IRFoot
+                    - coloursensor
+                    - LEDfoot
+                    - LEDarm
+                    - LEDeye
+                    - distance
+                whoAmITypeCode:
+                  type: string
+                valid:
+                  type: boolean
+                data:
+                  type: array
+                  items:
+                    type: integer
+                  minItems: 10
+                  maxItems: 10
+          timestamp:
+            type: integer
+
+    # === COMMAND MESSAGES ===
+    Command:
+      name: Command
+      title: Commande robot
+      summary: Client envoie une commande au robot
+      payload:
+        type: object
+        required: [type, payload, timestamp]
+        properties:
+          type:
+            type: string
+            const: "command"
+          payload:
+            type: object
+            required: [endpoint]
+            properties:
+              endpoint:
+                type: string
+                description: Endpoint RIC
+                enum:
+                  - traj/getReady
+                  - traj/standStraight
+                  - traj/step
+                  - traj/kick
+                  - traj/wave
+                  - traj/lean
+                  - traj/sidestep
+                  - traj/circle
+                  - traj/dance
+                  - traj/wiggle
+                  - traj/joint
+                  - traj/eyesAngry
+                  - traj/eyesExcited
+                  - traj/eyesNormal
+                  - traj/eyesWide
+                  - traj/wiggleEyes
+                  - audio/vol
+                  - filerun
+                  - led/{name}/off
+                  - led/{name}/pattern
+                  - led/{name}/color
+                  - traj/pause
+                  - traj/resume
+                  - traj/stop
+              params:
+                type: object
+                description: Paramètres de la commande (WalkParams, KickParams, etc.)
+                additionalProperties: true
+          timestamp:
+            type: integer
+      examples:
+        - payload:
+            type: "command"
+            payload:
+              endpoint: "traj/step"
+              params:
+                numSteps: 4
+                startFoot: "auto"
+                turn: 15
+                stepLength: 30
+                moveTime: 1500
+            timestamp: 1729166400000
+
+    CommandAck:
+      name: CommandAck
+      title: Accusé de réception
+      payload:
+        type: object
+        required: [type, payload, timestamp]
+        properties:
+          type:
+            type: string
+            const: "command_ack"
+          payload:
+            type: object
+            required: [commandId, status]
+            properties:
+              commandId:
+                type: string
+                description: Identifiant unique de la commande
+              status:
+                type: string
+                enum: [accepted, rejected, completed]
+                description: Statut de la commande
+              message:
+                type: string
+                description: Message optionnel
+          timestamp:
+            type: integer
+      examples:
+        - payload:
+            type: "command_ack"
+            payload:
+              commandId: "cmd_1729166400000"
+              status: "accepted"
+              message: "Command queued for execution"
+            timestamp: 1729166400000
+
+    # === ERROR MESSAGES ===
+    ErrorNotification:
+      name: ErrorNotification
+      title: Notification d'erreur
+      payload:
+        type: object
+        required: [type, payload, timestamp]
+        properties:
+          type:
+            type: string
+            const: "error"
+          payload:
+            type: object
+            required: [code, message]
+            properties:
+              code:
+                type: integer
+                enum: [1000, 1001, 1002, 1003, 1004, 1005]
+                description: |
+                  Code d'erreur:
+                  - 1000: INVALID_MESSAGE
+                  - 1001: UNAUTHORIZED
+                  - 1002: COMMAND_FAILED
+                  - 1003: ROBOT_NOT_READY
+                  - 1004: SIMULATION_ERROR
+                  - 1005: INTERNAL_ERROR
+              message:
+                type: string
+                description: Message d'erreur descriptif
+              details:
+                type: object
+                description: Détails supplémentaires
+          timestamp:
+            type: integer
+      examples:
+        - payload:
+            type: "error"
+            payload:
+              code: 1002
+              message: "Command execution failed: invalid joint angle"
+              details:
+                endpoint: "traj/step"
+                param: "turn"
+                value: 200
+            timestamp: 1729166400000
