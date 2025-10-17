@@ -12,6 +12,8 @@ info:
 servers:
   - url: http://localhost:5173/api
     description: Serveur de développement
+  - url: https://simumarty.polytech-dijon.fr/api (placeholder)
+    description: Serveur de production
 
 tags:
   - name: Robot
