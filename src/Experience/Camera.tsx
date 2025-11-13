@@ -29,12 +29,10 @@ export default class Camera {
       35,
       this.sizes.width / this.sizes.height,
       0.1,
-      100
+      100,
     );
     this.instance.position.set(6, 4, 8);
     this.scene.add(this.instance);
-    
-    console.log('📷 Camera initialized - position:', this.instance.position, 'aspect:', this.sizes.width / this.sizes.height);
   }
 
   private setControls() {

@@ -23,17 +23,13 @@ export default class World {
     this.scene = this.experience.scene;
     this.resources = this.experience.resources;
 
-    console.log('🌍 World constructor - resources:', this.resources);
-
     // Wait for resources to be ready
     this.resources.on('ready', () => {
-      console.log('🌍 Resources ready! Creating world objects...');
       // Setup world objects
       this.floor = new Floor();
       // this.labyrinth = new Labyrinth(); // Disabled for now
       this.marty = new Marty();
       this.environment = new Environment();
-      console.log('🌍 World objects created!');
     });
   }
 

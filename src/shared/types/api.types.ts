@@ -263,40 +263,44 @@ export interface WebSocketMessage<T = unknown> {
 /**
  * Message de connexion établie
  */
-export interface ConnectAckMessage extends WebSocketMessage<{
-  status: 'connected';
-  serverVersion: string;
-  subscriptionRate: number;
-}> {
+export interface ConnectAckMessage
+  extends WebSocketMessage<{
+    status: 'connected';
+    serverVersion: string;
+    subscriptionRate: number;
+  }> {
   type: typeof WebSocketMessageType.ACK;
 }
 
 /**
  * Message de déconnexion
  */
-export interface DisconnectMessage extends WebSocketMessage<{
-  reason: string;
-  code?: number;
-}> {
+export interface DisconnectMessage
+  extends WebSocketMessage<{
+    reason: string;
+    code?: number;
+  }> {
   type: typeof WebSocketMessageType.DISCONNECT;
 }
 
 /**
  * Message heartbeat (ping)
  */
-export interface HeartbeatMessage extends WebSocketMessage<{
-  clientTime: number;
-}> {
+export interface HeartbeatMessage
+  extends WebSocketMessage<{
+    clientTime: number;
+  }> {
   type: typeof WebSocketMessageType.HEARTBEAT;
 }
 
 /**
  * Message heartbeat ack (pong)
  */
-export interface HeartbeatAckMessage extends WebSocketMessage<{
-  serverTime: number;
-  clientTime: number;
-}> {
+export interface HeartbeatAckMessage
+  extends WebSocketMessage<{
+    serverTime: number;
+    clientTime: number;
+  }> {
   type: typeof WebSocketMessageType.HEARTBEAT_ACK;
 }
 
@@ -317,11 +321,12 @@ export interface RobotStatusMessage extends WebSocketMessage<RobotStatus> {
 /**
  * Message accéléromètre (10 Hz)
  */
-export interface AccelMessage extends WebSocketMessage<{
-  x: number;
-  y: number;
-  z: number;
-}> {
+export interface AccelMessage
+  extends WebSocketMessage<{
+    x: number;
+    y: number;
+    z: number;
+  }> {
   type: typeof WebSocketMessageType.ACCEL;
 }
 
@@ -349,21 +354,23 @@ export interface SystemStatusMessage extends WebSocketMessage<SystemStatus> {
 /**
  * Message commande (Client → Server)
  */
-export interface CommandMessage extends WebSocketMessage<{
-  endpoint: ApiEndpoint;
-  params?: RestParams;
-}> {
+export interface CommandMessage
+  extends WebSocketMessage<{
+    endpoint: ApiEndpoint;
+    params?: RestParams;
+  }> {
   type: typeof WebSocketMessageType.COMMAND;
 }
 
 /**
  * Message accusé réception commande
  */
-export interface CommandAckMessage extends WebSocketMessage<{
-  commandId: string;
-  status: 'accepted' | 'rejected' | 'completed';
-  message?: string;
-}> {
+export interface CommandAckMessage
+  extends WebSocketMessage<{
+    commandId: string;
+    status: 'accepted' | 'rejected' | 'completed';
+    message?: string;
+  }> {
   type: typeof WebSocketMessageType.COMMAND_ACK;
 }
 
@@ -385,11 +392,12 @@ export type WebSocketErrorCode =
 /**
  * Message erreur
  */
-export interface ErrorMessage extends WebSocketMessage<{
-  code: WebSocketErrorCode;
-  message: string;
-  details?: unknown;
-}> {
+export interface ErrorMessage
+  extends WebSocketMessage<{
+    code: WebSocketErrorCode;
+    message: string;
+    details?: unknown;
+  }> {
   type: typeof WebSocketMessageType.ERROR;
 }
 

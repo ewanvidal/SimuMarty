@@ -11,8 +11,11 @@ export function ExperienceCanvas() {
   const experienceRef = useRef<Experience | null>(null);
 
   useEffect(() => {
-    console.log('🔧 ExperienceCanvas useEffect - canvasRef.current:', canvasRef.current);
-    
+    console.log(
+      '🔧 ExperienceCanvas useEffect - canvasRef.current:',
+      canvasRef.current,
+    );
+
     if (!canvasRef.current) {
       console.error('❌ Canvas ref is null!');
       return;
@@ -37,5 +40,5 @@ export function ExperienceCanvas() {
     };
   }, []);
 
-  return <canvas ref={canvasRef} className="experience-canvas" />;
+  return <canvas ref={canvasRef} className='experience-canvas' />;
 }

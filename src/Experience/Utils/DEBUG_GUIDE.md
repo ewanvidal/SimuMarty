@@ -3,11 +3,13 @@
 ## Comment activer le Debug UI
 
 1. **Ouvrir votre application** dans le navigateur
+
    ```
    http://localhost:5173
    ```
 
 2. **Ajouter `#debug` à l'URL**
+
    ```
    http://localhost:5173/#debug
    ```
@@ -29,13 +31,15 @@ Ouvrez la console du navigateur (F12) et cherchez ces messages :
 🤖 Debug folder created: [GUI folder]
 ```
 
-Si vous voyez `active: false`, cela signifie que le hash `#debug` n'est pas détecté.
+Si vous voyez `active: false`, cela signifie que le hash `#debug` n'est pas
+détecté.
 
 ## Contrôles disponibles
 
 Dans le panneau **marty** vous trouverez :
 
 ### Animations
+
 - **playWalking** - Lance l'animation de marche
 - **playWaving** - Lance l'animation de salut
 - **stopAnimation** - Arrête l'animation en cours
@@ -43,15 +47,18 @@ Dans le panneau **marty** vous trouverez :
 - **crossFadeDuration** (0.1 - 2s) - Durée du fondu entre animations
 
 ### Mouvement
+
 - **moveSpeed** (0.1 - 3) - Vitesse de déplacement
 - **moveFrames** (1 - 60) - Frames de mouvement par cycle
 - **cycleFrames** (1 - 180) - Durée totale d'un cycle
 
 ### Lumières (panneau **sunLight**)
+
 - **intensity** - Intensité du soleil
 - **x, y, z** - Position de la lumière
 
 ### Ambient Light
+
 - **ambientIntensity** - Intensité de la lumière ambiante
 
 ## Dépannage
@@ -69,12 +76,14 @@ Dans le panneau **marty** vous trouverez :
 ### L'UI apparaît mais est vide
 
 Si le panneau lil-gui s'affiche mais ne contient rien :
+
 - Vérifiez que Marty charge correctement (messages dans la console)
 - Vérifiez que les animations sont disponibles dans le modèle GLTF
 
 ### Pour désactiver le debug
 
 Supprimez `#debug` de l'URL et rafraîchissez :
+
 ```
 http://localhost:5173/
 ```

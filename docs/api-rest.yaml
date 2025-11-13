@@ -5,7 +5,7 @@ info:
     API REST pour le contrôle et la supervision du robot Marty virtuel.
     Basée sur l'API RIC (Robotical Interface Controller) de Marty V2.
     Compatible avec MartyPy v3.6+
-    
+
     Développé par Natthan GUILLOT - Polytech Dijon 2025-2026
   version: 1.0.0
 
@@ -31,7 +31,9 @@ paths:
     get:
       tags: [Robot]
       summary: Obtenir l'état complet du robot
-      description: Retourne la position de toutes les articulations, la batterie et les capteurs
+      description:
+        Retourne la position de toutes les articulations, la batterie et les
+        capteurs
       responses:
         '200':
           description: État actuel du robot
@@ -40,17 +42,17 @@ paths:
               schema:
                 $ref: '#/components/schemas/RobotState'
               example:
-                robotId: "marty-001"
+                robotId: 'marty-001'
                 joints:
                   - IDNo: 0
-                    name: "left hip"
+                    name: 'left hip'
                     pos: 45.5
                     current: 120
                     enabled: true
                     commsOK: true
                     flags: 129
                   - IDNo: 3
-                    name: "right hip"
+                    name: 'right hip'
                     pos: -45.5
                     current: 115
                     enabled: true
@@ -78,7 +80,7 @@ paths:
                   isMoving: false
                   isPaused: false
                   isFwUpdating: false
-                ts: "2025-10-16T14:30:00Z"
+                ts: '2025-10-16T14:30:00Z'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
 
@@ -97,41 +99,41 @@ paths:
               walk:
                 summary: Faire marcher le robot
                 value:
-                  endpoint: "traj/step"
+                  endpoint: 'traj/step'
                   params:
                     numSteps: 4
-                    startFoot: "auto"
+                    startFoot: 'auto'
                     turn: 15
                     stepLength: 30
                     moveTime: 1500
               kick:
                 summary: Taper dans un ballon
                 value:
-                  endpoint: "traj/kick"
+                  endpoint: 'traj/kick'
                   params:
-                    side: "right"
+                    side: 'right'
                     twist: 5
                     moveTime: 2500
               lean:
                 summary: Se pencher en avant
                 value:
-                  endpoint: "traj/lean"
+                  endpoint: 'traj/lean'
                   params:
-                    direction: "forward"
+                    direction: 'forward'
                     amount: 29
                     moveTime: 1000
               eyes:
                 summary: Expression des yeux
                 value:
-                  endpoint: "traj/eyesExcited"
+                  endpoint: 'traj/eyesExcited'
                   params: {}
               ledColor:
                 summary: Changer couleur LED
                 value:
-                  endpoint: "led/eyes/color"
+                  endpoint: 'led/eyes/color'
                   params:
-                    color: "red"
-                    region: "all"
+                    color: 'red'
+                    region: 'all'
       responses:
         '202':
           description: Commande acceptée et en cours d'exécution
@@ -140,7 +142,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/CommandResult'
               example:
-                rslt: "ok"
+                rslt: 'ok'
                 duration: 3500
         '400':
           $ref: '#/components/responses/BadRequest'
@@ -226,7 +228,7 @@ paths:
                     - clear and zero
                     - pause
                     - pause and disable
-                  default: "clear and stop"
+                  default: 'clear and stop'
       responses:
         '200':
           description: Robot arrêté avec succès
@@ -270,19 +272,19 @@ paths:
                       $ref: '#/components/schemas/ModelInfo'
               example:
                 robots:
-                  - id: "marty-v2"
-                    name: "Marty Robot v2"
-                    version: "2.0.0"
-                    format: "glb"
+                  - id: 'marty-v2'
+                    name: 'Marty Robot v2'
+                    version: '2.0.0'
+                    format: 'glb'
                     size: 2548000
-                    url: "/models/marty-v2.glb"
+                    url: '/models/marty-v2.glb'
                 environments:
-                  - id: "maze-basic"
-                    name: "Labyrinthe basique"
-                    version: "1.0.0"
-                    format: "glb"
+                  - id: 'maze-basic'
+                    name: 'Labyrinthe basique'
+                    version: '1.0.0'
+                    format: 'glb'
                     size: 1024000
-                    url: "/models/environments/maze-basic.glb"
+                    url: '/models/environments/maze-basic.glb'
 
   /models/{modelId}:
     get:
@@ -325,7 +327,7 @@ paths:
                   type: number
                   default: -9.81
             example:
-              environment: "maze-basic"
+              environment: 'maze-basic'
               physics: true
               gravity: -9.81
       responses:
@@ -407,8 +409,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/HealthStatus'
               example:
-                status: "healthy"
-                version: "1.0.0"
+                status: 'healthy'
+                version: '1.0.0'
                 uptime: 3600
                 system:
                   heapFree: 45120
@@ -417,9 +419,9 @@ paths:
                   loopMsMax: 18.2
                   cpuLoad: 35.7
                 components:
-                  engine: "up"
-                  websocket: "up"
-                  physics: "up"
+                  engine: 'up'
+                  websocket: 'up'
+                  physics: 'up'
 
 components:
   schemas:
@@ -723,7 +725,7 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
           example:
-            code: "INVALID_REQUEST"
+            code: 'INVALID_REQUEST'
             message: "Le paramètre 'angle' doit être entre -180 et 180"
 
     ServiceUnavailable:
@@ -733,5 +735,5 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
           example:
-            code: "SERVICE_UNAVAILABLE"
-            message: "Le moteur de simulation est en cours de redémarrage"
+            code: 'SERVICE_UNAVAILABLE'
+            message: 'Le moteur de simulation est en cours de redémarrage'

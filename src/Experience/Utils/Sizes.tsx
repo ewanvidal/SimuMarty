@@ -24,10 +24,17 @@ export default class Sizes extends EventEmitter {
       this.width = window.innerWidth;
       this.height = window.innerHeight;
     }
-    
+
     this.pixelRatio = Math.min(window.devicePixelRatio, 2);
 
-    console.log('📐 Sizes initialized - width:', this.width, 'height:', this.height, 'pixelRatio:', this.pixelRatio);
+    console.log(
+      '📐 Sizes initialized - width:',
+      this.width,
+      'height:',
+      this.height,
+      'pixelRatio:',
+      this.pixelRatio,
+    );
 
     // Resize event
     window.addEventListener('resize', this.handleResize.bind(this));
@@ -43,10 +50,15 @@ export default class Sizes extends EventEmitter {
       this.width = window.innerWidth;
       this.height = window.innerHeight;
     }
-    
+
     this.pixelRatio = Math.min(window.devicePixelRatio, 2);
 
-    console.log('📐 Sizes resized - width:', this.width, 'height:', this.height);
+    console.log(
+      '📐 Sizes resized - width:',
+      this.width,
+      'height:',
+      this.height,
+    );
 
     this.trigger('resize');
   }

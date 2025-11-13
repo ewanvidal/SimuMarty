@@ -17,7 +17,9 @@ export default class EventEmitter {
     if (!this.callbacks[event]) return this;
 
     if (callback) {
-      this.callbacks[event] = this.callbacks[event].filter(cb => cb !== callback);
+      this.callbacks[event] = this.callbacks[event].filter(
+        (cb) => cb !== callback,
+      );
     } else {
       delete this.callbacks[event];
     }
@@ -27,7 +29,7 @@ export default class EventEmitter {
   trigger(event: string, ...args: any[]) {
     if (!this.callbacks[event]) return this;
 
-    this.callbacks[event].forEach(callback => {
+    this.callbacks[event].forEach((callback) => {
       callback(...args);
     });
     return this;

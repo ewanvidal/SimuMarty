@@ -28,7 +28,7 @@ export default class Environment {
     this.setSunLight();
     this.setAmbientLight();
     // this.setEnvironmentMap();
-    
+
     console.log('💡 Environment created - lights added to scene');
   }
 
@@ -44,10 +44,30 @@ export default class Environment {
     // Debug
     if (this.debug.active && this.debug.ui) {
       const folder = this.debug.ui.addFolder('sunLight');
-      folder.add(this.sunLight, 'intensity').min(0).max(10).step(0.001).name('intensity');
-      folder.add(this.sunLight.position, 'x').min(-5).max(5).step(0.001).name('x');
-      folder.add(this.sunLight.position, 'y').min(-5).max(5).step(0.001).name('y');
-      folder.add(this.sunLight.position, 'z').min(-5).max(5).step(0.001).name('z');
+      folder
+        .add(this.sunLight, 'intensity')
+        .min(0)
+        .max(10)
+        .step(0.001)
+        .name('intensity');
+      folder
+        .add(this.sunLight.position, 'x')
+        .min(-5)
+        .max(5)
+        .step(0.001)
+        .name('x');
+      folder
+        .add(this.sunLight.position, 'y')
+        .min(-5)
+        .max(5)
+        .step(0.001)
+        .name('y');
+      folder
+        .add(this.sunLight.position, 'z')
+        .min(-5)
+        .max(5)
+        .step(0.001)
+        .name('z');
     }
   }
 
@@ -57,7 +77,12 @@ export default class Environment {
 
     // Debug
     if (this.debug.active && this.debug.ui) {
-      this.debug.ui.add(this.ambientLight, 'intensity').min(0).max(3).step(0.001).name('ambientIntensity');
+      this.debug.ui
+        .add(this.ambientLight, 'intensity')
+        .min(0)
+        .max(3)
+        .step(0.001)
+        .name('ambientIntensity');
     }
   }
 
@@ -67,9 +92,9 @@ export default class Environment {
   //     intensity: 0.4,
   //     texture: this.resources.items.environmentMapTexture
   //   };
-  //   
+  //
   //   this.scene.environment = this.environmentMap.texture;
-  //   
+  //
   //   if (this.debug.active && this.debug.ui) {
   //     this.debug.ui.add(this.environmentMap, 'intensity').min(0).max(4).step(0.001).name('envMapIntensity');
   //   }
