@@ -1,34 +1,34 @@
-import { useState } from 'react';
-import reactLogo from './assets/react.svg';
-import viteLogo from '/vite.svg';
+import { ExperienceCanvas } from './components/ExperienceCanvas.tsx';
+import { CodeEditor } from './components/CodeEditor.tsx';
 import './App.css';
 
 function App() {
-  const [count, setCount] = useState(0);
+  const handleCodeChange = (code: string | undefined) => {
+    // Handle code changes if needed
+    console.log('Code changed:', code);
+  };
+
+  const handleRunCode = (code: string) => {
+    // Handle code execution
+    console.log('Running code:', code);
+    // TODO: Send code to Python backend for execution
+  };
 
   return (
-    <>
-      <div>
-        <a href='https://vite.dev' target='_blank'>
-          <img src={viteLogo} className='logo' alt='Vite logo' />
-        </a>
-        <a href='https://react.dev' target='_blank'>
-          <img src={reactLogo} className='logo react' alt='React logo' />
-        </a>
+    <div style={{ width: '100vw', height: '100vh', display: 'flex' }}>
+      {/* 3D Experience View */}
+      <div style={{ width: '50%', height: '100%' }}>
+        <ExperienceCanvas />
       </div>
-      <h1>Vite + React</h1>
-      <div className='card'>
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
+
+      {/* Code Editor */}
+      <div style={{ width: '50%', height: '100%' }}>
+        <CodeEditor 
+          onCodeChange={handleCodeChange}
+          onRun={handleRunCode}
+        />
       </div>
-      <p className='read-the-docs'>
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    </div>
   );
 }
 
