@@ -6,7 +6,7 @@ info:
     API WebSocket temps réel pour la communication bidirectionnelle avec le robot Marty.
     Basée sur l'API RIC (Robotical Interface Controller) de Marty V2.
     Compatible avec MartyPy v3.6+
-    
+
     Fournit les données de télémétrie (10Hz par défaut) et permet l'envoi de commandes asynchrones.
     Développé par Natthan GUILLOT - Polytech Dijon 2025-2026
   contact:
@@ -139,7 +139,7 @@ components:
         properties:
           type:
             type: string
-            const: "ack"
+            const: 'ack'
           payload:
             type: object
             required: [status]
@@ -157,10 +157,10 @@ components:
             description: Unix timestamp en millisecondes
       examples:
         - payload:
-            type: "ack"
+            type: 'ack'
             payload:
-              status: "connected"
-              serverVersion: "1.0.0"
+              status: 'connected'
+              serverVersion: '1.0.0'
               subscriptionRate: 10
             timestamp: 1729166400000
 
@@ -173,7 +173,7 @@ components:
         properties:
           event:
             type: string
-            const: "disconnect"
+            const: 'disconnect'
           reason:
             type: string
             enum:
@@ -196,7 +196,7 @@ components:
         properties:
           event:
             type: string
-            const: "ping"
+            const: 'ping'
           timestamp:
             type: string
             format: date-time
@@ -210,7 +210,7 @@ components:
         properties:
           event:
             type: string
-            const: "pong"
+            const: 'pong'
           timestamp:
             type: string
             format: date-time
@@ -226,7 +226,7 @@ components:
         properties:
           type:
             type: string
-            const: "smartServos"
+            const: 'smartServos'
           payload:
             type: array
             description: État des 9 articulations
@@ -271,17 +271,17 @@ components:
             description: Unix timestamp en ms
       examples:
         - payload:
-            type: "smartServos"
+            type: 'smartServos'
             payload:
               - IDNo: 0
-                name: "left hip"
+                name: 'left hip'
                 pos: 45.2
                 current: 120
                 enabled: true
                 commsOK: true
                 flags: 129
               - IDNo: 3
-                name: "right hip"
+                name: 'right hip'
                 pos: -45.2
                 current: 115
                 enabled: true
@@ -299,7 +299,7 @@ components:
         properties:
           type:
             type: string
-            const: "robotStatus"
+            const: 'robotStatus'
           payload:
             type: object
             required: [flags, workQCount, isMoving, isPaused, isFwUpdating]
@@ -324,7 +324,7 @@ components:
             type: integer
       examples:
         - payload:
-            type: "robotStatus"
+            type: 'robotStatus'
             payload:
               flags: 0
               workQCount: 2
@@ -343,7 +343,7 @@ components:
         properties:
           type:
             type: string
-            const: "systemStatus"
+            const: 'systemStatus'
           payload:
             type: object
             required: [heapFree, heapMin, loopMsAvg, loopMsMax]
@@ -372,7 +372,7 @@ components:
             type: integer
       examples:
         - payload:
-            type: "systemStatus"
+            type: 'systemStatus'
             payload:
               heapFree: 45120
               heapMin: 32768
@@ -392,7 +392,7 @@ components:
         properties:
           type:
             type: string
-            const: "accel"
+            const: 'accel'
           payload:
             type: object
             required: [x, y, z]
@@ -410,7 +410,7 @@ components:
             type: integer
       examples:
         - payload:
-            type: "accel"
+            type: 'accel'
             payload:
               x: 0.02
               y: 0.98
@@ -427,7 +427,7 @@ components:
         properties:
           type:
             type: string
-            const: "powerStatus"
+            const: 'powerStatus'
           payload:
             type: object
             required: [battRemainCapacityPercent]
@@ -455,7 +455,7 @@ components:
             type: integer
       examples:
         - payload:
-            type: "powerStatus"
+            type: 'powerStatus'
             payload:
               battRemainCapacityPercent: 87
               battTempDegC: 28.5
@@ -474,7 +474,7 @@ components:
         properties:
           type:
             type: string
-            const: "addOns"
+            const: 'addOns'
           payload:
             type: array
             items:
@@ -518,7 +518,7 @@ components:
         properties:
           type:
             type: string
-            const: "command"
+            const: 'command'
           payload:
             type: object
             required: [endpoint]
@@ -553,18 +553,19 @@ components:
                   - traj/stop
               params:
                 type: object
-                description: Paramètres de la commande (WalkParams, KickParams, etc.)
+                description:
+                  Paramètres de la commande (WalkParams, KickParams, etc.)
                 additionalProperties: true
           timestamp:
             type: integer
       examples:
         - payload:
-            type: "command"
+            type: 'command'
             payload:
-              endpoint: "traj/step"
+              endpoint: 'traj/step'
               params:
                 numSteps: 4
-                startFoot: "auto"
+                startFoot: 'auto'
                 turn: 15
                 stepLength: 30
                 moveTime: 1500
@@ -579,7 +580,7 @@ components:
         properties:
           type:
             type: string
-            const: "command_ack"
+            const: 'command_ack'
           payload:
             type: object
             required: [commandId, status]
@@ -598,11 +599,11 @@ components:
             type: integer
       examples:
         - payload:
-            type: "command_ack"
+            type: 'command_ack'
             payload:
-              commandId: "cmd_1729166400000"
-              status: "accepted"
-              message: "Command queued for execution"
+              commandId: 'cmd_1729166400000'
+              status: 'accepted'
+              message: 'Command queued for execution'
             timestamp: 1729166400000
 
     # === ERROR MESSAGES ===
@@ -615,7 +616,7 @@ components:
         properties:
           type:
             type: string
-            const: "error"
+            const: 'error'
           payload:
             type: object
             required: [code, message]
@@ -641,12 +642,12 @@ components:
             type: integer
       examples:
         - payload:
-            type: "error"
+            type: 'error'
             payload:
               code: 1002
-              message: "Command execution failed: invalid joint angle"
+              message: 'Command execution failed: invalid joint angle'
               details:
-                endpoint: "traj/step"
-                param: "turn"
+                endpoint: 'traj/step'
+                param: 'turn'
                 value: 200
             timestamp: 1729166400000

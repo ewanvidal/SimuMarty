@@ -24,14 +24,10 @@ export default class Floor {
     this.scene = this.experience.scene;
     this.resources = this.experience.resources;
 
-    console.log('🟫 Floor constructor');
-
     this.setGeometry();
     this.setTextures();
     this.setMaterial();
     this.setMesh();
-    
-    console.log('🟫 Floor created - mesh added to scene');
   }
 
   private setGeometry() {
@@ -46,8 +42,6 @@ export default class Floor {
     const alpha = this.resources.items.floorAlphaTexture;
 
     if (diffuse && normal && arm && alpha) {
-      console.log('🟫 Floor textures loaded');
-      
       // Set texture wrapping and repeat
       const repeat = 100;
       [diffuse, normal, arm].forEach((texture: THREE.Texture) => {
@@ -58,7 +52,6 @@ export default class Floor {
 
       this.textures = { diffuse, normal, arm, alpha };
     } else {
-      console.warn('⚠️ Floor textures not loaded, using simple material');
     }
   }
 

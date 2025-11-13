@@ -3,13 +3,13 @@
 Types TypeScript basés sur l'API officielle **MartyPy v3.6+** pour le robot
 Marty V2.
 
-##  Références
+## Références
 
 - [MartyPy GitHub Repository](https://github.com/robotical/martypy)
 - [Marty V2 Python Function Reference](https://userguides.robotical.io/martyv2/documentation/python_function_reference)
 - [RIC (Robotical Interface Controller) API](https://userguides.robotical.io/martyv2/userguides/python/marty_python_wifi_overview)
 
-##  Organisation
+## Organisation
 
 ### 1. `marty.types.ts`
 
@@ -67,7 +67,7 @@ Controller)
 - **Caméra** : Modes (free, follow, orbit, first-person, etc.)
 - **Objets 3D** : Position, rotation, géométrie, propriétés physiques
 
-##  Utilisation
+## Utilisation
 
 ```typescript
 // Import depuis le point d'entrée principal
@@ -114,15 +114,16 @@ const redColor = DiscoColor.RED; // 'red'
 
 ### Communication MartyEngine ↔ MartyStudio
 
-La communication entre **MartyEngine** (moteur de simulation 3D) et **MartyStudio** (interface utilisateur) utilise **JSON** via **WebSocket**.
+La communication entre **MartyEngine** (moteur de simulation 3D) et
+**MartyStudio** (interface utilisateur) utilise **JSON** via **WebSocket**.
 
 #### Format de Message Générique
 
 ```typescript
 interface WebSocketMessage {
-  type: string;           // Type de message (voir RosSerialMessage)
-  payload: unknown;       // Données spécifiques au type
-  timestamp: number;      // Timestamp en ms
+  type: string; // Type de message (voir RosSerialMessage)
+  payload: unknown; // Données spécifiques au type
+  timestamp: number; // Timestamp en ms
 }
 ```
 
@@ -144,6 +145,7 @@ interface WebSocketMessage {
 ```
 
 Types concernés :
+
 - `WebSocketMessageType.COMMAND` : Type de message commande
 - `CommandMessage` : Structure du message
 - `ApiEndpoint` : Endpoints REST disponibles
@@ -265,16 +267,17 @@ Type : `SystemStatusMessage`
 
 ```typescript
 const config: ConnectionConfig = {
-  method: 'wifi',              // 'wifi' | 'usb' | 'exp' | 'test'
-  locator: '192.168.1.100',    // IP ou port série
-  blocking: false,             // Mode asynchrone
-  subscribeRateHz: 10,         // 10 publications/seconde
+  method: 'wifi', // 'wifi' | 'usb' | 'exp' | 'test'
+  locator: '192.168.1.100', // IP ou port série
+  blocking: false, // Mode asynchrone
+  subscribeRateHz: 10, // 10 publications/seconde
 };
 ```
 
 #### Sérialisation JSON
 
 **Toutes les communications utilisent JSON** :
+
 - ✅ Sérialisation native avec `JSON.stringify()`
 - ✅ Désérialisation avec `JSON.parse()`
 - ✅ Types TypeScript garantissent la structure des données
@@ -291,14 +294,16 @@ const walkCmd: WalkParams = {
   turn: 15,
 };
 
-websocket.send(JSON.stringify({
-  type: 'command',
-  payload: {
-    endpoint: ApiEndpoint.TRAJ_WALK,
-    params: walkCmd,
-  },
-  timestamp: Date.now(),
-}));
+websocket.send(
+  JSON.stringify({
+    type: 'command',
+    payload: {
+      endpoint: ApiEndpoint.TRAJ_WALK,
+      params: walkCmd,
+    },
+    timestamp: Date.now(),
+  }),
+);
 ```
 
 **Exemple de réception dans MartyEngine** :
@@ -308,7 +313,7 @@ import type { ServosPublication } from '@/shared/types';
 
 websocket.on('message', (data) => {
   const message = JSON.parse(data) as ServosPublication;
-  
+
   if (message.topic === 'smartServos') {
     updateServoVisuals(message.servos);
   }
@@ -363,7 +368,7 @@ import { JointInfo } from './marty.types';
 - **Propriétés** : `camelCase` (`moveTime`, `numSteps`)
 - **Valeurs** : `snake_case` ou descriptif (`'left_hip'`, `'traj/walk'`)
 
-##  Différences SimuMarty vs Marty Réel
+## Différences SimuMarty vs Marty Réel
 
 Les types dans `simulator.types.ts` sont **spécifiques au simulateur** et
 n'existent pas sur le robot réel :

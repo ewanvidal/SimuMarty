@@ -20,9 +20,6 @@ export default class Renderer {
     this.scene = this.experience.scene;
     this.camera = this.experience.camera;
 
-    console.log('🖼️ Renderer - canvas:', this.canvas);
-    console.log('🖼️ Renderer - sizes:', this.sizes.width, 'x', this.sizes.height);
-
     this.setInstance();
   }
 
@@ -36,8 +33,6 @@ export default class Renderer {
     this.instance.setClearColor('#211d20');
     this.instance.shadowMap.enabled = true;
     this.instance.shadowMap.type = THREE.PCFSoftShadowMap;
-    
-    console.log('🖼️ Renderer initialized - size:', this.sizes.width, 'x', this.sizes.height, 'pixelRatio:', this.sizes.pixelRatio);
   }
 
   resize() {

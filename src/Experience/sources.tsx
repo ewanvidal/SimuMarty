@@ -14,7 +14,7 @@ export const sources: Source[] = [
   {
     name: 'martyModel',
     type: 'gltfModel',
-    path: '/blender/models/marty.glb'
+    path: '/blender/models/marty.glb',
   },
   // Labyrinth environment (disabled for now)
   // {
@@ -26,22 +26,22 @@ export const sources: Source[] = [
   {
     name: 'floorDiffuseTexture',
     type: 'texture',
-    path: '/textures/floor/granite_tile_diff_1k.jpg'
+    path: '/textures/floor/granite_tile_diff_1k.jpg',
   },
   {
     name: 'floorNormalTexture',
     type: 'texture',
-    path: '/textures/floor/granite_tile_nor_gl_1k.jpg'
+    path: '/textures/floor/granite_tile_nor_gl_1k.jpg',
   },
   {
     name: 'floorArmTexture',
     type: 'texture',
-    path: '/textures/floor/granite_tile_arm_1k.jpg'
+    path: '/textures/floor/granite_tile_arm_1k.jpg',
   },
   {
     name: 'floorAlphaTexture',
     type: 'texture',
-    path: '/textures/floor/Frame 10.jpg'
+    path: '/textures/floor/Frame 10.jpg',
   },
   // Example cube texture for environment
   // {

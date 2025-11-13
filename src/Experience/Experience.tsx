@@ -28,7 +28,9 @@ export default class Experience {
   constructor(canvas: HTMLCanvasElement) {
     // Singleton - return existing instance if already created
     if (instance) {
-      console.log('⚠️ Experience singleton already exists, returning existing instance');
+      console.log(
+        '⚠️ Experience singleton already exists, returning existing instance',
+      );
       return instance;
     }
 
@@ -42,21 +44,13 @@ export default class Experience {
 
     // Setup
     this.canvas = canvas;
-    console.log('📐 Creating Sizes...');
     this.sizes = new Sizes(canvas);
-    console.log('⏰ Creating Time...');
     this.time = new Time();
-    console.log('🎨 Creating Scene...');
     this.scene = new THREE.Scene();
-    console.log('🐛 Creating Debug...');
     this.debug = new Debug();
-    console.log('📦 Creating Resources...');
     this.resources = new Resources(sources);
-    console.log('📷 Creating Camera...');
     this.camera = new Camera();
-    console.log('🖼️ Creating Renderer...');
     this.renderer = new Renderer();
-    console.log('🌍 Creating World...');
     this.world = new World();
 
     // Resize event
@@ -68,8 +62,6 @@ export default class Experience {
     this.time.on('tick', () => {
       this.update();
     });
-    
-    console.log('✅ Experience initialized successfully!');
   }
 
   private resize() {

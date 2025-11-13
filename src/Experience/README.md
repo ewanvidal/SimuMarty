@@ -1,6 +1,7 @@
 # Experience Architecture
 
-Cette architecture suit le pattern Three.js class-based popularisé par Bruno Simon, adapté pour TypeScript et React.
+Cette architecture suit le pattern Three.js class-based popularisé par Bruno
+Simon, adapté pour TypeScript et React.
 
 ## Structure
 
@@ -26,15 +27,20 @@ src/Experience/
 ## Principes
 
 ### 1. Singleton Pattern
-L'instance `Experience` est accessible globalement via `window.experience`, permettant à toutes les classes d'y accéder facilement.
+
+L'instance `Experience` est accessible globalement via `window.experience`,
+permettant à toutes les classes d'y accéder facilement.
 
 ### 2. Event-Driven
+
 - `Sizes` émet un événement `resize` lors du redimensionnement
 - `Time` émet un événement `tick` à chaque frame
 - `Resources` émet un événement `ready` quand tous les assets sont chargés
 
 ### 3. Separation of Concerns
+
 Chaque classe a une responsabilité unique :
+
 - **Experience** : orchestration générale
 - **Camera** : gestion de la caméra
 - **Renderer** : rendu WebGL
@@ -65,7 +71,7 @@ function App() {
     };
   }, []);
 
-  return <canvas ref={canvasRef} className="webgl" />;
+  return <canvas ref={canvasRef} className='webgl' />;
 }
 ```
 
@@ -78,13 +84,13 @@ export const sources: Source[] = [
   {
     name: 'martyModel',
     type: 'gltfModel',
-    path: '/models/marty.glb'
+    path: '/models/marty.glb',
   },
   {
     name: 'floorTexture',
     type: 'texture',
-    path: '/textures/floor/color.jpg'
-  }
+    path: '/textures/floor/color.jpg',
+  },
 ];
 ```
 
@@ -100,12 +106,11 @@ Ajouter `#debug` à l'URL pour activer l'interface de debug (lil-gui).
 
 ## Avantages
 
-✅ **Modulaire** : Chaque fonctionnalité est isolée
-✅ **Maintenable** : Code organisé et facile à comprendre
-✅ **Scalable** : Facile d'ajouter de nouveaux objets/fonctionnalités
-✅ **TypeScript** : Type-safe avec auto-complétion
-✅ **Performance** : Une seule boucle d'animation pour tout
-✅ **Clean Disposal** : Libération propre des ressources
+✅ **Modulaire** : Chaque fonctionnalité est isolée ✅ **Maintenable** : Code
+organisé et facile à comprendre ✅ **Scalable** : Facile d'ajouter de nouveaux
+objets/fonctionnalités ✅ **TypeScript** : Type-safe avec auto-complétion ✅
+**Performance** : Une seule boucle d'animation pour tout ✅ **Clean Disposal** :
+Libération propre des ressources
 
 ## Installation des dépendances
 

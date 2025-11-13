@@ -1,3 +1,7 @@
 # Ignore artifacts:
 build
 coverage
+
+# Commands to run Prettier :
+# npx prettier . --check
+# npx prettier . --write

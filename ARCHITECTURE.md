@@ -2,7 +2,8 @@
 
 ## ✅ Structure créée
 
-Votre projet dispose maintenant d'une architecture Three.js professionnelle et scalable :
+Votre projet dispose maintenant d'une architecture Three.js professionnelle et
+scalable :
 
 ```
 src/Experience/
@@ -48,6 +49,7 @@ function App() {
 ### 2. Voir l'exemple complet
 
 Un exemple d'intégration avec l'éditeur Monaco est disponible dans :
+
 - `src/App.example.tsx` - Split view avec 3D + éditeur
 
 ### 3. Remplacer votre App.tsx actuel
@@ -73,13 +75,13 @@ export const sources: Source[] = [
   {
     name: 'martyModel',
     type: 'gltfModel',
-    path: '/models/marty.glb'
+    path: '/models/marty.glb',
   },
   {
     name: 'labyrinthModel',
     type: 'gltfModel',
-    path: '/models/labyrinth.glb'
-  }
+    path: '/models/labyrinth.glb',
+  },
 ];
 ```
 
@@ -104,12 +106,12 @@ import Labyrinth from './Labyrinth';
 
 export default class World {
   labyrinth?: Labyrinth;
-  
+
   constructor() {
     // ...
     this.resources.on('ready', () => {
       this.floor = new Floor();
-      this.labyrinth = new Labyrinth();  // ✅
+      this.labyrinth = new Labyrinth(); // ✅
       this.marty = new Marty();
       this.environment = new Environment();
     });
@@ -120,22 +122,24 @@ export default class World {
 ### Activer le Debug
 
 Ajoutez `#debug` à l'URL :
+
 ```
 http://localhost:5173/#debug
 ```
 
-Une interface GUI (lil-gui) apparaîtra pour ajuster les paramètres en temps réel.
+Une interface GUI (lil-gui) apparaîtra pour ajuster les paramètres en temps
+réel.
 
 ## 🎨 Avantages de cette architecture
 
-| Avantage | Description |
-|----------|-------------|
-| **Modulaire** | Chaque classe a une responsabilité unique |
-| **Type-safe** | TypeScript avec auto-complétion complète |
-| **Performance** | Une seule boucle d'animation pour tout |
-| **Scalable** | Facile d'ajouter des fonctionnalités |
-| **Maintenable** | Code organisé et documenté |
-| **Clean Disposal** | Libération propre des ressources |
+| Avantage           | Description                               |
+| ------------------ | ----------------------------------------- |
+| **Modulaire**      | Chaque classe a une responsabilité unique |
+| **Type-safe**      | TypeScript avec auto-complétion complète  |
+| **Performance**    | Une seule boucle d'animation pour tout    |
+| **Scalable**       | Facile d'ajouter des fonctionnalités      |
+| **Maintenable**    | Code organisé et documenté                |
+| **Clean Disposal** | Libération propre des ressources          |
 
 ## 📦 Dépendances installées
 
@@ -166,15 +170,16 @@ Une interface GUI (lil-gui) apparaîtra pour ajuster les paramètres en temps r�
 
 ## 💡 Comparaison React Three Fiber vs Vanilla Three.js
 
-| Aspect | R3F (avant) | Vanilla (maintenant) |
-|--------|-------------|----------------------|
-| Performance | Bon | Excellent |
-| Contrôle | Déclaratif | Impératif |
-| Complexité | React hooks | Classes OOP |
-| Debugging | Difficile | Plus facile |
-| Animation | useFrame | RAF natif |
+| Aspect      | R3F (avant) | Vanilla (maintenant) |
+| ----------- | ----------- | -------------------- |
+| Performance | Bon         | Excellent            |
+| Contrôle    | Déclaratif  | Impératif            |
+| Complexité  | React hooks | Classes OOP          |
+| Debugging   | Difficile   | Plus facile          |
+| Animation   | useFrame    | RAF natif            |
 
 Cette architecture est **idéale pour** :
+
 - ✅ Projets complexes avec beaucoup de logique 3D
 - ✅ Besoins de performance maximale
 - ✅ Code partagé avec des projets non-React
@@ -188,4 +193,6 @@ Cette architecture est **idéale pour** :
 
 ---
 
-**Note** : Vos anciens composants React Three Fiber (`Floor.tsx`, `Marty.tsx`) sont toujours dans `src/components/` et peuvent coexister avec la nouvelle architecture si besoin.
+**Note** : Vos anciens composants React Three Fiber (`Floor.tsx`, `Marty.tsx`)
+sont toujours dans `src/components/` et peuvent coexister avec la nouvelle
+architecture si besoin.

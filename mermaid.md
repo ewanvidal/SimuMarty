@@ -33,7 +33,7 @@ sequenceDiagram
     Physics-->>Scene: Retourne état physique
     Scene->>Scene: Applique IK et interpolations (LERP)
     Scene-->>UI: Met à jour rendu 3D
-    
+
     Note over Utilisateur,Scene: Communication temps réel
     loop Mise à jour continue
         WS->>Engine: Récupère position/capteurs
@@ -47,7 +47,7 @@ sequenceDiagram
     UI->>Engine: Suspend l'exécution
     Engine-->>UI: État en pause
     UI-->>Utilisateur: Affiche debugger
-    
+
     Utilisateur->>UI: Reprend l'exécution
     UI->>Engine: Continue l'exécution
     Engine->>Scene: Reprend animations
