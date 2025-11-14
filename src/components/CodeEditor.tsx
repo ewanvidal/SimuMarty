@@ -13,13 +13,15 @@ interface CodeEditorProps {
 const DEFAULT_CODE = `# Write your Python code here to control Marty
 # Click the "Run Code" button to execute
 
-# Example: Make Marty walk and wave
+# Example: Make Marty walk, turn and wave
 marty.walk(2)
+marty.turn(30)
 marty.wave()
 
 # More examples:
 # marty.walk(4)      # Walk 4 steps (2 animation cycles)
-# marty.walk(3)      # Walk 3 steps (1.5 cycles)
+# marty.turn(-45)    # Turn -45 degrees (left)
+# marty.turn(90)     # Turn 90 degrees (right)
 # marty.stop()       # Stop all motion
 `;
 

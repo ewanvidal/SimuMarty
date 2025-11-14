@@ -32,6 +32,26 @@ const defineMartyBlocks = () => {
     return code;
   };
 
+  // Bloc pour marty.turn()
+  Blockly.Blocks['marty_turn'] = {
+    init: function () {
+      this.appendValueInput('ANGLE')
+        .setCheck('Number')
+        .appendField('marty.turn');
+      this.setPreviousStatement(true, null);
+      this.setNextStatement(true, null);
+      this.setColour(160);
+      this.setTooltip('Make Marty turn by a certain angle in degrees');
+      this.setHelpUrl('');
+    },
+  };
+
+  pythonGenerator.forBlock['marty_turn'] = function (block, generator) {
+    const angle = generator.valueToCode(block, 'ANGLE', 0) || '30';
+    const code = `marty.turn(${angle})\n`;
+    return code;
+  };
+
   // Bloc pour marty.wave()
   Blockly.Blocks['marty_wave'] = {
     init: function () {
@@ -96,6 +116,20 @@ export const BlocklyEditor = ({
                     type: 'math_number',
                     fields: {
                       NUM: 2,
+                    },
+                  },
+                },
+              },
+            },
+            {
+              kind: 'block',
+              type: 'marty_turn',
+              inputs: {
+                ANGLE: {
+                  shadow: {
+                    type: 'math_number',
+                    fields: {
+                      NUM: 30,
                     },
                   },
                 },

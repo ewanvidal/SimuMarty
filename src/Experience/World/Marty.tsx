@@ -37,20 +37,36 @@ export default class Marty {
     moveTimer: number;
     restTimer: number;
   };
+  turn: {
+    active: boolean;
+    elapsed: number;
+    delay: number;
+    duration: number;
+    startAngle: number;
+    targetAngle: number;
+    state: 'idle' | 'waiting' | 'rotating' | 'resumeWait';
+    resumeDelay: number;
+    turnAction: THREE.AnimationAction | null;
+  };
   animation: {
     mixer?: THREE.AnimationMixer;
     actions?: {
       walking?: THREE.AnimationAction;
       waving?: THREE.AnimationAction;
+      turnRight?: THREE.AnimationAction;
+      getReady?: THREE.AnimationAction;
       current?: THREE.AnimationAction | null;
     };
     settings?: {
       timeScale: number;
       crossFadeDuration: number;
+      turnBaseAngle: number;
     };
     clips?: {
       walking?: THREE.AnimationClip;
       waving?: THREE.AnimationClip;
+      turnRight?: THREE.AnimationClip;
+      getReady?: THREE.AnimationClip;
     };
     play?: (name: string, options?: { autoStop?: boolean }) => void;
     stop?: () => void;
@@ -85,6 +101,18 @@ export default class Marty {
       active: false,
       moveTimer: 0,
       restTimer: 0,
+    };
+
+    this.turn = {
+      active: false,
+      elapsed: 0,
+      delay: 30 / 30, // 30 frames at 30 fps (seconds)
+      duration: 0,
+      startAngle: 0,
+      targetAngle: 0,
+      state: 'idle',
+      resumeDelay: 0,
+      turnAction: null,
     };
 
     this.animation = {};
@@ -150,6 +178,9 @@ export default class Marty {
     this.movement.moveDuration = moveFrames / fps;
     this.movement.restDuration = (cycleFrames - moveFrames) / fps;
 
+    // Update turn timings based on fps
+    this.turn.delay = 30 / fps; // 30 frames before rotation
+
     if (this.movement.active) {
       this.movement.moveTimer = Math.min(
         this.movement.moveTimer,
@@ -195,15 +226,43 @@ export default class Marty {
       this.resource.animations[1] ||
       walkingClip;
 
+    const getReadyClip = this.resource.animations.find(
+      (clip) =>
+        clip.name.toLowerCase().includes('getready') ||
+        clip.name.toLowerCase().includes('get_ready'),
+    );
+
+    const turnRightClip = this.resource.animations.find(
+      (clip) =>
+        clip.name.toLowerCase().includes('turn_right') ||
+        clip.name.toLowerCase().includes('turnright'),
+    );
+
     // Store the clips for duration access
     this.animation.clips = {
       walking: walkingClip,
       waving: wavingClip,
+      getReady: getReadyClip,
+      turnRight: turnRightClip,
     };
 
     this.animation.actions.walking =
       this.animation.mixer.clipAction(walkingClip);
     this.animation.actions.waving = this.animation.mixer.clipAction(wavingClip);
+
+    if (getReadyClip) {
+      this.animation.actions.getReady =
+        this.animation.mixer.clipAction(getReadyClip);
+      this.animation.actions.getReady.setLoop(THREE.LoopOnce, 1);
+      this.animation.actions.getReady.clampWhenFinished = true;
+    }
+
+    if (turnRightClip) {
+      this.animation.actions.turnRight =
+        this.animation.mixer.clipAction(turnRightClip);
+      this.animation.actions.turnRight.setLoop(THREE.LoopOnce, 1);
+      this.animation.actions.turnRight.clampWhenFinished = true;
+    }
 
     // Configurer les animations pour ne se jouer qu'une fois
     this.animation.actions.walking.setLoop(THREE.LoopOnce, 1);
@@ -213,10 +272,16 @@ export default class Marty {
 
     this.animation.actions.current = null; // Pas d'animation au démarrage
 
-    this.animation.settings = { timeScale: 1, crossFadeDuration: 0.6 };
+    this.animation.settings = {
+      timeScale: 1,
+      crossFadeDuration: 0.6,
+      turnBaseAngle: THREE.MathUtils.degToRad(30), // 30 degrees turn by default
+    };
 
     this.animation.play = (name: string, options?: { autoStop?: boolean }) => {
-      const newAction = this.animation.actions![name as 'walking' | 'waving'];
+      const newAction = this.animation.actions![
+        name as 'walking' | 'waving' | 'turnRight' | 'getReady'
+      ];
       if (!newAction) return;
 
       const oldAction = this.animation.actions!.current;
@@ -250,9 +315,39 @@ export default class Marty {
               this.movement.enabled = false;
               this.movement.active = false;
             },
-            (walkingClip.duration * 1000) / this.animation.settings!.timeScale,
+            (this.animation.clips!.walking!.duration * 1000) /
+              this.animation.settings!.timeScale,
           );
         }
+      }
+
+      // If playing getReady, ensure movement is disabled
+      if (name === 'getReady') {
+        this.movement.enabled = false;
+        this.movement.active = false;
+      }
+
+      // If playing turnRight, disable movement and start turn sequence
+      if (name === 'turnRight') {
+        this.movement.enabled = false;
+        this.movement.active = false;
+
+        // Start turn cycle: wait 30 frames, pause, rotate during pause, then resume
+        this.turn.active = true;
+        this.turn.elapsed = 0;
+        this.turn.startAngle = this.model!.rotation.y;
+        this.turn.state = 'waiting';
+        this.turn.turnAction = this.animation.actions!.turnRight || null;
+
+        // Duration of rotation proportional to angle for constant speed
+        const angleDeg = THREE.MathUtils.radToDeg(
+          this.animation.settings!.turnBaseAngle,
+        );
+        const absAngleDeg = Math.max(Math.abs(angleDeg), 1);
+        const baseSpeedDegPerSec = 60; // 60° per second => 30° in 0.5s
+
+        this.turn.duration = absAngleDeg / baseSpeedDegPerSec;
+        this.turn.resumeDelay = this.turn.duration * 0.2; // Small pause after rotation
       }
     };
 
@@ -270,6 +365,9 @@ export default class Marty {
       const debugObject = {
         timeScale: this.animation.settings.timeScale,
         crossFadeDuration: this.animation.settings.crossFadeDuration,
+        turnBaseAngleDeg: THREE.MathUtils.radToDeg(
+          this.animation.settings.turnBaseAngle,
+        ),
         moveSpeed: this.movement.speed,
         moveFrames: this.movement.moveFrames,
         cycleFrames: this.movement.cycleFrames,
@@ -279,6 +377,16 @@ export default class Marty {
         playWaving: () => {
           this.animation.play!('waving');
         },
+        playTurnRight: () => {
+          if (this.animation.actions!.turnRight) {
+            this.animation.play!('turnRight');
+          }
+        },
+        playGetReady: () => {
+          if (this.animation.actions!.getReady) {
+            this.animation.play!('getReady');
+          }
+        },
         stopAnimation: () => {
           this.animation.stop!();
         },
@@ -287,6 +395,12 @@ export default class Marty {
       // Animation controls
       this.debugFolder.add(debugObject, 'playWalking');
       this.debugFolder.add(debugObject, 'playWaving');
+      if (this.animation.actions.turnRight) {
+        this.debugFolder.add(debugObject, 'playTurnRight');
+      }
+      if (this.animation.actions.getReady) {
+        this.debugFolder.add(debugObject, 'playGetReady');
+      }
       this.debugFolder.add(debugObject, 'stopAnimation');
       this.debugFolder
         .add(debugObject, 'timeScale', 0.1, 2)
@@ -297,6 +411,12 @@ export default class Marty {
         .add(debugObject, 'crossFadeDuration', 0.1, 2)
         .onChange((value: number) => {
           this.animation.settings!.crossFadeDuration = value;
+        });
+      this.debugFolder
+        .add(debugObject, 'turnBaseAngleDeg', -180, 180, 1)
+        .onChange((value: number) => {
+          this.animation.settings!.turnBaseAngle =
+            THREE.MathUtils.degToRad(value);
         });
 
       // Movement controls
@@ -325,7 +445,9 @@ export default class Marty {
   /**
    * Get the duration of an animation in milliseconds
    */
-  getAnimationDuration(name: 'walking' | 'waving'): number {
+  getAnimationDuration(
+    name: 'walking' | 'waving' | 'turnRight' | 'getReady',
+  ): number {
     if (!this.animation.clips || !this.animation.settings) {
       return 2000; // Default fallback
     }
@@ -349,6 +471,8 @@ export default class Marty {
     if (this.movement.enabled) {
       this.updateMovement(deltaSeconds);
     }
+
+    this.updateTurn(deltaSeconds);
   }
 
   private updateMovement(deltaSeconds: number) {
@@ -356,8 +480,9 @@ export default class Marty {
 
     if (this.movement.active) {
       this.movement.moveTimer += deltaSeconds;
-      // Avancer dans la direction Z positive (vers l'avant selon l'orientation)
-      this.model.position.z += this.movement.speed * deltaSeconds;
+      // Move forward in the local Z direction (translateZ handles rotation)
+      const distance = this.movement.speed * deltaSeconds;
+      this.model.translateZ(distance);
 
       if (this.movement.moveTimer >= this.movement.moveDuration) {
         this.movement.active = false;
@@ -371,6 +496,57 @@ export default class Marty {
     if (this.movement.restTimer >= this.movement.restDuration) {
       this.movement.active = true;
       this.movement.restTimer = 0;
+    }
+  }
+
+  private updateTurn(deltaSeconds: number) {
+    if (!this.turn || !this.turn.active || !this.model) return;
+
+    this.turn.elapsed += deltaSeconds;
+    const { state } = this.turn;
+
+    // Phase 1: Initial wait
+    if (state === 'waiting') {
+      if (this.turn.elapsed >= this.turn.delay) {
+        // Move to rotation phase and pause animation
+        if (this.turn.turnAction) {
+          this.turn.turnAction.paused = true;
+        }
+        this.turn.state = 'rotating';
+        this.turn.elapsed = 0; // Reset for rotation phase
+      }
+      return;
+    }
+
+    // Phase 2: Rotation (animation paused)
+    if (state === 'rotating') {
+      const t = Math.min(this.turn.elapsed / this.turn.duration, 1);
+
+      const targetAngle =
+        this.turn.startAngle - this.animation.settings!.turnBaseAngle;
+      this.model.rotation.y = THREE.MathUtils.lerp(
+        this.turn.startAngle,
+        targetAngle,
+        t,
+      );
+
+      if (t >= 1) {
+        // Rotation complete -> wait phase before resuming
+        this.turn.state = 'resumeWait';
+        this.turn.elapsed = 0;
+      }
+      return;
+    }
+
+    // Phase 3: Wait before resuming animation
+    if (state === 'resumeWait') {
+      if (this.turn.elapsed >= this.turn.resumeDelay) {
+        if (this.turn.turnAction) {
+          this.turn.turnAction.paused = false;
+        }
+        this.turn.active = false;
+        this.turn.state = 'idle';
+      }
     }
   }
 
