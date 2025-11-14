@@ -24,4 +24,5 @@ dist-ssr
 *.sw?
 useful
 
-.python_marty
+# Not commiting the marty connection file used for testing purposes located in python_marty folder 
+python_marty/marty_connection.py

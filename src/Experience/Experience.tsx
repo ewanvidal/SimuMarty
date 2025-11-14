@@ -28,19 +28,15 @@ export default class Experience {
   constructor(canvas: HTMLCanvasElement) {
     // Singleton - return existing instance if already created
     if (instance) {
-      console.log(
-        '⚠️ Experience singleton already exists, returning existing instance',
-      );
       return instance;
     }
 
-    console.log('🎬 Experience constructor — canvas:', canvas);
-
     // Set instance first
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     instance = this;
 
     // Make experience accessible globally
-    (window as any).experience = this;
+    (window as unknown as { experience: Experience }).experience = this;
 
     // Setup
     this.canvas = canvas;
@@ -85,7 +81,7 @@ export default class Experience {
     this.debug.dispose();
 
     // Clean up global reference
-    delete (window as any).experience;
+    delete (window as unknown as { experience?: Experience }).experience;
 
     // Clear singleton
     instance = null;

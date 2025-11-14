@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import type Experience from './Experience.tsx';
+import type Sizes from './Utils/Sizes.tsx';
+import type Camera from './Camera.tsx';
 
 /**
  * Renderer
@@ -8,13 +10,15 @@ import type Experience from './Experience.tsx';
 export default class Renderer {
   experience: Experience;
   canvas: HTMLCanvasElement;
-  sizes: any;
+  sizes: Sizes;
   scene: THREE.Scene;
-  camera: any;
+  camera: Camera;
   instance?: THREE.WebGLRenderer;
 
   constructor() {
-    this.experience = (window as any).experience;
+    this.experience = (
+      window as unknown as { experience: Experience }
+    ).experience;
     this.canvas = this.experience.canvas;
     this.sizes = this.experience.sizes;
     this.scene = this.experience.scene;

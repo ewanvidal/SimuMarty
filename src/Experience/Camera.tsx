@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import type Experience from './Experience.tsx';
+import type Sizes from './Utils/Sizes.tsx';
 
 /**
  * Camera
@@ -8,14 +9,16 @@ import type Experience from './Experience.tsx';
  */
 export default class Camera {
   experience: Experience;
-  sizes: any;
+  sizes: Sizes;
   scene: THREE.Scene;
   canvas: HTMLCanvasElement;
   instance?: THREE.PerspectiveCamera;
   controls?: OrbitControls;
 
   constructor() {
-    this.experience = (window as any).experience;
+    this.experience = (
+      window as unknown as { experience: Experience }
+    ).experience;
     this.sizes = this.experience.sizes;
     this.scene = this.experience.scene;
     this.canvas = this.experience.canvas;

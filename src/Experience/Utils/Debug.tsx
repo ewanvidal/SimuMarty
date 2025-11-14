@@ -11,16 +11,8 @@ export default class Debug {
   constructor() {
     this.active = window.location.hash === '#debug';
 
-    console.log(
-      '🐛 Debug constructor - hash:',
-      window.location.hash,
-      'active:',
-      this.active,
-    );
-
     if (this.active) {
       this.ui = new GUI();
-      console.log('🐛 Debug UI created:', this.ui);
     } else {
       console.log('🐛 Debug UI not active. Add #debug to URL to enable.');
     }

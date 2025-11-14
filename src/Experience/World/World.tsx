@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type Experience from '../Experience.tsx';
+import type Resources from '../Utils/Resources.tsx';
 import Environment from './Environment.tsx';
 import Floor from './Floor.tsx';
 import Marty from './Marty.tsx';
@@ -12,14 +13,16 @@ import Labyrinth from './Labyrinth.tsx';
 export default class World {
   experience: Experience;
   scene: THREE.Scene;
-  resources: any;
+  resources: Resources;
   floor?: Floor;
   labyrinth?: Labyrinth;
   marty?: Marty;
   environment?: Environment;
 
   constructor() {
-    this.experience = (window as any).experience;
+    this.experience = (
+      window as unknown as { experience: Experience }
+    ).experience;
     this.scene = this.experience.scene;
     this.resources = this.experience.resources;
 

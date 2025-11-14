@@ -1,6 +1,13 @@
 import * as THREE from 'three';
 import type Experience from '../Experience.tsx';
-import { webSocketService } from '../../services/WebSocketService.ts';
+import type Resources from '../Utils/Resources.tsx';
+import type Time from '../Utils/Time.tsx';
+import type Debug from '../Utils/Debug.tsx';
+import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import {
+  webSocketService,
+  type RobotCommand,
+} from '../../services/WebSocketService.ts';
 import { MartyController } from './MartyController.ts';
 
 /**
@@ -10,11 +17,11 @@ import { MartyController } from './MartyController.ts';
 export default class Marty {
   experience: Experience;
   scene: THREE.Scene;
-  resources: any;
-  time: any;
-  debug: any;
-  debugFolder?: any;
-  resource: any;
+  resources: Resources;
+  time: Time;
+  debug: Debug;
+  debugFolder?: ReturnType<typeof import('lil-gui').GUI.prototype.addFolder>;
+  resource!: GLTF;
   model?: THREE.Group;
   controller?: MartyController;
   wsUnsubscribe?: () => void;
@@ -50,19 +57,21 @@ export default class Marty {
   };
 
   constructor() {
-    this.experience = (window as any).experience;
+    this.experience = (
+      window as unknown as { experience: Experience }
+    ).experience;
     this.scene = this.experience.scene;
     this.resources = this.experience.resources;
     this.time = this.experience.time;
     this.debug = this.experience.debug;
 
     // Debug
-    if (this.debug.active) {
+    if (this.debug.active && this.debug.ui) {
       this.debugFolder = this.debug.ui.addFolder('marty');
     }
 
     // Setup
-    this.resource = this.resources.items.martyModel;
+    this.resource = this.resources.items.martyModel as GLTF;
 
     // Initialize movement and animation objects
     this.movement = {
@@ -96,8 +105,9 @@ export default class Marty {
     // Subscribe to command events
     this.wsUnsubscribe = webSocketService.on('command', async (data) => {
       // If the data contains a command, enqueue it
-      if (data.action) {
-        this.controller!.enqueueCommand(data);
+      const commandData = data as RobotCommand;
+      if (commandData.action) {
+        this.controller!.enqueueCommand(commandData);
       }
     });
   }
@@ -107,7 +117,7 @@ export default class Marty {
       // Fallback: Create a simple box as placeholder
       const geometry = new THREE.BoxGeometry(1, 1, 1);
       const material = new THREE.MeshStandardMaterial({ color: '#ff6b6b' });
-      this.model = new THREE.Mesh(geometry, material) as any;
+      this.model = new THREE.Mesh(geometry, material) as unknown as THREE.Group;
       this.model!.position.set(0, 0.5, 0);
       this.model!.castShadow = true;
       this.scene.add(this.model!);
@@ -115,8 +125,8 @@ export default class Marty {
     }
 
     this.model = this.resource.scene;
-    this.model!.scale.set(0.5, 0.5, 0.5);
-    this.model!.position.set(2, 0, 0);
+    this.model!.scale.set(0.05, 0.05, 0.05);
+    this.model!.position.set(0, 0, 0);
     this.scene.add(this.model!);
 
     this.model!.traverse((child) => {
@@ -161,33 +171,29 @@ export default class Marty {
     this.animation.mixer = new THREE.AnimationMixer(this.model);
     this.animation.actions = {};
 
-    // Debug: Log all available animations
-    console.log('Available animations:', this.resource.animations);
-    this.resource.animations.forEach(
-      (clip: THREE.AnimationClip, index: number) => {
-        console.log(
-          `Animation ${index}:`,
-          clip.name,
-          'Duration:',
-          clip.duration,
-        );
-      },
-    );
+    // // Debug: Log all available animations
+    // this.resource.animations.forEach(
+    //   (clip: THREE.AnimationClip, index: number) => {
+    //     console.log(
+    //       `Animation ${index}:`,
+    //       clip.name,
+    //       'Duration:',
+    //       clip.duration,
+    //     );
+    //   },
+    // );
 
     const walkingClip =
-      this.resource.animations.find((clip: THREE.AnimationClip) =>
+      this.resource.animations.find((clip) =>
         clip.name.toLowerCase().includes('walking'),
       ) || this.resource.animations[0];
 
     const wavingClip =
-      this.resource.animations.find((clip: THREE.AnimationClip) =>
+      this.resource.animations.find((clip) =>
         clip.name.toLowerCase().includes('waving'),
       ) ||
       this.resource.animations[1] ||
       walkingClip;
-
-    console.log('Walking clip:', walkingClip?.name);
-    console.log('Waving clip:', wavingClip?.name);
 
     // Store the clips for duration access
     this.animation.clips = {
