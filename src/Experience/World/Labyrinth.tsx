@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type Experience from '../Experience.tsx';
+import type Resources from '../Utils/Resources.tsx';
 
 /**
  * Labyrinth
@@ -8,11 +9,13 @@ import type Experience from '../Experience.tsx';
 export default class Labyrinth {
   experience: Experience;
   scene: THREE.Scene;
-  resources: any;
+  resources: Resources;
   model?: THREE.Object3D;
 
   constructor() {
-    this.experience = (window as any).experience;
+    this.experience = (
+      window as unknown as { experience: Experience }
+    ).experience;
     this.scene = this.experience.scene;
     this.resources = this.experience.resources;
 
@@ -23,14 +26,14 @@ export default class Labyrinth {
     // Load the labyrinth model
     const gltf = this.resources.items.labyrinthModel;
 
-    if (gltf && gltf.scene) {
+    if (gltf && 'scene' in gltf && gltf.scene) {
       this.model = gltf.scene;
 
       // Enable shadows on all meshes
-      this.model!.traverse((child: any) => {
-        if (child.isMesh) {
-          child.castShadow = true;
-          child.receiveShadow = true;
+      this.model!.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+          (child as THREE.Mesh).castShadow = true;
+          (child as THREE.Mesh).receiveShadow = true;
         }
       });
 
@@ -39,6 +42,7 @@ export default class Labyrinth {
 
       this.scene.add(this.model!);
     } else {
+      console.warn('⚠️ Labyrinth model not loaded');
     }
   }
 

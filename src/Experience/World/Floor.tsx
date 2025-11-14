@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type Experience from '../Experience.tsx';
+import type Resources from '../Utils/Resources.tsx';
 
 /**
  * Floor
@@ -8,7 +9,7 @@ import type Experience from '../Experience.tsx';
 export default class Floor {
   experience: Experience;
   scene: THREE.Scene;
-  resources: any;
+  resources: Resources;
   geometry?: THREE.PlaneGeometry;
   textures?: {
     diffuse: THREE.Texture;
@@ -20,7 +21,9 @@ export default class Floor {
   mesh?: THREE.Mesh;
 
   constructor() {
-    this.experience = (window as any).experience;
+    this.experience = (
+      window as unknown as { experience: Experience }
+    ).experience;
     this.scene = this.experience.scene;
     this.resources = this.experience.resources;
 
@@ -36,15 +39,15 @@ export default class Floor {
 
   private setTextures() {
     // Get textures from resources
-    const diffuse = this.resources.items.floorDiffuseTexture;
-    const normal = this.resources.items.floorNormalTexture;
-    const arm = this.resources.items.floorArmTexture;
-    const alpha = this.resources.items.floorAlphaTexture;
+    const diffuse = this.resources.items.floorDiffuseTexture as THREE.Texture;
+    const normal = this.resources.items.floorNormalTexture as THREE.Texture;
+    const arm = this.resources.items.floorArmTexture as THREE.Texture;
+    const alpha = this.resources.items.floorAlphaTexture as THREE.Texture;
 
     if (diffuse && normal && arm && alpha) {
       // Set texture wrapping and repeat
       const repeat = 100;
-      [diffuse, normal, arm].forEach((texture: THREE.Texture) => {
+      [diffuse, normal, arm].forEach((texture) => {
         texture.wrapS = THREE.RepeatWrapping;
         texture.wrapT = THREE.RepeatWrapping;
         texture.repeat.set(repeat, repeat);
@@ -52,6 +55,7 @@ export default class Floor {
 
       this.textures = { diffuse, normal, arm, alpha };
     } else {
+      console.warn('⚠️ Floor textures not loaded');
     }
   }
 

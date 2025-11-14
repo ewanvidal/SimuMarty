@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import type Experience from '../Experience.tsx';
+import type Resources from '../Utils/Resources.tsx';
+import type Debug from '../Utils/Debug.tsx';
 
 /**
  * Environment
@@ -8,8 +10,8 @@ import type Experience from '../Experience.tsx';
 export default class Environment {
   experience: Experience;
   scene: THREE.Scene;
-  resources: any;
-  debug: any;
+  resources: Resources;
+  debug: Debug;
   sunLight?: THREE.DirectionalLight;
   ambientLight?: THREE.AmbientLight;
   environmentMap?: {
@@ -18,18 +20,16 @@ export default class Environment {
   };
 
   constructor() {
-    this.experience = (window as any).experience;
+    this.experience = (
+      window as unknown as { experience: Experience }
+    ).experience;
     this.scene = this.experience.scene;
     this.resources = this.experience.resources;
     this.debug = this.experience.debug;
 
-    console.log('💡 Environment constructor');
-
     this.setSunLight();
     this.setAmbientLight();
     // this.setEnvironmentMap();
-
-    console.log('💡 Environment created - lights added to scene');
   }
 
   private setSunLight() {

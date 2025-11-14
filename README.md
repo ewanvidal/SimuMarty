@@ -45,7 +45,7 @@ Interface utilisateur immersive comprenant :
     3D Modeling : Blender 3.6+
     Physics Engine : Rapier.js / Cannon.js
     Build Tool : Vite 5+
-    Styling : Tailwind CSS 3+
+    Styling : Classic CSS
     Code Editor : Monaco Editor
     Visual Programming : Blockly
     State Management : Zustand / React Context

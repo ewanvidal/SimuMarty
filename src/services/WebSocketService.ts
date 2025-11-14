@@ -19,7 +19,7 @@ export type MessageType =
   | 'ping'
   | 'pong';
 
-export interface WebSocketMessage<T = any> {
+export interface WebSocketMessage<T = unknown> {
   type: MessageType;
   payload: T;
   timestamp: number;
@@ -28,7 +28,7 @@ export interface WebSocketMessage<T = any> {
 // Command structure for robot control
 export interface RobotCommand {
   action: string; // e.g., 'walk', 'turn', 'wave', 'stop'
-  params?: Record<string, any>;
+  params?: Record<string, unknown>;
   requestId?: string;
 }
 
@@ -63,7 +63,7 @@ export type WebSocketEventType =
   | 'telemetry'
   | 'error';
 
-type EventCallback = (data: any) => void;
+type EventCallback = (data?: unknown) => void;
 
 class WebSocketService {
   private ws: WebSocket | null = null;
@@ -120,7 +120,7 @@ class WebSocketService {
   /**
    * Emit event to all subscribers
    */
-  private emit(event: WebSocketEventType, data?: any) {
+  private emit(event: WebSocketEventType, data?: unknown) {
     const listeners = this.listeners.get(event);
     if (listeners) {
       listeners.forEach((callback) => callback(data));

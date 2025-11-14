@@ -1,0 +1,45 @@
+/* Styles pour améliorer l'apparence de Blockly */
+
+.blocklyWorkspace {
+  background-color: #1e1e1e !important;
+}
+
+.blocklyToolboxDiv {
+  background-color: #252526 !important;
+  border-right: 1px solid #3c3c3c !important;
+}
+
+.blocklyFlyout {
+  background-color: #252526 !important;
+}
+
+.blocklyTreeRow {
+  color: #cccccc !important;
+}
+
+.blocklyTreeRow:hover {
+  background-color: #2a2d2e !important;
+}
+
+.blocklyTreeSelected {
+  background-color: #094771 !important;
+}
+
+.blocklyScrollbarHandle {
+  fill: #424242 !important;
+}
+
+.blocklyScrollbarBackground {
+  fill: #1e1e1e !important;
+}
+
+/* Style pour les blocs */
+.blocklyText {
+  fill: #ffffff !important;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace !important;
+}
+
+/* Améliorer la visibilité de la grille */
+.blocklyMainBackground {
+  stroke: #3c3c3c !important;
+}

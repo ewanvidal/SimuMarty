@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import EventEmitter from './EventEmitter.tsx';
 import type { Source } from '../sources.tsx';
 
@@ -9,7 +10,7 @@ import type { Source } from '../sources.tsx';
  */
 export default class Resources extends EventEmitter {
   sources: Source[];
-  items: { [key: string]: any } = {};
+  items: { [key: string]: GLTF | THREE.Texture | THREE.CubeTexture } = {};
   toLoad: number;
   loaded: number = 0;
   loaders: {
@@ -24,16 +25,12 @@ export default class Resources extends EventEmitter {
     this.sources = sources;
     this.toLoad = this.sources.length;
 
-    console.log('📦 Resources - sources to load:', this.toLoad);
-
     this.setLoaders();
     this.startLoading();
 
     // If no sources, trigger ready immediately (asynchronously to allow listeners to register)
     if (this.toLoad === 0) {
-      console.log('📦 No resources to load, triggering ready asynchronously');
       setTimeout(() => {
-        console.log('📦 Triggering ready event now');
         this.trigger('ready');
       }, 0);
     }
@@ -67,7 +64,10 @@ export default class Resources extends EventEmitter {
     }
   }
 
-  private sourceLoaded(source: Source, file: any) {
+  private sourceLoaded(
+    source: Source,
+    file: GLTF | THREE.Texture | THREE.CubeTexture,
+  ) {
     this.items[source.name] = file;
     this.loaded++;
 
@@ -80,7 +80,7 @@ export default class Resources extends EventEmitter {
     // Dispose of loaded resources
     for (const key in this.items) {
       const item = this.items[key];
-      if (item.dispose) {
+      if ('dispose' in item && typeof item.dispose === 'function') {
         item.dispose();
       }
     }

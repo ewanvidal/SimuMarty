@@ -21,15 +21,13 @@ export class MartyController {
   async processCommand(
     command: RobotCommand,
   ): Promise<{ success: boolean; message?: string }> {
-    console.log('🎮 Marty:', command.action);
-
     try {
       switch (command.action) {
         case 'walk':
           return await this.handleWalk(command.params);
 
         case 'wave':
-          return await this.handleWave(command.params);
+          return await this.handleWave();
 
         case 'stop':
           return this.handleStop();
@@ -54,11 +52,9 @@ export class MartyController {
    * Handle walk command
    */
   private async handleWalk(
-    params?: any,
+    params?: Record<string, unknown>,
   ): Promise<{ success: boolean; message?: string }> {
-    const steps = params?.steps || 2;
-
-    console.log(`🚶 Walking ${steps} steps...`);
+    const steps = (params?.steps as number) || 2;
 
     if (this.marty.animation?.play) {
       // One animation cycle = 2 steps
@@ -89,11 +85,16 @@ export class MartyController {
   /**
    * Handle wave command
    */
-  private async handleWave(
-    _params?: any,
-  ): Promise<{ success: boolean; message?: string }> {
+  private async handleWave(): Promise<{ success: boolean; message?: string }> {
     if (this.marty.animation?.play) {
       this.marty.animation.play('waving');
+
+      // Get actual animation duration
+      const animationDuration = this.marty.getAnimationDuration('waving');
+
+      // Wait for animation to complete
+      await new Promise((resolve) => setTimeout(resolve, animationDuration));
+
       return { success: true, message: 'Waving' };
     }
 
@@ -118,9 +119,9 @@ export class MartyController {
    * Parse Python code and convert to commands
    */
   private async handleExecutePython(
-    params?: any,
+    params?: Record<string, unknown>,
   ): Promise<{ success: boolean; message?: string }> {
-    const code = params?.code || '';
+    const code = (params?.code as string) || '';
 
     // Simple parser for basic Marty commands
     const lines = code.split('\n');

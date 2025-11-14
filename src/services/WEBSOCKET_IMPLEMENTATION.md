@@ -2,7 +2,8 @@
 
 ## What Was Implemented
 
-A complete WebSocket system that connects the Monaco code editor with the 3D robot simulation, enabling real-time bidirectional communication.
+A complete WebSocket system that connects the Monaco code editor with the 3D
+robot simulation, enabling real-time bidirectional communication.
 
 ## Architecture
 
@@ -45,11 +46,13 @@ A complete WebSocket system that connects the Monaco code editor with the 3D rob
 ## Files Created
 
 ### 1. Frontend - WebSocket Service
+
 **File:** `src/services/WebSocketService.ts`
 
 **Purpose:** Core WebSocket client for browser
 
 **Features:**
+
 - Connection management with auto-reconnect
 - Event subscription system
 - Message sending/receiving
@@ -58,6 +61,7 @@ A complete WebSocket system that connects the Monaco code editor with the 3D rob
 - Command queueing
 
 **Key Methods:**
+
 - `connect()` - Establish WebSocket connection
 - `sendCommand()` - Send robot commands
 - `executeCode()` - Execute Python code
@@ -65,11 +69,13 @@ A complete WebSocket system that connects the Monaco code editor with the 3D rob
 - Helper methods: `walk()`, `turn()`, `wave()`, etc.
 
 ### 2. Frontend - Marty Controller
+
 **File:** `src/Experience/World/MartyController.ts`
 
 **Purpose:** Bridge WebSocket commands to 3D animations
 
 **Features:**
+
 - Command processing
 - Python code parser
 - Animation triggers
@@ -77,6 +83,7 @@ A complete WebSocket system that connects the Monaco code editor with the 3D rob
 - Command queue management
 
 **Supported Commands:**
+
 - `walk` - Walking animation + movement
 - `turn` - Rotation
 - `wave` - Waving animation
@@ -87,9 +94,11 @@ A complete WebSocket system that connects the Monaco code editor with the 3D rob
 - `execute_python` - Parse and execute Python code
 
 ### 3. Frontend - App Integration
+
 **File:** `src/App.tsx` (updated)
 
 **Changes:**
+
 - WebSocket connection on mount
 - Connection status indicator (green/red)
 - Event subscriptions
@@ -98,25 +107,30 @@ A complete WebSocket system that connects the Monaco code editor with the 3D rob
 - Cleanup on unmount
 
 **UI Additions:**
+
 - Status bar showing connection state
 - Real-time status messages
 - Color-coded indicators
 
 ### 4. Frontend - Marty Integration
+
 **File:** `src/Experience/World/Marty.tsx` (updated)
 
 **Changes:**
+
 - WebSocket event subscription
 - Command reception
 - Controller integration
 - Cleanup on dispose
 
 ### 5. Backend - WebSocket Server
+
 **File:** `python_marty/websocket_server.py`
 
 **Purpose:** Python WebSocket server
 
 **Features:**
+
 - Client connection management
 - Message routing
 - Command processing
@@ -126,12 +140,14 @@ A complete WebSocket system that connects the Monaco code editor with the 3D rob
 - Logging
 
 **Protocol:**
+
 - Follows AsyncAPI spec in `docs/api-websocket.yaml`
 - JSON message format
 - Request/response pattern
 - Broadcast to all clients
 
 ### 6. Backend - Dependencies
+
 **File:** `python_marty/requirements.txt`
 
 ```
@@ -139,7 +155,9 @@ websockets>=12.0
 ```
 
 ### 7. Documentation
+
 **Files:**
+
 - `python_marty/README.md` - Backend documentation
 - `WEBSOCKET_SETUP.md` - Complete setup guide
 - `python_marty/test_websocket.py` - Test script
@@ -209,6 +227,7 @@ marty.turn(90)
 ### Client → Server
 
 **Command Message:**
+
 ```json
 {
   "type": "command",
@@ -222,6 +241,7 @@ marty.turn(90)
 ```
 
 **Heartbeat:**
+
 ```json
 {
   "type": "ping",
@@ -233,6 +253,7 @@ marty.turn(90)
 ### Server → Client
 
 **Connection Ack:**
+
 ```json
 {
   "type": "ack",
@@ -246,6 +267,7 @@ marty.turn(90)
 ```
 
 **Command Ack:**
+
 ```json
 {
   "type": "commandAck",
@@ -259,6 +281,7 @@ marty.turn(90)
 ```
 
 **Robot Status (Telemetry):**
+
 ```json
 {
   "type": "robotStatus",
@@ -275,27 +298,33 @@ marty.turn(90)
 ## Key Features
 
 ### 1. Auto-Reconnect
+
 - Automatically reconnects if connection is lost
 - Configurable retry attempts (default: 5)
 - Configurable retry delay (default: 3s)
 
 ### 2. Event System
-- Subscribe to events: `connected`, `disconnected`, `command`, `telemetry`, `error`
+
+- Subscribe to events: `connected`, `disconnected`, `command`, `telemetry`,
+  `error`
 - Unsubscribe with returned function
 - Type-safe event handling
 
 ### 3. Command Queue
+
 - Commands queued for sequential execution
 - Prevents command overlap
 - Automatic delay between commands
 
 ### 4. Python Parser
+
 - Parses common Marty commands
 - Supports parameters
 - Handles comments and empty lines
 - Extensible for more commands
 
 ### 5. Status Indicator
+
 - Visual connection status (green/red)
 - Real-time status messages
 - Error notifications
@@ -305,12 +334,14 @@ marty.turn(90)
 ### Start the System
 
 **Terminal 1 - Python Server:**
+
 ```bash
 cd python_marty
 python websocket_server.py
 ```
 
 **Terminal 2 - Frontend:**
+
 ```bash
 npm run dev
 ```
@@ -318,6 +349,7 @@ npm run dev
 ### Test WebSocket
 
 **Terminal 3 - Test Script:**
+
 ```bash
 cd python_marty
 python test_websocket.py
@@ -328,10 +360,12 @@ python test_websocket.py
 1. Open `http://localhost:5173`
 2. Check status indicator is green
 3. Write code in Monaco Editor:
+
 ```python
 marty.walk(2)
 marty.wave()
 ```
+
 4. Click "Run Code"
 5. Watch the robot animate!
 
@@ -339,41 +373,44 @@ marty.wave()
 
 ```javascript
 // Check connection
-webSocketService.isConnected()
+webSocketService.isConnected();
 
 // Send commands directly
-webSocketService.walk(3)
-webSocketService.wave()
-webSocketService.turn(90)
+webSocketService.walk(3);
+webSocketService.wave();
+webSocketService.turn(90);
 
 // Execute Python code
 webSocketService.executeCode(`
 marty.walk(2)
 marty.wave()
 marty.dance()
-`)
+`);
 
 // Subscribe to events
 webSocketService.on('command', (data) => {
   console.log('Command result:', data);
-})
+});
 ```
 
 ## Troubleshooting
 
 ### Connection Issues
+
 1. Verify Python server is running
 2. Check port 8765 is available
 3. Check firewall settings
 4. Check browser console for errors
 
 ### Command Not Executing
+
 1. Verify connection is green
 2. Check browser console
 3. Check Python server logs
 4. Verify model is loaded
 
 ### Animation Issues
+
 1. Check model has animations
 2. Verify animation names
 3. Check console for errors
@@ -382,18 +419,21 @@ webSocketService.on('command', (data) => {
 ## Future Enhancements
 
 ### Short Term
+
 - [ ] Add more Marty commands
 - [ ] Improve Python parser
 - [ ] Add syntax validation
 - [ ] Show command queue status
 
 ### Medium Term
+
 - [ ] Add breakpoint debugging
 - [ ] Record command sequences
 - [ ] Replay recorded sequences
 - [ ] Visual trajectory planning
 
 ### Long Term
+
 - [ ] Connect to real Marty robot
 - [ ] Sandboxed Python execution
 - [ ] Multi-robot support

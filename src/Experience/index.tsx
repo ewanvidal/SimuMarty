@@ -24,6 +24,8 @@ export { default as Floor } from './World/Floor.tsx';
 export { default as Labyrinth } from './World/Labyrinth.tsx';
 export { default as Marty } from './World/Marty.tsx';
 
-// Types
+// Types and constants
 export type { Source } from './sources.tsx';
+// Exporting non-React components is necessary for this module
+// eslint-disable-next-line react-refresh/only-export-components
 export { sources } from './sources.tsx';

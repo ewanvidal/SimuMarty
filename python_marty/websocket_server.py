@@ -130,55 +130,71 @@ class MartyWebSocketServer:
     async def execute_python_code(self, code: str) -> Dict[str, Any]:
         """
         Execute Python code and return result
-        This is a simplified implementation - in production, use a sandboxed environment
+        Executes the code in a controlled environment and captures marty commands
         """
         logger.info(f"Executing Python code:\n{code}")
         
-        # For now, just parse and forward Marty commands
-        # In a real implementation, you would execute the code in a sandboxed environment
-        # and interface with the actual Marty robot or its Python API
-        
+        # Create a command queue to capture marty commands
         commands = []
-        lines = code.split('\n')
         
-        for line in lines:
-            line = line.strip()
-            if not line or line.startswith('#'):
-                continue
-                
-            # Parse marty commands with parameters
-            if 'marty.walk(' in line:
-                # Extract steps parameter: marty.walk(4)
-                import re
-                match = re.search(r'marty\.walk\((\d+)\)', line)
-                steps = int(match.group(1)) if match else 2
-                logger.info(f"  → Parsed: walk({steps})")
+        # Create a mock marty object that captures commands instead of executing them
+        class MockMarty:
+            def walk(self, steps):
+                logger.info(f"  → Captured: walk({steps})")
                 commands.append({"action": "walk", "params": {"steps": steps}})
-            elif 'marty.wave(' in line:
-                logger.info(f"  → Parsed: wave()")
+                
+            def wave(self):
+                logger.info(f"  → Captured: wave()")
                 commands.append({"action": "wave", "params": {}})
-            elif 'marty.stop(' in line:
-                logger.info(f"  → Parsed: stop()")
+                
+            def stop(self):
+                logger.info(f"  → Captured: stop()")
                 commands.append({"action": "stop", "params": {}})
-                
-        if commands:
-            # Broadcast commands to simulation
-            for cmd in commands:
-                await self.broadcast({
-                    "type": "command",
-                    "payload": cmd,
-                    "timestamp": int(datetime.now().timestamp() * 1000)
-                })
-                await asyncio.sleep(0.5)  # Small delay between commands
-                
-            return {
-                "success": True,
-                "message": f"Executed {len(commands)} command(s)"
+        
+        # Create execution environment with the mock marty object
+        exec_globals = {
+            'marty': MockMarty(),
+            '__builtins__': {
+                'range': range,
+                'len': len,
+                'print': print,
+                'int': int,
+                'float': float,
+                'str': str,
+                'bool': bool,
+                'True': True,
+                'False': False,
             }
-        else:
+        }
+        
+        try:
+            # Execute the Python code
+            exec(code, exec_globals)
+            
+            # Broadcast all captured commands to simulation
+            if commands:
+                for cmd in commands:
+                    await self.broadcast({
+                        "type": "command",
+                        "payload": cmd,
+                        "timestamp": int(datetime.now().timestamp() * 1000)
+                    })
+                    await asyncio.sleep(0.5)  # Small delay between commands
+                    
+                return {
+                    "success": True,
+                    "message": f"Executed {len(commands)} command(s)"
+                }
+            else:
+                return {
+                    "success": True,
+                    "message": "No Marty commands found in code"
+                }
+        except Exception as e:
+            logger.error(f"Error executing Python code: {e}")
             return {
-                "success": True,
-                "message": "No Marty commands found in code"
+                "success": False,
+                "message": f"Execution error: {str(e)}"
             }
             
     async def handle_client(self, websocket: WebSocketServerProtocol):

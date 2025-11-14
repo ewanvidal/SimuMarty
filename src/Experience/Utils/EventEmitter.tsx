@@ -3,9 +3,10 @@
  * Handles custom events throughout the experience
  */
 export default class EventEmitter {
-  private callbacks: { [key: string]: Array<(...args: any[]) => void> } = {};
+  private callbacks: { [key: string]: Array<(...args: unknown[]) => void> } =
+    {};
 
-  on(event: string, callback: (...args: any[]) => void) {
+  on(event: string, callback: (...args: unknown[]) => void) {
     if (!this.callbacks[event]) {
       this.callbacks[event] = [];
     }
@@ -13,7 +14,7 @@ export default class EventEmitter {
     return this;
   }
 
-  off(event: string, callback?: (...args: any[]) => void) {
+  off(event: string, callback?: (...args: unknown[]) => void) {
     if (!this.callbacks[event]) return this;
 
     if (callback) {
@@ -26,7 +27,7 @@ export default class EventEmitter {
     return this;
   }
 
-  trigger(event: string, ...args: any[]) {
+  trigger(event: string, ...args: unknown[]) {
     if (!this.callbacks[event]) return this;
 
     this.callbacks[event].forEach((callback) => {
