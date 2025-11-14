@@ -26,6 +26,9 @@ export class MartyController {
         case 'walk':
           return await this.handleWalk(command.params);
 
+        case 'turn':
+          return await this.handleTurn(command.params);
+
         case 'wave':
           return await this.handleWave();
 
@@ -102,6 +105,39 @@ export class MartyController {
   }
 
   /**
+   * Handle turn command
+   */
+  private async handleTurn(
+    params?: Record<string, unknown>,
+  ): Promise<{ success: boolean; message?: string }> {
+    const angle = (params?.angle as number) || 30; // Default 30 degrees
+
+    if (this.marty.animation?.play && this.marty.animation.actions?.turnRight) {
+      // Update the turn base angle
+      if (this.marty.animation.settings) {
+        const THREE = await import('three');
+        this.marty.animation.settings.turnBaseAngle =
+          THREE.MathUtils.degToRad(angle);
+      }
+
+      this.marty.animation.play('turnRight');
+
+      // Get actual animation duration
+      const animationDuration = this.marty.getAnimationDuration('turnRight');
+
+      // Wait for animation to complete
+      await new Promise((resolve) => setTimeout(resolve, animationDuration));
+
+      return { success: true, message: `Turning ${angle} degrees` };
+    }
+
+    return {
+      success: false,
+      message: 'Turn animation not available or not ready',
+    };
+  }
+
+  /**
    * Handle stop command
    */
   private handleStop(): { success: boolean; message?: string } {
@@ -138,6 +174,13 @@ export class MartyController {
         const match = trimmed.match(/marty\.walk\((\d+)\)/);
         const steps = match ? parseInt(match[1]) : 2;
         commands.push({ action: 'walk', params: { steps } });
+      }
+
+      // Parse marty.turn()
+      else if (trimmed.includes('marty.turn(')) {
+        const match = trimmed.match(/marty\.turn\((-?\d+)\)/);
+        const angle = match ? parseInt(match[1]) : 30;
+        commands.push({ action: 'turn', params: { angle } });
       }
 
       // Parse marty.wave()

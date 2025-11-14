@@ -142,6 +142,10 @@ class MartyWebSocketServer:
             def walk(self, steps):
                 logger.info(f"  → Captured: walk({steps})")
                 commands.append({"action": "walk", "params": {"steps": steps}})
+            
+            def turn(self, angle):
+                logger.info(f"  → Captured: turn({angle})")
+                commands.append({"action": "turn", "params": {"angle": angle}})
                 
             def wave(self):
                 logger.info(f"  → Captured: wave()")
