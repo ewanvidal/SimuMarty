@@ -91,6 +91,7 @@ export const BlocklyEditor = ({
 }: BlocklyEditorProps) => {
   const blocklyDiv = useRef<HTMLDivElement>(null);
   const workspaceRef = useRef<Blockly.WorkspaceSvg | null>(null);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
 
   useEffect(() => {
     if (!blocklyDiv.current) return;
@@ -334,8 +335,21 @@ export const BlocklyEditor = ({
     // Générer le code initial
     handleWorkspaceChange();
 
+    // Setup ResizeObserver to resize Blockly when container size changes
+    if (blocklyDiv.current) {
+      resizeObserverRef.current = new ResizeObserver(() => {
+        requestAnimationFrame(() => {
+          Blockly.svgResize(workspace);
+        });
+      });
+      resizeObserverRef.current.observe(blocklyDiv.current);
+    }
+
     // Cleanup
     return () => {
+      if (resizeObserverRef.current) {
+        resizeObserverRef.current.disconnect();
+      }
       workspace.dispose();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

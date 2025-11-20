@@ -9,6 +9,8 @@ export default class Sizes extends EventEmitter {
   height: number;
   pixelRatio: number;
   canvas?: HTMLCanvasElement;
+  resizeObserver?: ResizeObserver;
+  resizeTimeout?: number;
 
   constructor(canvas?: HTMLCanvasElement) {
     super();
@@ -29,6 +31,20 @@ export default class Sizes extends EventEmitter {
 
     // Resize event
     window.addEventListener('resize', this.handleResize.bind(this));
+
+    // ResizeObserver for parent container changes (e.g., panel width changes)
+    if (canvas && canvas.parentElement) {
+      this.resizeObserver = new ResizeObserver(() => {
+        // Use requestAnimationFrame for smooth resizing
+        if (this.resizeTimeout) {
+          cancelAnimationFrame(this.resizeTimeout);
+        }
+        this.resizeTimeout = requestAnimationFrame(() => {
+          this.handleResize();
+        });
+      });
+      this.resizeObserver.observe(canvas.parentElement);
+    }
   }
 
   private handleResize() {
@@ -49,6 +65,12 @@ export default class Sizes extends EventEmitter {
 
   dispose() {
     window.removeEventListener('resize', this.handleResize.bind(this));
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+    }
+    if (this.resizeTimeout) {
+      cancelAnimationFrame(this.resizeTimeout);
+    }
     super.dispose();
   }
 }
