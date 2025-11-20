@@ -472,7 +472,6 @@ export const BlocklyEditor = ({
       if (resizeObserverRef.current) {
         resizeObserverRef.current.disconnect();
       }
-      workspace.dispose();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
