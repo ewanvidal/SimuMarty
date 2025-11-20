@@ -34,7 +34,7 @@ export default class Camera {
       0.1,
       100,
     );
-    this.instance.position.set(6, 4, 8);
+    this.instance.position.set(0.5, 1, 1);
     this.scene.add(this.instance);
   }
 
@@ -55,6 +55,7 @@ export default class Camera {
 
   update() {
     this.controls?.update();
+    this.instance?.lookAt(this.experience.world.marty?.model?.position ?? new THREE.Vector3(0, 0, 0));
   }
 
   dispose() {
