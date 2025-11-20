@@ -30,5 +30,9 @@ export function ExperienceCanvas() {
     };
   }, []);
 
-  return <canvas ref={canvasRef} className='experience-canvas' />;
+  return (
+    <div className='experience-container'>
+      <canvas ref={canvasRef} className='experience-canvas' />
+    </div>
+  );
 }
