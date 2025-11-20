@@ -32,23 +32,43 @@ const defineMartyBlocks = () => {
     return code;
   };
 
-  // Bloc pour marty.turn()
+  // Bloc pour marty.turnRight()
   Blockly.Blocks['marty_turn'] = {
     init: function () {
       this.appendValueInput('ANGLE')
         .setCheck('Number')
-        .appendField('marty.turn');
+        .appendField('marty.turnRight');
       this.setPreviousStatement(true, null);
       this.setNextStatement(true, null);
       this.setColour(160);
-      this.setTooltip('Make Marty turn by a certain angle in degrees');
+      this.setTooltip('Make Marty turn right by a certain angle in degrees');
       this.setHelpUrl('');
     },
   };
 
   pythonGenerator.forBlock['marty_turn'] = function (block, generator) {
     const angle = generator.valueToCode(block, 'ANGLE', 0) || '30';
-    const code = `marty.turn(${angle})\n`;
+    const code = `marty.turnRight(${angle})\n`;
+    return code;
+  };
+
+  // Bloc pour marty.turnLeft()
+  Blockly.Blocks['marty_turn_left'] = {
+    init: function () {
+      this.appendValueInput('ANGLE')
+        .setCheck('Number')
+        .appendField('marty.turnLeft');
+      this.setPreviousStatement(true, null);
+      this.setNextStatement(true, null);
+      this.setColour(160);
+      this.setTooltip('Make Marty turn left by a certain angle in degrees');
+      this.setHelpUrl('');
+    },
+  };
+
+  pythonGenerator.forBlock['marty_turn_left'] = function (block, generator) {
+    const angle = generator.valueToCode(block, 'ANGLE', 0) || '30';
+    const code = `marty.turnLeft(${angle})\n`;
     return code;
   };
 
@@ -66,6 +86,70 @@ const defineMartyBlocks = () => {
 
   pythonGenerator.forBlock['marty_wave'] = function () {
     return 'marty.wave()\n';
+  };
+
+  // Bloc pour marty.kick()
+  Blockly.Blocks['marty_kick'] = {
+    init: function () {
+      this.appendDummyInput().appendField('marty.kick');
+      this.setPreviousStatement(true, null);
+      this.setNextStatement(true, null);
+      this.setColour(160);
+      this.setTooltip('Make Marty kick');
+      this.setHelpUrl('');
+    },
+  };
+
+  pythonGenerator.forBlock['marty_kick'] = function () {
+    return 'marty.kick()\n';
+  };
+
+  // Bloc pour marty.dance()
+  Blockly.Blocks['marty_dance'] = {
+    init: function () {
+      this.appendDummyInput().appendField('marty.dance');
+      this.setPreviousStatement(true, null);
+      this.setNextStatement(true, null);
+      this.setColour(160);
+      this.setTooltip('Make Marty dance');
+      this.setHelpUrl('');
+    },
+  };
+
+  pythonGenerator.forBlock['marty_dance'] = function () {
+    return 'marty.dance()\n';
+  };
+
+  // Bloc pour marty.slideLeft()
+  Blockly.Blocks['marty_slide_left'] = {
+    init: function () {
+      this.appendDummyInput().appendField('marty.slideLeft');
+      this.setPreviousStatement(true, null);
+      this.setNextStatement(true, null);
+      this.setColour(160);
+      this.setTooltip('Make Marty slide to the left');
+      this.setHelpUrl('');
+    },
+  };
+
+  pythonGenerator.forBlock['marty_slide_left'] = function () {
+    return 'marty.slideLeft()\n';
+  };
+
+  // Bloc pour marty.slideRight()
+  Blockly.Blocks['marty_slide_right'] = {
+    init: function () {
+      this.appendDummyInput().appendField('marty.slideRight');
+      this.setPreviousStatement(true, null);
+      this.setNextStatement(true, null);
+      this.setColour(160);
+      this.setTooltip('Make Marty slide to the right');
+      this.setHelpUrl('');
+    },
+  };
+
+  pythonGenerator.forBlock['marty_slide_right'] = function () {
+    return 'marty.slideRight()\n';
   };
 
   // Bloc pour marty.stop()
@@ -138,7 +222,37 @@ export const BlocklyEditor = ({
             },
             {
               kind: 'block',
+              type: 'marty_turn_left',
+              inputs: {
+                ANGLE: {
+                  shadow: {
+                    type: 'math_number',
+                    fields: {
+                      NUM: 30,
+                    },
+                  },
+                },
+              },
+            },
+            {
+              kind: 'block',
               type: 'marty_wave',
+            },
+            {
+              kind: 'block',
+              type: 'marty_kick',
+            },
+            {
+              kind: 'block',
+              type: 'marty_dance',
+            },
+            {
+              kind: 'block',
+              type: 'marty_slide_left',
+            },
+            {
+              kind: 'block',
+              type: 'marty_slide_right',
             },
             {
               kind: 'block',
@@ -347,6 +461,14 @@ export const BlocklyEditor = ({
 
     // Cleanup
     return () => {
+      try {
+        if (workspace) {
+          workspace.dispose();
+        }
+        workspaceRef.current = null;
+      } catch (error) {
+        console.warn('Error disposing Blockly workspace:', error);
+      }
       if (resizeObserverRef.current) {
         resizeObserverRef.current.disconnect();
       }
@@ -366,10 +488,21 @@ export const BlocklyEditor = ({
       }
     } catch (error) {
       console.warn('Failed to read current Blockly XML:', error);
+      return;
     }
 
     try {
-      workspaceRef.current.clear();
+      // Clear workspace safely
+      const blocks = workspaceRef.current.getTopBlocks(false);
+      blocks.forEach(block => {
+        try {
+          block.dispose(false);
+        } catch (e) {
+          console.warn('Error disposing block:', e);
+        }
+      });
+      
+      // Load new XML
       const xml = Blockly.utils.xml.textToDom(initialXml);
       Blockly.Xml.domToWorkspace(xml, workspaceRef.current);
     } catch (error) {
