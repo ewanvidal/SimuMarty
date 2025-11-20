@@ -54,6 +54,11 @@ export default class Marty {
       walking?: THREE.AnimationAction;
       waving?: THREE.AnimationAction;
       turnRight?: THREE.AnimationAction;
+      turnLeft?: THREE.AnimationAction;
+      kick?: THREE.AnimationAction;
+      dance?: THREE.AnimationAction;
+      slideLeft?: THREE.AnimationAction;
+      slideRight?: THREE.AnimationAction;
       getReady?: THREE.AnimationAction;
       current?: THREE.AnimationAction | null;
     };
@@ -66,6 +71,11 @@ export default class Marty {
       walking?: THREE.AnimationClip;
       waving?: THREE.AnimationClip;
       turnRight?: THREE.AnimationClip;
+      turnLeft?: THREE.AnimationClip;
+      kick?: THREE.AnimationClip;
+      dance?: THREE.AnimationClip;
+      slideLeft?: THREE.AnimationClip;
+      slideRight?: THREE.AnimationClip;
       getReady?: THREE.AnimationClip;
     };
     play?: (name: string, options?: { autoStop?: boolean }) => void;
@@ -238,12 +248,43 @@ export default class Marty {
         clip.name.toLowerCase().includes('turnright'),
     );
 
+    const turnLeftClip = this.resource.animations.find(
+      (clip) =>
+        clip.name.toLowerCase().includes('turn_left') ||
+        clip.name.toLowerCase().includes('turnleft'),
+    );
+
+    const kickClip = this.resource.animations.find(
+      (clip) => clip.name.toLowerCase().includes('kick'),
+    );
+
+    const danceClip = this.resource.animations.find(
+      (clip) => clip.name.toLowerCase().includes('dance'),
+    );
+
+    const slideLeftClip = this.resource.animations.find(
+      (clip) =>
+        clip.name.toLowerCase().includes('slide_left') ||
+        clip.name.toLowerCase().includes('slideleft'),
+    );
+
+    const slideRightClip = this.resource.animations.find(
+      (clip) =>
+        clip.name.toLowerCase().includes('slide_right') ||
+        clip.name.toLowerCase().includes('slideright'),
+    );
+
     // Store the clips for duration access
     this.animation.clips = {
       walking: walkingClip,
       waving: wavingClip,
       getReady: getReadyClip,
       turnRight: turnRightClip,
+      turnLeft: turnLeftClip,
+      kick: kickClip,
+      dance: danceClip,
+      slideLeft: slideLeftClip,
+      slideRight: slideRightClip,
     };
 
     this.animation.actions.walking =
@@ -264,6 +305,41 @@ export default class Marty {
       this.animation.actions.turnRight.clampWhenFinished = true;
     }
 
+    if (turnLeftClip) {
+      this.animation.actions.turnLeft =
+        this.animation.mixer.clipAction(turnLeftClip);
+      this.animation.actions.turnLeft.setLoop(THREE.LoopOnce, 1);
+      this.animation.actions.turnLeft.clampWhenFinished = true;
+    }
+
+    if (kickClip) {
+      this.animation.actions.kick =
+        this.animation.mixer.clipAction(kickClip);
+      this.animation.actions.kick.setLoop(THREE.LoopOnce, 1);
+      this.animation.actions.kick.clampWhenFinished = true;
+    }
+
+    if (danceClip) {
+      this.animation.actions.dance =
+        this.animation.mixer.clipAction(danceClip);
+      this.animation.actions.dance.setLoop(THREE.LoopOnce, 1);
+      this.animation.actions.dance.clampWhenFinished = true;
+    }
+
+    if (slideLeftClip) {
+      this.animation.actions.slideLeft =
+        this.animation.mixer.clipAction(slideLeftClip);
+      this.animation.actions.slideLeft.setLoop(THREE.LoopOnce, 1);
+      this.animation.actions.slideLeft.clampWhenFinished = true;
+    }
+
+    if (slideRightClip) {
+      this.animation.actions.slideRight =
+        this.animation.mixer.clipAction(slideRightClip);
+      this.animation.actions.slideRight.setLoop(THREE.LoopOnce, 1);
+      this.animation.actions.slideRight.clampWhenFinished = true;
+    }
+
     // Configurer les animations pour ne se jouer qu'une fois
     this.animation.actions.walking.setLoop(THREE.LoopOnce, 1);
     this.animation.actions.waving.setLoop(THREE.LoopOnce, 1);
@@ -280,12 +356,12 @@ export default class Marty {
 
     this.animation.play = (name: string, options?: { autoStop?: boolean }) => {
       const newAction = this.animation.actions![
-        name as 'walking' | 'waving' | 'turnRight' | 'getReady'
+        name as 'walking' | 'waving' | 'turnRight' | 'turnLeft' | 'kick' | 'dance' | 'slideLeft' | 'slideRight' | 'getReady'
       ];
       if (!newAction) return;
 
       const oldAction = this.animation.actions!.current;
-      const crossFadeDuration = this.animation.settings!.crossFadeDuration;
+      const crossFadeDuration = 1; // Use 1 second for cross-fade as requested
 
       // Stop and reset the action completely
       newAction.stop();
@@ -309,15 +385,57 @@ export default class Marty {
         // Only auto-stop if explicitly requested (default behavior)
         const shouldAutoStop = options?.autoStop !== false;
         if (shouldAutoStop) {
-          // Désactiver après la durée de l'animation complète
-          setTimeout(
-            () => {
-              this.movement.enabled = false;
-              this.movement.active = false;
-            },
-            (this.animation.clips!.walking!.duration * 1000) /
-              this.animation.settings!.timeScale,
-          );
+          const animationDuration = this.getAnimationDuration('walking');
+          
+          // After animation completes, transition to getReady
+          setTimeout(() => {
+            this.movement.enabled = false;
+            this.movement.active = false;
+            
+            if (this.animation.actions!.getReady) {
+              const getReadyAction = this.animation.actions!.getReady;
+              const currentAction = this.animation.actions!.current;
+              
+              getReadyAction.stop();
+              getReadyAction.reset();
+              getReadyAction.play();
+              
+              if (currentAction && currentAction !== getReadyAction) {
+                getReadyAction.crossFadeFrom(currentAction, 1, false);
+              }
+              
+              this.animation.actions!.current = getReadyAction;
+            }
+          }, animationDuration);
+        }
+      }
+
+      // Handle waving animation
+      if (name === 'waving') {
+        this.movement.enabled = false;
+        this.movement.active = false;
+
+        const shouldAutoStop = options?.autoStop !== false;
+        if (shouldAutoStop) {
+          const animationDuration = this.getAnimationDuration('waving');
+          
+          // After animation completes, transition to getReady
+          setTimeout(() => {
+            if (this.animation.actions!.getReady) {
+              const getReadyAction = this.animation.actions!.getReady;
+              const currentAction = this.animation.actions!.current;
+              
+              getReadyAction.stop();
+              getReadyAction.reset();
+              getReadyAction.play();
+              
+              if (currentAction && currentAction !== getReadyAction) {
+                getReadyAction.crossFadeFrom(currentAction, 1, false);
+              }
+              
+              this.animation.actions!.current = getReadyAction;
+            }
+          }, animationDuration);
         }
       }
 
@@ -331,7 +449,7 @@ export default class Marty {
       if (name === 'turnRight') {
         this.movement.enabled = false;
         this.movement.active = false;
-
+        
         // Start turn cycle: wait 30 frames, pause, rotate during pause, then resume
         this.turn.active = true;
         this.turn.elapsed = 0;
@@ -348,6 +466,59 @@ export default class Marty {
 
         this.turn.duration = absAngleDeg / baseSpeedDegPerSec;
         this.turn.resumeDelay = this.turn.duration * 0.2; // Small pause after rotation
+        this.turn.targetAngle = this.turn.startAngle - this.animation.settings!.turnBaseAngle; // Store target for rotation
+      }
+
+      // If playing turnLeft, disable movement and start turn sequence (opposite direction)
+      if (name === 'turnLeft') {
+        this.movement.enabled = false;
+        this.movement.active = false;
+        
+        // Start turn cycle: wait 30 frames, pause, rotate during pause, then resume
+        this.turn.active = true;
+        this.turn.elapsed = 0;
+        this.turn.startAngle = this.model!.rotation.y;
+        this.turn.state = 'waiting';
+        this.turn.turnAction = this.animation.actions!.turnLeft || null;
+
+        // Duration of rotation proportional to angle for constant speed
+        const angleDeg = THREE.MathUtils.radToDeg(
+          this.animation.settings!.turnBaseAngle,
+        );
+        const absAngleDeg = Math.max(Math.abs(angleDeg), 1);
+        const baseSpeedDegPerSec = 60; // 60° per second => 30° in 0.5s
+
+        this.turn.duration = absAngleDeg / baseSpeedDegPerSec;
+        this.turn.resumeDelay = this.turn.duration * 0.2; // Small pause after rotation
+        this.turn.targetAngle = this.turn.startAngle + this.animation.settings!.turnBaseAngle; // Store target for rotation
+      }
+
+      // Handle animations that need to transition to getReady at the end
+      const animationsWithGetReady = ['turnRight', 'turnLeft', 'kick', 'dance', 'slideLeft', 'slideRight'];
+      
+      if (animationsWithGetReady.includes(name)) {
+        const shouldAutoStop = options?.autoStop !== false;
+        if (shouldAutoStop) {
+          const animationDuration = this.getAnimationDuration(name as any);
+          
+          // After animation completes, transition to getReady
+          setTimeout(() => {
+            if (this.animation.actions!.getReady) {
+              const getReadyAction = this.animation.actions!.getReady;
+              const currentAction = this.animation.actions!.current;
+              
+              getReadyAction.stop();
+              getReadyAction.reset();
+              getReadyAction.play();
+              
+              if (currentAction && currentAction !== getReadyAction) {
+                getReadyAction.crossFadeFrom(currentAction, 1, false);
+              }
+              
+              this.animation.actions!.current = getReadyAction;
+            }
+          }, animationDuration);
+        }
       }
     };
 
@@ -382,6 +553,31 @@ export default class Marty {
             this.animation.play!('turnRight');
           }
         },
+        playTurnLeft: () => {
+          if (this.animation.actions!.turnLeft) {
+            this.animation.play!('turnLeft');
+          }
+        },
+        playKick: () => {
+          if (this.animation.actions!.kick) {
+            this.animation.play!('kick');
+          }
+        },
+        playDance: () => {
+          if (this.animation.actions!.dance) {
+            this.animation.play!('dance');
+          }
+        },
+        playSlideLeft: () => {
+          if (this.animation.actions!.slideLeft) {
+            this.animation.play!('slideLeft');
+          }
+        },
+        playSlideRight: () => {
+          if (this.animation.actions!.slideRight) {
+            this.animation.play!('slideRight');
+          }
+        },
         playGetReady: () => {
           if (this.animation.actions!.getReady) {
             this.animation.play!('getReady');
@@ -397,6 +593,21 @@ export default class Marty {
       this.debugFolder.add(debugObject, 'playWaving');
       if (this.animation.actions.turnRight) {
         this.debugFolder.add(debugObject, 'playTurnRight');
+      }
+      if (this.animation.actions.turnLeft) {
+        this.debugFolder.add(debugObject, 'playTurnLeft');
+      }
+      if (this.animation.actions.kick) {
+        this.debugFolder.add(debugObject, 'playKick');
+      }
+      if (this.animation.actions.dance) {
+        this.debugFolder.add(debugObject, 'playDance');
+      }
+      if (this.animation.actions.slideLeft) {
+        this.debugFolder.add(debugObject, 'playSlideLeft');
+      }
+      if (this.animation.actions.slideRight) {
+        this.debugFolder.add(debugObject, 'playSlideRight');
       }
       if (this.animation.actions.getReady) {
         this.debugFolder.add(debugObject, 'playGetReady');
@@ -444,9 +655,11 @@ export default class Marty {
 
   /**
    * Get the duration of an animation in milliseconds
+   * For turn animations, optionally specify the angle to calculate the proper duration
    */
   getAnimationDuration(
-    name: 'walking' | 'waving' | 'turnRight' | 'getReady',
+    name: 'walking' | 'waving' | 'turnRight' | 'turnLeft' | 'kick' | 'dance' | 'slideLeft' | 'slideRight' | 'getReady',
+    options?: { angle?: number },
   ): number {
     if (!this.animation.clips || !this.animation.settings) {
       return 2000; // Default fallback
@@ -455,6 +668,23 @@ export default class Marty {
     const clip = this.animation.clips[name];
     if (!clip) {
       return 2000; // Default fallback
+    }
+
+    // For turn animations, calculate duration based on angle
+    if ((name === 'turnRight' || name === 'turnLeft') && options?.angle !== undefined) {
+      const baseAnimationDuration = (clip.duration * 1000) / this.animation.settings.timeScale;
+      const absAngle = Math.abs(options.angle);
+      const baseSpeedDegPerSec = 60; // 60° per second
+      
+      // Calculate rotation duration based on angle
+      const rotationDuration = (absAngle / baseSpeedDegPerSec) * 1000; // in ms
+      
+      // Total duration includes: initial delay + rotation + resume delay
+      const delayMs = this.turn.delay * 1000;
+      const resumeDelayMs = rotationDuration * 0.2;
+      
+      // Return the maximum of either the base animation duration or calculated duration
+      return Math.max(baseAnimationDuration, delayMs + rotationDuration + resumeDelayMs);
     }
 
     return (clip.duration * 1000) / this.animation.settings.timeScale;
@@ -522,11 +752,10 @@ export default class Marty {
     if (state === 'rotating') {
       const t = Math.min(this.turn.elapsed / this.turn.duration, 1);
 
-      const targetAngle =
-        this.turn.startAngle - this.animation.settings!.turnBaseAngle;
+      // Use the stored target angle for rotation
       this.model.rotation.y = THREE.MathUtils.lerp(
         this.turn.startAngle,
-        targetAngle,
+        this.turn.targetAngle,
         t,
       );
 

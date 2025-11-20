@@ -343,10 +343,52 @@ class WebSocketService {
     });
   }
 
+  turnRight(angle: number = 30) {
+    return this.sendCommand({
+      action: 'turn',
+      params: { angle },
+    });
+  }
+
+  turnLeft(angle: number = 30) {
+    return this.sendCommand({
+      action: 'turnLeft',
+      params: { angle },
+    });
+  }
+
   // Gestures
   wave() {
     return this.sendCommand({
       action: 'wave',
+      params: {},
+    });
+  }
+
+  kick() {
+    return this.sendCommand({
+      action: 'kick',
+      params: {},
+    });
+  }
+
+  dance() {
+    return this.sendCommand({
+      action: 'dance',
+      params: {},
+    });
+  }
+
+  slideLeft() {
+    return this.sendCommand({
+      action: 'slideLeft',
+      params: {},
+    });
+  }
+
+  slideRight() {
+    return this.sendCommand({
+      action: 'slideRight',
       params: {},
     });
   }

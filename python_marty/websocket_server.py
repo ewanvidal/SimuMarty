@@ -84,7 +84,7 @@ class MartyWebSocketServer:
                 result = await self.execute_python_code(code)
                 status = "success" if result["success"] else "error"
                 message = result.get("message", "")
-            elif action in ["walk", "turn", "wave", "dance", "kick", "sidestep", "stop", "get_ready", "stand_straight"]:
+            elif action in ["walk", "turn", "turnLeft", "wave", "kick", "dance", "slideLeft", "slideRight", "stop", "get_ready", "stand_straight"]:
                 # Robot movement commands - forward to simulation
                 status = "success"
                 message = f"Command {action} executed"
@@ -143,13 +143,33 @@ class MartyWebSocketServer:
                 logger.info(f"  → Captured: walk({steps})")
                 commands.append({"action": "walk", "params": {"steps": steps}})
             
-            def turn(self, angle):
-                logger.info(f"  → Captured: turn({angle})")
+            def turnRight(self, angle):
+                logger.info(f"  → Captured: turnRight({angle})")
                 commands.append({"action": "turn", "params": {"angle": angle}})
+            
+            def turnLeft(self, angle):
+                logger.info(f"  → Captured: turnLeft({angle})")
+                commands.append({"action": "turnLeft", "params": {"angle": angle}})
                 
             def wave(self):
                 logger.info(f"  → Captured: wave()")
                 commands.append({"action": "wave", "params": {}})
+            
+            def kick(self):
+                logger.info(f"  → Captured: kick()")
+                commands.append({"action": "kick", "params": {}})
+            
+            def dance(self):
+                logger.info(f"  → Captured: dance()")
+                commands.append({"action": "dance", "params": {}})
+            
+            def slideLeft(self):
+                logger.info(f"  → Captured: slideLeft()")
+                commands.append({"action": "slideLeft", "params": {}})
+            
+            def slideRight(self):
+                logger.info(f"  → Captured: slideRight()")
+                commands.append({"action": "slideRight", "params": {}})
                 
             def stop(self):
                 logger.info(f"  → Captured: stop()")
