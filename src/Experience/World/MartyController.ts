@@ -83,19 +83,21 @@ export class MartyController {
       const getReadyDuration = this.marty.getAnimationDuration('getReady');
 
       if (cycles > 0) {
-        // Play full cycles - disable auto-stop for all but the last
+        // Play full cycles
         for (let i = 0; i < cycles; i++) {
           const isLastCycle = i === cycles - 1;
-          // Disable auto-stop for intermediate cycles
-          this.marty.animation.play('walking', { autoStop: isLastCycle });
+          // Always auto-stop to trigger getReady if steps > 2
+          this.marty.animation.play('walking', { autoStop: true });
           // Wait for animation to complete using actual duration
           await new Promise((resolve) =>
             setTimeout(resolve, animationDuration),
           );
+          
+          // Add getReady between cycles if steps > 2
+          if (steps >= 2 || isLastCycle) {
+            await new Promise((resolve) => setTimeout(resolve, getReadyDuration));
+          }
         }
-        
-        // Wait for getReady transition after the last cycle
-        await new Promise((resolve) => setTimeout(resolve, getReadyDuration));
       }
 
       return { success: true, message: `Walking ${steps} steps` };
@@ -136,24 +138,32 @@ export class MartyController {
     const angle = (params?.angle as number) || 30; // Default 30 degrees
 
     if (this.marty.animation?.play && this.marty.animation.actions?.turnRight) {
+      // Calculate how many times to replay the animation
+      const baseAngle = 30; // Base angle per animation
+      const repetitions = Math.ceil(angle / baseAngle);
+      const anglePerRepetition = angle / repetitions;
+
       // Update the turn base angle
       if (this.marty.animation.settings) {
         const THREE = await import('three');
         this.marty.animation.settings.turnBaseAngle =
-          THREE.MathUtils.degToRad(angle);
+          THREE.MathUtils.degToRad(anglePerRepetition);
       }
 
-      this.marty.animation.play('turnRight');
+      // Play animation multiple times if needed
+      for (let i = 0; i < repetitions; i++) {
+        this.marty.animation.play('turnRight', { autoStop: true });
 
-      // Get actual animation duration based on the angle
-      const animationDuration = this.marty.getAnimationDuration('turnRight', { angle });
-      const getReadyDuration = this.marty.getAnimationDuration('getReady');
+        // Get actual animation duration based on the angle
+        const animationDuration = this.marty.getAnimationDuration('turnRight', { angle: anglePerRepetition });
+        const getReadyDuration = this.marty.getAnimationDuration('getReady');
 
-      // Wait for animation to complete
-      await new Promise((resolve) => setTimeout(resolve, animationDuration));
-      
-      // Wait for getReady transition
-      await new Promise((resolve) => setTimeout(resolve, getReadyDuration));
+        // Wait for animation to complete
+        await new Promise((resolve) => setTimeout(resolve, animationDuration));
+        
+        // Wait for getReady between each repetition
+        await new Promise((resolve) => setTimeout(resolve, getReadyDuration));
+      }
 
       return { success: true, message: `Turning right ${angle} degrees` };
     }
@@ -173,24 +183,32 @@ export class MartyController {
     const angle = (params?.angle as number) || 30; // Default 30 degrees
 
     if (this.marty.animation?.play && this.marty.animation.actions?.turnLeft) {
+      // Calculate how many times to replay the animation
+      const baseAngle = 30; // Base angle per animation
+      const repetitions = Math.ceil(angle / baseAngle);
+      const anglePerRepetition = angle / repetitions;
+
       // Update the turn base angle
       if (this.marty.animation.settings) {
         const THREE = await import('three');
         this.marty.animation.settings.turnBaseAngle =
-          THREE.MathUtils.degToRad(angle);
+          THREE.MathUtils.degToRad(anglePerRepetition);
       }
 
-      this.marty.animation.play('turnLeft');
+      // Play animation multiple times if needed
+      for (let i = 0; i < repetitions; i++) {
+        this.marty.animation.play('turnLeft', { autoStop: true });
 
-      // Get actual animation duration based on the angle
-      const animationDuration = this.marty.getAnimationDuration('turnLeft', { angle });
-      const getReadyDuration = this.marty.getAnimationDuration('getReady');
+        // Get actual animation duration based on the angle
+        const animationDuration = this.marty.getAnimationDuration('turnLeft', { angle: anglePerRepetition });
+        const getReadyDuration = this.marty.getAnimationDuration('getReady');
 
-      // Wait for animation to complete
-      await new Promise((resolve) => setTimeout(resolve, animationDuration));
-      
-      // Wait for getReady transition
-      await new Promise((resolve) => setTimeout(resolve, getReadyDuration));
+        // Wait for animation to complete
+        await new Promise((resolve) => setTimeout(resolve, animationDuration));
+        
+        // Wait for getReady between each repetition
+        await new Promise((resolve) => setTimeout(resolve, getReadyDuration));
+      }
 
       return { success: true, message: `Turning left ${angle} degrees` };
     }
