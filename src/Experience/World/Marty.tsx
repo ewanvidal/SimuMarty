@@ -48,6 +48,13 @@ export default class Marty {
     resumeDelay: number;
     turnAction: THREE.AnimationAction | null;
   };
+  slide: {
+    enabled: boolean;
+    direction: 'left' | 'right' | null;
+    speed: number;
+    elapsed: number;
+    duration: number;
+  };
   animation: {
     mixer?: THREE.AnimationMixer;
     actions?: {
@@ -101,10 +108,10 @@ export default class Marty {
 
     // Initialize movement and animation objects
     this.movement = {
-      speed: 0.25,
+      speed: 0.025, // Scaled down to match 0.05 model scale (10x smaller)
       fps: 30,
-      moveFrames: 20,
-      cycleFrames: 55,
+      moveFrames: 30,
+      cycleFrames: 70,
       moveDuration: 0,
       restDuration: 0,
       enabled: false,
@@ -123,6 +130,14 @@ export default class Marty {
       state: 'idle',
       resumeDelay: 0,
       turnAction: null,
+    };
+
+    this.slide = {
+      enabled: false,
+      direction: null,
+      speed: 0.025, // Scaled down to match 0.05 model scale (10x smaller)
+      elapsed: 0,
+      duration: 1.7, // 1.7 seconds - stop a bit before animation ends
     };
 
     this.animation = {};
@@ -212,17 +227,18 @@ export default class Marty {
     this.animation.mixer = new THREE.AnimationMixer(this.model);
     this.animation.actions = {};
 
-    // // Debug: Log all available animations
-    // this.resource.animations.forEach(
-    //   (clip: THREE.AnimationClip, index: number) => {
-    //     console.log(
-    //       `Animation ${index}:`,
-    //       clip.name,
-    //       'Duration:',
-    //       clip.duration,
-    //     );
-    //   },
-    // );
+    // Debug: Log all available animations
+    console.log('📋 Available animations in GLTF:');
+    this.resource.animations.forEach(
+      (clip: THREE.AnimationClip, index: number) => {
+        console.log(
+          `Animation ${index}:`,
+          clip.name,
+          'Duration:',
+          clip.duration,
+        );
+      },
+    );
 
     const walkingClip =
       this.resource.animations.find((clip) =>
@@ -264,14 +280,14 @@ export default class Marty {
 
     const slideLeftClip = this.resource.animations.find(
       (clip) =>
-        clip.name.toLowerCase().includes('slide_left') ||
-        clip.name.toLowerCase().includes('slideleft'),
+        clip.name.toLowerCase().includes('slide') &&
+        clip.name.toLowerCase().includes('left'),
     );
 
     const slideRightClip = this.resource.animations.find(
       (clip) =>
-        clip.name.toLowerCase().includes('slide_right') ||
-        clip.name.toLowerCase().includes('slideright'),
+        clip.name.toLowerCase().includes('slide') &&
+        clip.name.toLowerCase().includes('right'),
     );
 
     // Store the clips for duration access
@@ -493,6 +509,26 @@ export default class Marty {
         this.turn.targetAngle = this.turn.startAngle + this.animation.settings!.turnBaseAngle; // Store target for rotation
       }
 
+      // If playing slideLeft, enable slide movement
+      if (name === 'slideLeft') {
+        console.log('🎯 slideLeft activated');
+        this.movement.enabled = false;
+        this.movement.active = false;
+        this.slide.enabled = true;
+        this.slide.direction = 'left';
+        this.slide.elapsed = 0;
+        console.log('🎯 slide state:', this.slide);
+      }
+
+      // If playing slideRight, enable slide movement
+      if (name === 'slideRight') {
+        this.movement.enabled = false;
+        this.movement.active = false;
+        this.slide.enabled = true;
+        this.slide.direction = 'right';
+        this.slide.elapsed = 0;
+      }
+
       // Handle animations that need to transition to getReady at the end
       const animationsWithGetReady = ['turnRight', 'turnLeft', 'kick', 'dance', 'slideLeft', 'slideRight'];
       
@@ -503,6 +539,9 @@ export default class Marty {
           
           // After animation completes, transition to getReady
           setTimeout(() => {
+            // Disable slide movement if active
+            this.slide.enabled = false;
+            
             if (this.animation.actions!.getReady) {
               const getReadyAction = this.animation.actions!.getReady;
               const currentAction = this.animation.actions!.current;
@@ -702,6 +741,10 @@ export default class Marty {
       this.updateMovement(deltaSeconds);
     }
 
+    if (this.slide.enabled) {
+      this.updateSlide(deltaSeconds);
+    }
+
     this.updateTurn(deltaSeconds);
   }
 
@@ -776,6 +819,26 @@ export default class Marty {
         this.turn.active = false;
         this.turn.state = 'idle';
       }
+    }
+  }
+
+  private updateSlide(deltaSeconds: number) {
+    if (!this.model || !this.slide.enabled) return;
+
+    this.slide.elapsed += deltaSeconds;
+    
+    // Move sideways continuously in the local X direction
+    const distance = this.slide.speed * deltaSeconds;
+    if (this.slide.direction === 'left') {
+      this.model.translateX(distance); // Positive X is left
+    } else if (this.slide.direction === 'right') {
+      this.model.translateX(-distance); // Negative X is right
+    }
+
+    // Stop after duration
+    if (this.slide.elapsed >= this.slide.duration) {
+      this.slide.enabled = false;
+      this.slide.elapsed = 0;
     }
   }
 
