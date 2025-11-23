@@ -17,7 +17,8 @@ export const JointID = {
   RIGHT_KNEE: 5,
   LEFT_ARM: 6,
   RIGHT_ARM: 7,
-  EYES: 8,
+  LEFT_EYE: 8,
+  RIGHT_EYE: 9,
 } as const;
 
 export type JointID = (typeof JointID)[keyof typeof JointID];
@@ -26,15 +27,16 @@ export type JointID = (typeof JointID)[keyof typeof JointID];
  * Noms des articulations (utilisables dans les commandes)
  */
 export const JointName = {
-  LEFT_HIP: 'left hip',
-  LEFT_TWIST: 'left twist',
-  LEFT_KNEE: 'left knee',
-  RIGHT_HIP: 'right hip',
-  RIGHT_TWIST: 'right twist',
-  RIGHT_KNEE: 'right knee',
-  LEFT_ARM: 'left arm',
-  RIGHT_ARM: 'right arm',
-  EYES: 'eyes',
+  LEFT_HIP: 'left_hip',
+  LEFT_TWIST: 'left_twist',
+  LEFT_KNEE: 'left_knee',
+  RIGHT_HIP: 'right_hip',
+  RIGHT_TWIST: 'right_twist',
+  RIGHT_KNEE: 'right_knee',
+  LEFT_ARM: 'left_arm',
+  RIGHT_ARM: 'right_arm',
+  LEFT_EYE: 'left_eye',
+  RIGHT_EYE: 'right_eye',
 } as const;
 
 export type JointName = (typeof JointName)[keyof typeof JointName];

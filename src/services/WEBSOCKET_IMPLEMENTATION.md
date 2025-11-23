@@ -364,10 +364,17 @@ python test_websocket.py
 ```python
 marty.walk(2)
 marty.wave()
+
+# Move individual joints (degrees, optional move_time in ms)
+marty.set_joint('left_arm', 20)
+marty.set_joint('left_eye', -10, move_time=800)
+marty.set_joint('right_eye', 10)
 ```
 
 4. Click "Run Code"
 5. Watch the robot animate!
+
+Joint names must be provided as underscore strings (e.g. `'left_arm'`, `'left_eye'`). Numeric IDs, `marty.joints[...]`, `JointID.X`, and the group alias `'eyes'` are not accepted — use `'left_eye'` and `'right_eye'` explicitly. The helper automatically routes to the WebSocket `joint` action and accepts an optional `move_time` (milliseconds).
 
 ## Browser Console Testing
 

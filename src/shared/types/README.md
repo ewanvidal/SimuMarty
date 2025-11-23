@@ -178,7 +178,7 @@ Type : `ConnectAckMessage`
   "payload": [
     {
       "IDNo": 0,
-      "name": "left hip",
+      "name": "left_hip",
       "pos": 45.2,
       "current": 120,
       "enabled": true,

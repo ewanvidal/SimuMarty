@@ -56,6 +56,8 @@ marty.wave()
 # marty.turn(-45)    # Turn -45 degrees (left)
 # marty.turn(90)     # Turn 90 degrees (right)
 # marty.stop()       # Stop all motion
+# marty.set_joint('left_arm', 25)
+# marty.set_joint('left_eye', -10, move_time=800)
 `;
 
 export const useAppStore = create<AppState>((set) => ({

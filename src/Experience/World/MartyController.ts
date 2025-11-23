@@ -47,6 +47,12 @@ export class MartyController {
         case 'slideRight':
           return await this.handleSlideRight();
 
+        case 'joint':
+        case 'jointControl':
+        case 'setJoint':
+        case 'setJointAngle':
+          return await this.handleJointCommand(command.params);
+
         case 'stop':
           return this.handleStop();
 
@@ -291,6 +297,40 @@ export class MartyController {
     }
 
     return { success: false, message: 'Slide right animation not available' };
+  }
+
+  // Handle REST/WebSocket joint control requests and forward them to the model
+  private async handleJointCommand(
+    params?: Record<string, unknown>,
+  ): Promise<{ success: boolean; message?: string }> {
+    if (!params) {
+      return { success: false, message: 'Missing joint parameters' };
+    }
+
+    const jointParam =
+      params.jointId ?? params.joint ?? params.id ?? params.name ?? params.target;
+    if (jointParam === undefined || jointParam === null) {
+      return { success: false, message: 'jointId parameter is required' };
+    }
+
+    const rawAngle =
+      params.angle ?? params.value ?? params.position ?? params.pos ?? params.deg;
+    const angle =
+      typeof rawAngle === 'string' ? Number(rawAngle) : (rawAngle as number | undefined);
+
+    if (angle === undefined || Number.isNaN(angle)) {
+      return { success: false, message: 'Angle parameter is required' };
+    }
+
+    const rawMoveTime = params.moveTime ?? params.duration ?? params.time;
+    const moveTime =
+      typeof rawMoveTime === 'string'
+        ? Number(rawMoveTime)
+        : (rawMoveTime as number | undefined);
+
+    return this.marty.setJointAngle(jointParam as number | string, angle, {
+      moveTime: moveTime && !Number.isNaN(moveTime) ? moveTime : undefined,
+    });
   }
 
   /**
