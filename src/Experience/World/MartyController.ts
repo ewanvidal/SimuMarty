@@ -334,14 +334,14 @@ export class MartyController {
 
       // Parse marty.turnRight()
       else if (trimmed.includes('marty.turnRight(')) {
-        const match = trimmed.match(/marty\.turnRight\((\-?\d+)\)/);
+        const match = trimmed.match(/marty\.turnRight\((-?\d+)\)/);
         const angle = match ? parseInt(match[1]) : 30;
         commands.push({ action: 'turn', params: { angle } });
       }
 
       // Parse marty.turnLeft()
       else if (trimmed.includes('marty.turnLeft(')) {
-        const match = trimmed.match(/marty\.turnLeft\((\-?\d+)\)/);
+        const match = trimmed.match(/marty\.turnLeft\((-?\d+)\)/);
         const angle = match ? parseInt(match[1]) : 30;
         commands.push({ action: 'turnLeft', params: { angle } });
       }

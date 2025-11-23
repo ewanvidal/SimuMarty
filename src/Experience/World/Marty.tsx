@@ -24,6 +24,8 @@ export default class Marty {
   resource!: GLTF;
   model?: THREE.Group;
   controller?: MartyController;
+  boneNodes: { name: string; object: THREE.Bone }[] = [];
+  boneDebugFolder?: ReturnType<typeof import('lil-gui').GUI.prototype.addFolder>;
   wsUnsubscribe?: () => void;
   movement: {
     speed: number;
@@ -47,6 +49,13 @@ export default class Marty {
     state: 'idle' | 'waiting' | 'rotating' | 'resumeWait';
     resumeDelay: number;
     turnAction: THREE.AnimationAction | null;
+  };
+  slide: {
+    enabled: boolean;
+    direction: 'left' | 'right' | null;
+    speed: number;
+    elapsed: number;
+    duration: number;
   };
   animation: {
     mixer?: THREE.AnimationMixer;
@@ -101,10 +110,10 @@ export default class Marty {
 
     // Initialize movement and animation objects
     this.movement = {
-      speed: 0.25,
+      speed: 0.025, // Scaled down to match 0.05 model scale (10x smaller)
       fps: 30,
-      moveFrames: 20,
-      cycleFrames: 55,
+      moveFrames: 30,
+      cycleFrames: 70,
       moveDuration: 0,
       restDuration: 0,
       enabled: false,
@@ -123,6 +132,14 @@ export default class Marty {
       state: 'idle',
       resumeDelay: 0,
       turnAction: null,
+    };
+
+    this.slide = {
+      enabled: false,
+      direction: null,
+      speed: 0.025, // Scaled down to match 0.05 model scale (10x smaller)
+      elapsed: 0,
+      duration: 1.7, // 1.7 seconds - stop a bit before animation ends
     };
 
     this.animation = {};
@@ -167,11 +184,125 @@ export default class Marty {
     this.model!.position.set(0, 0, 0);
     this.scene.add(this.model!);
 
+    this.boneNodes = [];
+
     this.model!.traverse((child) => {
       if (child instanceof THREE.Mesh) {
         child.castShadow = true;
       }
+
+      if (child instanceof THREE.Bone) {
+        const hasName = child.name && child.name.trim().length > 0;
+        const label = hasName
+          ? child.name
+          : `bone_${this.boneNodes.length.toString().padStart(2, '0')}`;
+        this.boneNodes.push({ name: label, object: child });
+      }
     });
+
+    this.setupBoneDebugControls();
+  }
+
+  private setupBoneDebugControls() {
+    if (!this.debug.active || !this.debugFolder || this.boneNodes.length === 0) {
+      return;
+    }
+
+    this.boneDebugFolder?.destroy();
+    this.boneDebugFolder = this.debugFolder.addFolder('bones');
+    this.boneDebugFolder.close();
+
+    const helpers = {
+      logBones: () => {
+        console.table(
+          this.boneNodes.map((bone) => ({
+            name: bone.name,
+          })),
+        );
+      },
+    };
+
+    this.boneDebugFolder.add(helpers, 'logBones').name('Log bone list');
+
+    // Hard-code folders so bones stay organized in debug UI
+    const boneGroups = [
+      { label: 'Core', names: ['Root', 'Body'] },
+      { label: 'Head & Eyes', names: ['Head', 'EyeL', 'EyeR'] },
+      { label: 'Left Arm', names: ['ArmL'] },
+      { label: 'Right Arm', names: ['ArmR'] },
+      {
+        label: 'Left Leg',
+        names: ['LegL', 'LegL001', 'LegL002', 'LegL003'],
+      },
+      {
+        label: 'Right Leg',
+        names: ['LegR', 'LegR001', 'LegR002', 'LegR003'],
+      },
+      { label: 'Floor', names: ['Floor'] },
+    ];
+
+    const assigned = new Set<string>();
+    const addBoneRotationControls = (
+      folder: ReturnType<typeof import('lil-gui').GUI.prototype.addFolder>,
+      bone: { name: string; object: THREE.Bone },
+    ) => {
+      // Proxy keeps slider values in sync when lil-gui updates
+      const rotationProxy = {
+        x: bone.object.rotation.x,
+        y: bone.object.rotation.y,
+        z: bone.object.rotation.z,
+      };
+
+      folder
+        .add(rotationProxy, 'x', -Math.PI, Math.PI, 0.01)
+        .name(`${bone.name} rotX`)
+        .onChange((value: number) => {
+          bone.object.rotation.x = value;
+          rotationProxy.x = value;
+        });
+
+      folder
+        .add(rotationProxy, 'y', -Math.PI, Math.PI, 0.01)
+        .name(`${bone.name} rotY`)
+        .onChange((value: number) => {
+          bone.object.rotation.y = value;
+          rotationProxy.y = value;
+        });
+
+      folder
+        .add(rotationProxy, 'z', -Math.PI, Math.PI, 0.01)
+        .name(`${bone.name} rotZ`)
+        .onChange((value: number) => {
+          bone.object.rotation.z = value;
+          rotationProxy.z = value;
+        });
+    };
+
+    boneGroups.forEach((group) => {
+      const bonesInGroup = this.boneNodes.filter((bone) =>
+        group.names.includes(bone.name),
+      );
+      if (bonesInGroup.length === 0) {
+        return;
+      }
+
+      const groupFolder = this.boneDebugFolder!.addFolder(group.label);
+      groupFolder.close();
+      bonesInGroup.forEach((bone) => {
+        assigned.add(bone.name);
+        addBoneRotationControls(groupFolder, bone);
+      });
+    });
+
+    const unassignedBones = this.boneNodes.filter(
+      (bone) => !assigned.has(bone.name),
+    );
+    if (unassignedBones.length > 0) {
+      // If new bones appear later, keep them reachable under "Other"
+      const miscFolder = this.boneDebugFolder.addFolder('Other');
+      miscFolder.close();
+      unassignedBones.forEach((bone) => addBoneRotationControls(miscFolder, bone));
+    }
   }
 
   private setMovement() {
@@ -212,17 +343,18 @@ export default class Marty {
     this.animation.mixer = new THREE.AnimationMixer(this.model);
     this.animation.actions = {};
 
-    // // Debug: Log all available animations
-    // this.resource.animations.forEach(
-    //   (clip: THREE.AnimationClip, index: number) => {
-    //     console.log(
-    //       `Animation ${index}:`,
-    //       clip.name,
-    //       'Duration:',
-    //       clip.duration,
-    //     );
-    //   },
-    // );
+    // Debug: Log all available animations
+    console.log('📋 Available animations in GLTF:');
+    this.resource.animations.forEach(
+      (clip: THREE.AnimationClip, index: number) => {
+        console.log(
+          `Animation ${index}:`,
+          clip.name,
+          'Duration:',
+          clip.duration,
+        );
+      },
+    );
 
     const walkingClip =
       this.resource.animations.find((clip) =>
@@ -264,15 +396,17 @@ export default class Marty {
 
     const slideLeftClip = this.resource.animations.find(
       (clip) =>
-        clip.name.toLowerCase().includes('slide_left') ||
-        clip.name.toLowerCase().includes('slideleft'),
+        clip.name.toLowerCase().includes('slide') &&
+        clip.name.toLowerCase().includes('left'),
     );
+    console.log('🔍 slideLeftClip found:', slideLeftClip?.name || 'NOT FOUND');
 
     const slideRightClip = this.resource.animations.find(
       (clip) =>
-        clip.name.toLowerCase().includes('slide_right') ||
-        clip.name.toLowerCase().includes('slideright'),
+        clip.name.toLowerCase().includes('slide') &&
+        clip.name.toLowerCase().includes('right'),
     );
+    console.log('🔍 slideRightClip found:', slideRightClip?.name || 'NOT FOUND');
 
     // Store the clips for duration access
     this.animation.clips = {
@@ -493,16 +627,44 @@ export default class Marty {
         this.turn.targetAngle = this.turn.startAngle + this.animation.settings!.turnBaseAngle; // Store target for rotation
       }
 
+      // If playing slideLeft, enable slide movement
+      if (name === 'slideLeft') {
+        console.log('🎯 slideLeft activated');
+        this.movement.enabled = false;
+        this.movement.active = false;
+        this.slide.enabled = true;
+        this.slide.direction = 'left';
+        this.slide.elapsed = 0;
+        console.log('🎯 slide state:', this.slide);
+      }
+
+      // If playing slideRight, enable slide movement
+      if (name === 'slideRight') {
+        console.log('🎯 slideRight activated');
+        this.movement.enabled = false;
+        this.movement.active = false;
+        this.slide.enabled = true;
+        this.slide.direction = 'right';
+        this.slide.elapsed = 0;
+        console.log('🎯 slide state:', this.slide);
+      }
+
       // Handle animations that need to transition to getReady at the end
-      const animationsWithGetReady = ['turnRight', 'turnLeft', 'kick', 'dance', 'slideLeft', 'slideRight'];
-      
-      if (animationsWithGetReady.includes(name)) {
+      const animationsWithGetReady = ['turnRight', 'turnLeft', 'kick', 'dance', 'slideLeft', 'slideRight'] as const;
+      type AnimationWithGetReady = (typeof animationsWithGetReady)[number];
+      const requiresGetReady = (value: string): value is AnimationWithGetReady =>
+        animationsWithGetReady.includes(value as AnimationWithGetReady);
+
+      if (requiresGetReady(name)) {
         const shouldAutoStop = options?.autoStop !== false;
         if (shouldAutoStop) {
-          const animationDuration = this.getAnimationDuration(name as any);
+          const animationDuration = this.getAnimationDuration(name);
           
           // After animation completes, transition to getReady
           setTimeout(() => {
+            // Disable slide movement if active
+            this.slide.enabled = false;
+            
             if (this.animation.actions!.getReady) {
               const getReadyAction = this.animation.actions!.getReady;
               const currentAction = this.animation.actions!.current;
@@ -702,6 +864,10 @@ export default class Marty {
       this.updateMovement(deltaSeconds);
     }
 
+    if (this.slide.enabled) {
+      this.updateSlide(deltaSeconds);
+    }
+
     this.updateTurn(deltaSeconds);
   }
 
@@ -776,6 +942,29 @@ export default class Marty {
         this.turn.active = false;
         this.turn.state = 'idle';
       }
+    }
+  }
+
+  private updateSlide(deltaSeconds: number) {
+    if (!this.model || !this.slide.enabled) return;
+
+    this.slide.elapsed += deltaSeconds;
+    
+    // Move sideways continuously in the local X direction
+    const distance = this.slide.speed * deltaSeconds;
+    if (this.slide.direction === 'left') {
+      console.log('⬅️ Moving left:', distance);
+      this.model.translateX(distance); // Positive X is left
+    } else if (this.slide.direction === 'right') {
+      console.log('➡️ Moving right:', distance);
+      this.model.translateX(-distance); // Negative X is right
+    }
+
+    // Stop after duration
+    if (this.slide.elapsed >= this.slide.duration) {
+      console.log('✅ Slide complete');
+      this.slide.enabled = false;
+      this.slide.elapsed = 0;
     }
   }
 
