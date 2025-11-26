@@ -45,17 +45,30 @@ interface AppState {
 
 const DEFAULT_CODE = `# Write your Python code here to control Marty
 # Click the "Run Code" button to execute
-
 # Example: Make Marty walk, turn and wave
+
 marty.walk(2)
-marty.turn(30)
+marty.turnRight(30)
 marty.wave()
 
-# More examples:
-# marty.walk(4)      # Walk 4 steps (2 animation cycles)
-# marty.turn(-45)    # Turn -45 degrees (left)
-# marty.turn(90)     # Turn 90 degrees (right)
-# marty.stop()       # Stop all motion
+# Available commands:
+# marty.walk(steps)      # Walk a number of steps
+# marty.turnRight(angle) # Turn right by angle in degrees
+# marty.turnLeft(angle)  # Turn left by angle in degrees
+# marty.wave()           # Wave gesture
+# marty.kick()           # Kick
+# marty.dance()          # Dance animation
+# marty.slideLeft()      # Slide to the left
+# marty.slideRight()     # Slide to the right
+# marty.stop()           # Stop all motion
+
+# Examples:
+# marty.walk(4)
+# marty.turnRight(90)
+# marty.turnLeft(45)
+# marty.kick()
+# marty.dance()
+# marty.slideRight()
 # marty.set_joint('left_arm', 25)
 # marty.set_joint('left_eye', -10, move_time=800)
 `;

@@ -181,6 +181,26 @@ export default class Marty {
     this.jointController.update(deltaSeconds);
   }
 
+  private updateSlide(deltaSeconds: number) {
+    if (!this.model || !this.slide.enabled) return;
+
+    this.slide.elapsed += deltaSeconds;
+    
+    // Move sideways continuously in the local X direction
+    const distance = this.slide.speed * deltaSeconds;
+    if (this.slide.direction === 'left') {
+      this.model.translateX(distance); // Positive X is left
+    } else if (this.slide.direction === 'right') {
+      this.model.translateX(-distance); // Negative X is right
+    }
+
+    // Stop after duration
+    if (this.slide.elapsed >= this.slide.duration) {
+      this.slide.enabled = false;
+      this.slide.elapsed = 0;
+    }
+  }
+
   dispose() {
     // Clean up WebSocket subscription
     if (this.wsUnsubscribe) {
