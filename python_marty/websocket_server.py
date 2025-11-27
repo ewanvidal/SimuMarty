@@ -112,8 +112,8 @@ class MartyWebSocketServer:
                 result = await self.execute_python_code(code)
                 status = "success" if result["success"] else "error"
                 message = result.get("message", "")
-            elif action in ["walk", "turn", "turnLeft", "wave", "kick", "dance", "slideLeft", "slideRight", "stop", "get_ready", "stand_straight"]:
-                # Robot movement commands - forward to simulation
+            elif action in ["walk", "turn", "turnLeft", "wave", "kick", "dance", "slideLeft", "slideRight", "stop", "get_ready", "stand_straight", "getGroundColor", "getObstacleDistance"]:
+                # Robot movement commands and sensor queries - forward to simulation
                 status = "success"
                 message = f"Command {action} executed"
                 
@@ -238,6 +238,18 @@ class MartyWebSocketServer:
             def set_joint_angle(self, joint, angle, move_time=None):
                 self.set_joint(joint, angle, move_time)
 
+            # --- Sensor helpers -------------------------------------------------
+            def getGroundColor(self):
+                logger.info(f"  → Captured: getGroundColor()")
+                commands.append({"action": "getGroundColor", "params": {}})
+                print("Ground Color sensor called - check browser console for results")
+                return None
+            
+            def getObstacleDistance(self):
+                logger.info(f"  → Captured: getObstacleDistance()")
+                commands.append({"action": "getObstacleDistance", "params": {}})
+                print("Obstacle Distance sensor called - check browser console for results")
+                return None
 
             def _normalize_joint_identifier(self, joint) -> Optional[int]:
                 if isinstance(joint, (int, float)):

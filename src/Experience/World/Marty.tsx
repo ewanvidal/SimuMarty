@@ -30,6 +30,7 @@ import {
   type SlideState,
   type TurnState,
 } from './marty/animationSystem.ts';
+import { GroundColorSensor, ObstacleSensor } from './sensors/index.tsx';
 
 /**
  * Marty
@@ -54,6 +55,10 @@ export default class Marty {
   turn: TurnState;
   slide: SlideState;
   animation: AnimationState;
+  sensors: {
+    groundColorSensor?: GroundColorSensor;
+    obstacleSensor?: ObstacleSensor;
+  };
 
   constructor() {
     this.experience = (
@@ -77,6 +82,7 @@ export default class Marty {
     this.turn = createTurnState();
     this.slide = createSlideState();
     this.animation = createAnimationState();
+    this.sensors = {};
 
     this.jointController = createJointController({
       getBoneNodes: () => this.boneNodes,
@@ -86,6 +92,7 @@ export default class Marty {
     this.setModel();
     this.setMovement();
     this.setAnimation();
+    this.setupSensors();
     this.setupWebSocket();
   }
 
@@ -156,6 +163,81 @@ export default class Marty {
   }
 
   /**
+   * Setup virtual sensors for the robot
+   */
+  private setupSensors() {
+    if (!this.model || !this.experience.renderer.instance) return;
+
+    // 1. Ground Color Sensor
+    // Position just below Marty's feet (0.001m below model origin)
+    // This ensures it's outside the robot mesh but close to the ground
+    this.sensors.groundColorSensor = new GroundColorSensor(
+      this.model,
+      this.scene,
+      this.experience.renderer.instance,
+      {
+        fov: 10,
+        sensorHeight: -0.001, // Just below feet to avoid being inside mesh
+        nearPlane: 0.0001,
+        farPlane: 10, // See far enough to detect ground
+      }
+    );
+
+    // 2. Obstacle Detection Sensor
+    this.sensors.obstacleSensor = new ObstacleSensor(
+      this.model,
+      this.scene,
+      {
+        maxRange: 10,
+        sensorHeight: 0.1,
+      }
+    );
+  }
+
+  /**
+   * Get the ground color beneath the robot
+   * @returns RGB color object {r, g, b} with values 0-255
+   */
+  getGroundColor(): { r: number; g: number; b: number } | null {
+    if (!this.sensors.groundColorSensor) {
+      console.warn('Ground color sensor not initialized');
+      return null;
+    }
+    return this.sensors.groundColorSensor.getColor();
+  }
+
+  /**
+   * Detect obstacles ahead of the robot
+   * @returns Distance to nearest obstacle, or Infinity if nothing detected
+   */
+  getDistanceAhead(): number {
+    if (!this.sensors.obstacleSensor) {
+      console.warn('Obstacle detection sensor not initialized');
+      return Infinity;
+    }
+    return this.sensors.obstacleSensor.getDistance();
+  }
+
+  /**
+   * Check if ground color matches specific RGB thresholds
+   * Example usage for colored ground detection
+   */
+  isGroundColorRed(): boolean {
+    if (!this.sensors.groundColorSensor) return false;
+    return this.sensors.groundColorSensor.isRed();
+  }
+
+  isGroundColorBlue(): boolean {
+    if (!this.sensors.groundColorSensor) return false;
+    return this.sensors.groundColorSensor.isBlue();
+  }
+
+  isGroundColorGreen(): boolean {
+    if (!this.sensors.groundColorSensor) return false;
+    return this.sensors.groundColorSensor.isGreen();
+  }
+
+  /**
    * Get the duration of an animation in milliseconds
    * For turn animations, optionally specify the angle to calculate the proper duration
    */
@@ -181,30 +263,18 @@ export default class Marty {
     this.jointController.update(deltaSeconds);
   }
 
-  private updateSlide(deltaSeconds: number) {
-    if (!this.model || !this.slide.enabled) return;
-
-    this.slide.elapsed += deltaSeconds;
-    
-    // Move sideways continuously in the local X direction
-    const distance = this.slide.speed * deltaSeconds;
-    if (this.slide.direction === 'left') {
-      this.model.translateX(distance); // Positive X is left
-    } else if (this.slide.direction === 'right') {
-      this.model.translateX(-distance); // Negative X is right
-    }
-
-    // Stop after duration
-    if (this.slide.elapsed >= this.slide.duration) {
-      this.slide.enabled = false;
-      this.slide.elapsed = 0;
-    }
-  }
-
   dispose() {
     // Clean up WebSocket subscription
     if (this.wsUnsubscribe) {
       this.wsUnsubscribe();
+    }
+
+    // Clean up sensors
+    if (this.sensors.groundColorSensor) {
+      this.sensors.groundColorSensor.dispose();
+    }
+    if (this.sensors.obstacleSensor) {
+      this.sensors.obstacleSensor.dispose();
     }
 
     if (this.model) {
