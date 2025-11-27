@@ -19,6 +19,34 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Servo identifiers (mirrors src/shared/types/marty.types.ts)
+JOINT_IDS = {
+    'LEFT_HIP': 0,
+    'LEFT_TWIST': 1,
+    'LEFT_KNEE': 2,
+    'RIGHT_HIP': 3,
+    'RIGHT_TWIST': 4,
+    'RIGHT_KNEE': 5,
+    'LEFT_ARM': 6,
+    'RIGHT_ARM': 7,
+    'LEFT_EYE': 8,
+    'RIGHT_EYE': 9,
+}
+
+# Common string aliases that users may type in Monaco
+JOINT_ALIAS_MAP = {
+    'left_hip': JOINT_IDS['LEFT_HIP'],
+    'left_twist': JOINT_IDS['LEFT_TWIST'],
+    'left_knee': JOINT_IDS['LEFT_KNEE'],
+    'right_hip': JOINT_IDS['RIGHT_HIP'],
+    'right_twist': JOINT_IDS['RIGHT_TWIST'],
+    'right_knee': JOINT_IDS['RIGHT_KNEE'],
+    'left_arm': JOINT_IDS['LEFT_ARM'],
+    'right_arm': JOINT_IDS['RIGHT_ARM'],
+    'left_eye': JOINT_IDS['LEFT_EYE'],
+    'right_eye': JOINT_IDS['RIGHT_EYE'],
+}
+
 class MartyWebSocketServer:
     def __init__(self, host: str = "localhost", port: int = 8765):
         self.host = host
@@ -139,41 +167,115 @@ class MartyWebSocketServer:
         
         # Create a mock marty object that captures commands instead of executing them
         class MockMarty:
+            def __init__(self):
+                pass
+
             def walk(self, steps):
                 logger.info(f"  → Captured: walk({steps})")
                 commands.append({"action": "walk", "params": {"steps": steps}})
-            
+
+            def turn(self, angle):
+                direction = 'turn' if angle >= 0 else 'turnLeft'
+                magnitude = abs(angle)
+                logger.info(f"  → Captured: turn({angle}) → {direction}({magnitude})")
+                commands.append({"action": direction, "params": {"angle": magnitude}})
+
             def turnRight(self, angle):
                 logger.info(f"  → Captured: turnRight({angle})")
                 commands.append({"action": "turn", "params": {"angle": angle}})
-            
+
             def turnLeft(self, angle):
                 logger.info(f"  → Captured: turnLeft({angle})")
                 commands.append({"action": "turnLeft", "params": {"angle": angle}})
-                
+
             def wave(self):
                 logger.info(f"  → Captured: wave()")
                 commands.append({"action": "wave", "params": {}})
-            
+
             def kick(self):
                 logger.info(f"  → Captured: kick()")
                 commands.append({"action": "kick", "params": {}})
-            
+
             def dance(self):
                 logger.info(f"  → Captured: dance()")
                 commands.append({"action": "dance", "params": {}})
-            
+
             def slideLeft(self):
                 logger.info(f"  → Captured: slideLeft()")
                 commands.append({"action": "slideLeft", "params": {}})
-            
+
             def slideRight(self):
                 logger.info(f"  → Captured: slideRight()")
                 commands.append({"action": "slideRight", "params": {}})
-                
+
             def stop(self):
                 logger.info(f"  → Captured: stop()")
                 commands.append({"action": "stop", "params": {}})
+
+            # --- Joint helpers -------------------------------------------------
+            def set_joint(self, joint, angle, move_time=None):
+                joint_id = self._normalize_joint_identifier(joint)
+                if joint_id is None:
+                    logger.warning(f"  → Ignoring set_joint for unknown joint: {joint}")
+                    return
+
+                params: Dict[str, Any] = {"jointId": joint_id, "angle": angle}
+                if move_time is not None:
+                    params["moveTime"] = move_time
+
+                logger.info(
+                    "  → Captured: set_joint(joint=%s, angle=%s, move_time=%s) → jointId=%s",
+                    joint,
+                    angle,
+                    move_time,
+                    joint_id,
+                )
+                commands.append({"action": "joint", "params": params})
+
+            def move_joint(self, joint, angle, move_time=None):
+                self.set_joint(joint, angle, move_time)
+
+            def set_joint_angle(self, joint, angle, move_time=None):
+                self.set_joint(joint, angle, move_time)
+
+
+            def _normalize_joint_identifier(self, joint) -> Optional[int]:
+                if isinstance(joint, (int, float)):
+                    logger.warning(
+                        "Joint identifiers must use string names like 'left_arm', numeric IDs are not allowed: %s",
+                        joint,
+                    )
+                    return None
+
+                if isinstance(joint, str):
+                    key = joint.strip().lower()
+                    if key.startswith('jointid.'):
+                        logger.warning(
+                            "Joint identifiers must use string names like 'left_arm', not JointID constants: %s",
+                            joint,
+                        )
+                        return None
+                    if key.isdigit():
+                        logger.warning(
+                            "Joint identifiers must use string names like 'left_arm', digits are not allowed: %s",
+                            joint,
+                        )
+                        return None
+
+                    if ' ' in key:
+                        logger.warning("Joint names must use underscores instead of spaces: %s", joint)
+                        return None
+
+                    if '-' in key:
+                        logger.warning("Joint names must use underscores instead of hyphens: %s", joint)
+                        return None
+
+                    normalized = key.strip('_')
+                    if normalized in JOINT_ALIAS_MAP:
+                        return JOINT_ALIAS_MAP[normalized]
+
+                logger.warning("Unknown joint identifier (expected values like 'left_arm'): %s", joint)
+                return None
         
         # Create execution environment with the mock marty object
         exec_globals = {

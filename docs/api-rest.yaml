@@ -45,14 +45,14 @@ paths:
                 robotId: 'marty-001'
                 joints:
                   - IDNo: 0
-                    name: 'left hip'
+                    name: 'left_hip'
                     pos: 45.5
                     current: 120
                     enabled: true
                     commsOK: true
                     flags: 129
                   - IDNo: 3
-                    name: 'right hip'
+                    name: 'right_hip'
                     pos: -45.5
                     current: 115
                     enabled: true
@@ -122,11 +122,7 @@ paths:
                     direction: 'forward'
                     amount: 29
                     moveTime: 1000
-              eyes:
-                summary: Expression des yeux
-                value:
-                  endpoint: 'traj/eyesExcited'
-                  params: {}
+              # Eyes trajectories removed in favor of direct joint control
               ledColor:
                 summary: Changer couleur LED
                 value:
@@ -158,23 +154,24 @@ paths:
         - name: jointId
           in: path
           required: true
-          description: ID de l'articulation (0-8) ou nom
+          description: ID de l'articulation (0-9) ou nom
           schema:
             oneOf:
               - type: integer
                 minimum: 0
-                maximum: 8
+                maximum: 9
               - type: string
                 enum:
-                  - left hip
-                  - left twist
-                  - left knee
-                  - right hip
-                  - right twist
-                  - right knee
-                  - left arm
-                  - right arm
-                  - eyes
+                  - left_hip
+                  - left_twist
+                  - left_knee
+                  - right_hip
+                  - right_twist
+                  - right_knee
+                  - left_arm
+                  - right_arm
+                  - left_eye
+                  - right_eye
       requestBody:
         required: true
         content:
@@ -433,20 +430,21 @@ components:
         IDNo:
           type: integer
           minimum: 0
-          maximum: 8
-          description: ID de l'articulation (0-8)
+          maximum: 9
+          description: ID de l'articulation (0-9)
         name:
           type: string
           enum:
-            - left hip
-            - left twist
-            - left knee
-            - right hip
-            - right twist
-            - right knee
-            - left arm
-            - right arm
-            - eyes
+            - left_hip
+            - left_twist
+            - left_knee
+            - right_hip
+            - right_twist
+            - right_knee
+            - left_arm
+            - right_arm
+            - left_eye
+            - right_eye
           description: Nom de l'articulation
         pos:
           type: number

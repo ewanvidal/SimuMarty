@@ -219,7 +219,7 @@ components:
     ServosState:
       name: ServosState
       title: État des servomoteurs
-      summary: Publication périodique (10Hz) de l'état des 9 servos
+      summary: Publication périodique (10Hz) de l'état des 10 servos
       payload:
         type: object
         required: [type, payload, timestamp]
@@ -229,9 +229,9 @@ components:
             const: 'smartServos'
           payload:
             type: array
-            description: État des 9 articulations
-            minItems: 9
-            maxItems: 9
+            description: État des 10 articulations
+            minItems: 10
+            maxItems: 10
             items:
               type: object
               required: [IDNo, name, pos, current, enabled, commsOK, flags]
@@ -239,20 +239,21 @@ components:
                 IDNo:
                   type: integer
                   minimum: 0
-                  maximum: 8
-                  description: ID de l'articulation (0-8)
+                  maximum: 9
+                  description: ID de l'articulation (0-9)
                 name:
                   type: string
                   enum:
-                    - left hip
-                    - left twist
-                    - left knee
-                    - right hip
-                    - right twist
-                    - right knee
-                    - left arm
-                    - right arm
-                    - eyes
+                    - left_hip
+                    - left_twist
+                    - left_knee
+                    - right_hip
+                    - right_twist
+                    - right_knee
+                    - left_arm
+                    - right_arm
+                    - left_eye
+                    - right_eye
                 pos:
                   type: number
                   description: Position en degrés
@@ -274,14 +275,14 @@ components:
             type: 'smartServos'
             payload:
               - IDNo: 0
-                name: 'left hip'
+                name: 'left_hip'
                 pos: 45.2
                 current: 120
                 enabled: true
                 commsOK: true
                 flags: 129
               - IDNo: 3
-                name: 'right hip'
+                name: 'right_hip'
                 pos: -45.2
                 current: 115
                 enabled: true

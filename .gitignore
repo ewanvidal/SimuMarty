@@ -26,3 +26,6 @@ useful
 
 # Not commiting the marty connection file used for testing purposes located in python_marty folder 
 python_marty/marty_connection.py
+
+# We don't want to commit blender backup files
+blender/marty/backup-blender

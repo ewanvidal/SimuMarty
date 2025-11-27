@@ -69,6 +69,8 @@ marty.wave()
 # marty.kick()
 # marty.dance()
 # marty.slideRight()
+# marty.set_joint('left_arm', 25)
+# marty.set_joint('left_eye', -10, move_time=800)
 `;
 
 export const useAppStore = create<AppState>((set) => ({
