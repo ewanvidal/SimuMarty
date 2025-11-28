@@ -8,6 +8,7 @@ export interface JointControlTarget {
   id: JointID;
   name: JointName;
   boneNames: string[];
+  counterRotateBones?: string[];
   axis: JointAxis;
   invert?: boolean;
   clamp?: { min?: number; max?: number };
@@ -42,15 +43,31 @@ export interface JointController {
 
 // Map each servo exposed by the API to the GLTF bones we can pose in the scene
 export const JOINT_CONTROL_TARGETS: JointControlTarget[] = [
-  { id: JointID.LEFT_HIP, name: JointName.LEFT_HIP, boneNames: ['LegL'], axis: 'z' },
-  { id: JointID.LEFT_TWIST, name: JointName.LEFT_TWIST, boneNames: ['LegL001'], axis: 'z' },
+  {
+    id: JointID.LEFT_HIP,
+    name: JointName.LEFT_HIP,
+    boneNames: ['LegL'],
+    counterRotateBones: ['LegL001'],
+    axis: 'z',
+    clamp: { min: -35, max: 35 },
+  },
   {
     id: JointID.LEFT_KNEE,
     name: JointName.LEFT_KNEE,
-    boneNames: ['LegL002', 'LegL003'],
+    boneNames: ['LegL002'],
+    counterRotateBones: ['LegL003'],
     axis: 'x',
+    clamp: { min: -45, max: 45 },
   },
-  { id: JointID.RIGHT_HIP, name: JointName.RIGHT_HIP, boneNames: ['LegR'], axis: 'z', invert: true },
+  {
+    id: JointID.RIGHT_HIP,
+    name: JointName.RIGHT_HIP,
+    boneNames: ['LegR'],
+    axis: 'z',
+    counterRotateBones: ['LegR001'],
+    invert: true,
+    clamp: { min: -35, max: 35 },
+  },
   {
     id: JointID.RIGHT_TWIST,
     name: JointName.RIGHT_TWIST,
@@ -61,14 +78,38 @@ export const JOINT_CONTROL_TARGETS: JointControlTarget[] = [
   {
     id: JointID.RIGHT_KNEE,
     name: JointName.RIGHT_KNEE,
-    boneNames: ['LegR002', 'LegR003'],
+    boneNames: ['LegR002'],
+    counterRotateBones: ['LegR003'],
     axis: 'x',
     invert: true,
+    clamp: { min: -45, max: 45 },
   },
-  { id: JointID.LEFT_ARM, name: JointName.LEFT_ARM, boneNames: ['ArmL'], axis: 'x' },
-  { id: JointID.RIGHT_ARM, name: JointName.RIGHT_ARM, boneNames: ['ArmR'], axis: 'x', invert: true },
-  { id: JointID.LEFT_EYE, name: JointName.LEFT_EYE, boneNames: ['EyeL'], axis: 'z' },
-  { id: JointID.RIGHT_EYE, name: JointName.RIGHT_EYE, boneNames: ['EyeR'], axis: 'z' },
+  {
+    id: JointID.LEFT_ARM,
+    name: JointName.LEFT_ARM,
+    boneNames: ['ArmL'],
+    axis: 'x',
+    invert: true,
+    clamp: { min: -45, max: 125 },
+  },
+  {
+    id: JointID.RIGHT_ARM,
+    name: JointName.RIGHT_ARM,
+    boneNames: ['ArmR'],
+    axis: 'x',
+    invert: true,
+    clamp: { min: -45, max: 125 },
+  },
+  { id: JointID.LEFT_EYE,
+    name: JointName.LEFT_EYE,
+    boneNames: ['EyeL'],
+    axis: 'z',
+    clamp: {min: -45, max: 10} },
+  { id: JointID.RIGHT_EYE,
+    name: JointName.RIGHT_EYE,
+    boneNames: ['EyeR'],
+    axis: 'z',
+    clamp: {min: -10, max: 45} },
 ];
 
 export function createJointController({
@@ -134,11 +175,24 @@ export function createJointController({
       return { success: false, message: 'Invalid angle value' };
     }
 
+    let clampedAngle = numericAngle;
+    if (target.clamp) {
+      if (target.clamp.min !== undefined && clampedAngle < target.clamp.min) {
+        console.warn(`⚠️ Joint ${target.name} angle ${clampedAngle}° clamped to min ${target.clamp.min}°`);
+        clampedAngle = target.clamp.min;
+      }
+      if (target.clamp.max !== undefined && clampedAngle > target.clamp.max) {
+        console.warn(`⚠️ Joint ${target.name} angle ${clampedAngle}° clamped to max ${target.clamp.max}°`);
+        clampedAngle = target.clamp.max;
+      }
+    }
+
     const durationSeconds = Math.max((options?.moveTime ?? 1000) / 1000, 0);
-    const signedRadians = THREE.MathUtils.degToRad(numericAngle);
+    const signedRadians = THREE.MathUtils.degToRad(clampedAngle);
     let affectedBones = 0;
 
-    target.boneNames.forEach((boneName) => {
+    // Helper to process a bone
+    const processBone = (boneName: string, invertBone: boolean) => {
       const boneEntry = boneNodes.find((bone) => bone.name === boneName);
       if (!boneEntry) {
         console.warn(`⚠️ Bone ${boneName} not found for joint ${target.name}`);
@@ -149,25 +203,68 @@ export function createJointController({
       const baseValue = initialRotation
         ? initialRotation[target.axis]
         : boneEntry.object.rotation[target.axis];
-      const goal = baseValue + signedRadians * (target.invert ? -1 : 1);
+      
+      // Calculate goal for this specific bone
+      // If invertBone is true, we flip the sign of the movement relative to the joint command
+      // target.invert flips the joint command itself
+      // Total inversion = target.invert XOR invertBone
+      const totalInvert = (target.invert ? !invertBone : invertBone);
+      const rawGoal = baseValue + signedRadians * (totalInvert ? -1 : 1);
+      
       const animationKey = `${boneName}:${target.axis}`;
+
+      let startValue: number;
+      let targetValue: number;
+
+      if (target.clamp) {
+        // For clamped joints, we normalize angles around the baseValue (rest position).
+        const currentRotation = boneEntry.object.rotation[target.axis];
+        const twoPi = 2 * Math.PI;
+        
+        const normalizeAround = (val: number, center: number) => {
+          const diff = val - center;
+          return center + (diff - twoPi * Math.round(diff / twoPi));
+        };
+
+        startValue = normalizeAround(currentRotation, baseValue);
+        targetValue = normalizeAround(rawGoal, baseValue);
+      } else {
+        // For continuous joints, take the shortest path
+        const currentRotation = boneEntry.object.rotation[target.axis];
+        const twoPi = 2 * Math.PI;
+        const diff = currentRotation - rawGoal;
+        const normalizedDiff = diff - twoPi * Math.round(diff / twoPi);
+        startValue = rawGoal + normalizedDiff;
+        targetValue = rawGoal;
+      }
+
+      // Update bone to start value immediately
+      boneEntry.object.rotation[target.axis] = startValue;
 
       if (durationSeconds > 0) {
         jointAnimations.set(animationKey, {
           bone: boneEntry.object,
           axis: target.axis,
-          start: boneEntry.object.rotation[target.axis],
-          target: goal,
+          start: startValue,
+          target: targetValue,
           duration: durationSeconds,
           elapsed: 0,
         });
       } else {
-        boneEntry.object.rotation[target.axis] = goal;
+        boneEntry.object.rotation[target.axis] = targetValue;
         jointAnimations.delete(animationKey);
       }
 
       affectedBones += 1;
-    });
+    };
+
+    // Process primary bones (normal movement)
+    target.boneNames.forEach((boneName) => processBone(boneName, false));
+
+    // Process counter-rotating bones (inverted movement)
+    if (target.counterRotateBones) {
+      target.counterRotateBones.forEach((boneName) => processBone(boneName, true));
+    }
 
     if (affectedBones === 0) {
       return {

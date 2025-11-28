@@ -305,6 +305,7 @@ export const setupAnimationSystem = ({
     animation.actions.current = newAction;
 
     if (name === 'walking') {
+      console.log('🎯 walk state:', movement);
       movement.enabled = true;
       movement.active = false;
       movement.moveTimer = 0;
@@ -369,6 +370,7 @@ export const setupAnimationSystem = ({
     }
 
     if (name === 'turnRight' || name === 'turnLeft') {
+      console.log('🎯 turn state:', turn);
       movement.enabled = false;
       movement.active = false;
 
@@ -394,7 +396,6 @@ export const setupAnimationSystem = ({
     }
 
     if (name === 'slideLeft') {
-      console.log('🎯 slideLeft activated');
       movement.enabled = false;
       movement.active = false;
       slide.enabled = true;
@@ -404,7 +405,6 @@ export const setupAnimationSystem = ({
     }
 
     if (name === 'slideRight') {
-      console.log('🎯 slideRight activated');
       movement.enabled = false;
       movement.active = false;
       slide.enabled = true;
@@ -692,10 +692,8 @@ const updateSlide = (
 
   const distance = slide.speed * deltaSeconds;
   if (slide.direction === 'left') {
-    console.log('⬅️ Moving left:', distance);
     model.translateX(distance);
   } else if (slide.direction === 'right') {
-    console.log('➡️ Moving right:', distance);
     model.translateX(-distance);
   }
 
