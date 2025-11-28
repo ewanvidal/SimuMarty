@@ -42,7 +42,21 @@ export interface JointController {
 }
 
 // Map each servo exposed by the API to the GLTF bones we can pose in the scene
+// Left and Right Twist are not yet mapped.
 export const JOINT_CONTROL_TARGETS: JointControlTarget[] = [
+  // Twist joints added to enable resolution and logging (not implemented)
+  {
+    id: JointID.LEFT_TWIST,
+    name: JointName.LEFT_TWIST,
+    boneNames: [],
+    axis: 'z',
+  },
+  {
+    id: JointID.RIGHT_TWIST,
+    name: JointName.RIGHT_TWIST,
+    boneNames: [],
+    axis: 'z',
+  },
   {
     id: JointID.LEFT_HIP,
     name: JointName.LEFT_HIP,
@@ -67,13 +81,6 @@ export const JOINT_CONTROL_TARGETS: JointControlTarget[] = [
     counterRotateBones: ['LegR001'],
     invert: true,
     clamp: { min: -35, max: 35 },
-  },
-  {
-    id: JointID.RIGHT_TWIST,
-    name: JointName.RIGHT_TWIST,
-    boneNames: ['LegR001'],
-    axis: 'z',
-    invert: true,
   },
   {
     id: JointID.RIGHT_KNEE,
@@ -167,6 +174,15 @@ export function createJointController({
       return {
         success: false,
         message: `Unknown joint: ${joint ?? '(undefined)'}`,
+      };
+    }
+
+    // Check if the joint is a twist joint and warn the user
+    if (target.id === JointID.LEFT_TWIST || target.id === JointID.RIGHT_TWIST) {
+      console.warn(`⚠️ Twist command for ${target.name} is not yet implemented.`);
+      return {
+        success: false,
+        message: `Twist command for ${target.name} is not yet implemented.`,
       };
     }
 
