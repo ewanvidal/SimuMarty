@@ -143,7 +143,7 @@ export default class Floor {
   }
 
   private updateTextureRepeat(repeat: number) {
-    if (!this.textures || !repeat) return;
+    if (!this.textures || repeat === undefined || repeat === null) return;
     [this.textures.diffuse, this.textures.normal, this.textures.arm].forEach((texture) => {
       texture.repeat.set(repeat, repeat);
       texture.needsUpdate = true;
