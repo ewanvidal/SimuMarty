@@ -68,8 +68,8 @@ export function TutorialModal() {
         <section className='tutorial-section'>
           <h3>Steps</h3>
           <ol>
-            {lesson.steps.map((step) => (
-              <li key={step}>{step}</li>
+            {lesson.steps.map((step, index) => (
+              <li key={index}>{step}</li>
             ))}
           </ol>
         </section>
