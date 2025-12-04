@@ -59,8 +59,8 @@ export function TutorialModal() {
         <section className='tutorial-section'>
           <h3>Objectives</h3>
           <ul>
-            {lesson.objectives.map((objective) => (
-              <li key={objective}>{objective}</li>
+            {lesson.objectives.map((objective, index) => (
+              <li key={index}>{objective}</li>
             ))}
           </ul>
         </section>
