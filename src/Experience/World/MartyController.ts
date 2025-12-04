@@ -59,6 +59,12 @@ export class MartyController {
         case 'execute_python':
           return await this.handleExecutePython(command.params);
 
+        case 'getGroundColor':
+          return this.handleGetGroundColor();
+
+        case 'getObstacleDistance':
+          return this.handleGetObstacleDistance();
+
         default:
           console.warn('⚠️ Unknown command:', command.action);
           return {
@@ -477,5 +483,92 @@ export class MartyController {
     }
 
     this.isProcessing = false;
+  }
+  
+  /**
+   * Handle ground color sensor query
+   */
+  private handleGetGroundColor(): { success: boolean; message?: string; data?: unknown } {
+    const color = this.marty.getGroundColor();
+    
+    if (!color) {
+      return { 
+        success: false, 
+        message: 'Ground color sensor not available' 
+      };
+    }
+    
+    // Log to browser console
+    console.log('🎨 Ground Color:', color);
+    console.log(`   RGB(${color.r}, ${color.g}, ${color.b})`);
+    
+    // Detect specific colors
+    if (color.r > 200 && color.g < 50 && color.b < 50) {
+      console.log('   🔴 RED detected!');
+    } else if (color.b > 200 && color.r < 50 && color.g < 50) {
+      console.log('   🔵 BLUE detected!');
+    } else if (color.g > 200 && color.r < 50 && color.b < 50) {
+      console.log('   🟢 GREEN detected!');
+    }
+    
+    // Send sensor data back via WebSocket
+    import('../../services/WebSocketService').then(({ webSocketService }) => {
+      webSocketService.send({
+        type: 'sensorData',
+        payload: {
+          sensorType: 'groundColor',
+          data: color,
+          timestamp: Date.now(),
+        },
+        timestamp: Date.now(),
+      } as any);
+    });
+    
+    return { 
+      success: true, 
+      message: 'Ground color retrieved',
+      data: color
+    };
+  }
+  
+  /**
+   * Handle obstacle distance sensor query
+   */
+  private handleGetObstacleDistance(): { success: boolean; message?: string; data?: unknown } {
+    const distance = this.marty.getDistanceAhead();
+    
+    const obstacleData = {
+      distance,
+      detected: distance !== Infinity,
+    };
+    
+    // Log to browser console
+    if (obstacleData.detected) {
+      console.log('📡 Obstacle Distance:', distance.toFixed(2), 'units');
+      if (distance < 2) {
+        console.log('   ⚠️ WARNING: Too close!');
+      }
+    } else {
+      console.log('📡 Obstacle Distance: Clear (no obstacle detected)');
+    }
+    
+    // Send sensor data back via WebSocket
+    import('../../services/WebSocketService').then(({ webSocketService }) => {
+      webSocketService.send({
+        type: 'sensorData',
+        payload: {
+          sensorType: 'obstacle',
+          data: obstacleData,
+          timestamp: Date.now(),
+        },
+        timestamp: Date.now(),
+      } as any);
+    });
+    
+    return { 
+      success: true, 
+      message: 'Obstacle distance retrieved',
+      data: obstacleData
+    };
   }
 }

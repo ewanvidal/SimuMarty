@@ -15,6 +15,7 @@ export type MessageType =
   | 'systemStatus'
   | 'command'
   | 'commandAck'
+  | 'sensorData'
   | 'error'
   | 'ping'
   | 'pong';
@@ -55,12 +56,31 @@ export interface AccelData {
   z: number;
 }
 
+// Sensor data structures
+export interface GroundColorData {
+  r: number;
+  g: number;
+  b: number;
+}
+
+export interface ObstacleData {
+  distance: number;
+  detected: boolean;
+}
+
+export interface SensorDataPayload {
+  sensorType: 'groundColor' | 'obstacle';
+  data: GroundColorData | ObstacleData;
+  timestamp: number;
+}
+
 // Event types for subscribers
 export type WebSocketEventType =
   | 'connected'
   | 'disconnected'
   | 'command'
   | 'telemetry'
+  | 'sensorData'
   | 'error';
 
 type EventCallback = (data?: unknown) => void;
@@ -87,6 +107,7 @@ class WebSocketService {
       'disconnected',
       'command',
       'telemetry',
+      'sensorData',
       'error',
     ];
     eventTypes.forEach((type) => {
@@ -214,7 +235,7 @@ class WebSocketService {
   /**
    * Send a message to the server
    */
-  private send(message: WebSocketMessage) {
+  send(message: WebSocketMessage): boolean {
     if (!this.isConnected()) {
       console.warn('⚠️ WebSocket not connected, message not sent');
       return false;
@@ -285,6 +306,11 @@ class WebSocketService {
         case 'systemStatus':
           // Telemetry data (silent, just emit)
           this.emit('telemetry', { type: message.type, data: message.payload });
+          break;
+
+        case 'sensorData':
+          // Sensor data from robot
+          this.emit('sensorData', message.payload);
           break;
 
         case 'error':
@@ -396,6 +422,65 @@ class WebSocketService {
   // Control commands
   stop() {
     return this.sendCommand({ action: 'stop' });
+  }
+
+  // Sensor commands
+  getGroundColor(): Promise<GroundColorData | null> {
+    return new Promise((resolve) => {
+      const requestId = `sensor_ground_${Date.now()}`;
+      
+      // Set up one-time listener for sensor data
+      const handler = (data: unknown) => {
+        const sensorData = data as SensorDataPayload;
+        if (sensorData.sensorType === 'groundColor') {
+          this.off('sensorData', handler);
+          resolve(sensorData.data as GroundColorData);
+        }
+      };
+      
+      this.on('sensorData', handler);
+      
+      // Send request
+      this.sendCommand({
+        action: 'getGroundColor',
+        requestId,
+      });
+      
+      // Timeout after 5 seconds
+      setTimeout(() => {
+        this.off('sensorData', handler);
+        resolve(null);
+      }, 5000);
+    });
+  }
+
+  getObstacleDistance(): Promise<ObstacleData | null> {
+    return new Promise((resolve) => {
+      const requestId = `sensor_obstacle_${Date.now()}`;
+      
+      // Set up one-time listener for sensor data
+      const handler = (data: unknown) => {
+        const sensorData = data as SensorDataPayload;
+        if (sensorData.sensorType === 'obstacle') {
+          this.off('sensorData', handler);
+          resolve(sensorData.data as ObstacleData);
+        }
+      };
+      
+      this.on('sensorData', handler);
+      
+      // Send request
+      this.sendCommand({
+        action: 'getObstacleDistance',
+        requestId,
+      });
+      
+      // Timeout after 5 seconds
+      setTimeout(() => {
+        this.off('sensorData', handler);
+        resolve(null);
+      }, 5000);
+    });
   }
 }
 

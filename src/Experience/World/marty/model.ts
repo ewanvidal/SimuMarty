@@ -50,7 +50,7 @@ export function setupMartyModel({
 
   model = resource.scene;
   model.scale.set(0.05, 0.05, 0.05);
-  model.position.set(0, 0, 0);
+  model.position.set(0, 0.001, 0);
   scene.add(model);
 
   const boneNodes: BoneNode[] = [];
