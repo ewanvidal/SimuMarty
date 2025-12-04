@@ -5,6 +5,7 @@ import Environment from './Environment.tsx';
 import Floor from './Floor.tsx';
 import Marty from './Marty.tsx';
 import Labyrinth from './Labyrinth.tsx';
+import SceneDirector from './SceneDirector.ts';
 
 /**
  * World
@@ -18,6 +19,8 @@ export default class World {
   labyrinth?: Labyrinth;
   marty?: Marty;
   environment?: Environment;
+  sceneDirector?: SceneDirector;
+  pendingScenePresetId: string | null = null;
 
   constructor() {
     this.experience = (
@@ -33,6 +36,12 @@ export default class World {
       // this.labyrinth = new Labyrinth(); // Disabled for now
       this.marty = new Marty();
       this.environment = new Environment();
+      this.sceneDirector = new SceneDirector({
+        floor: this.floor,
+        environment: this.environment,
+        marty: this.marty,
+      });
+      this.sceneDirector.applyScenePreset(this.pendingScenePresetId);
     });
   }
 
@@ -50,5 +59,12 @@ export default class World {
     this.labyrinth?.dispose();
     this.marty?.dispose();
     this.environment?.dispose();
+  }
+
+  applyScenePreset(presetId?: string | null) {
+    this.pendingScenePresetId = presetId ?? null;
+    if (this.sceneDirector) {
+      this.sceneDirector.applyScenePreset(this.pendingScenePresetId);
+    }
   }
 }

@@ -535,7 +535,7 @@ export class MartyController {
    * Handle obstacle distance sensor query
    */
   private handleGetObstacleDistance(): { success: boolean; message?: string; data?: unknown } {
-    const distance = this.marty.getDistanceAhead();
+    const distance = this.marty.getObstacleDistance();
     
     const obstacleData = {
       distance,

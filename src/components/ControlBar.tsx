@@ -2,12 +2,18 @@ import { useRef } from 'react';
 import type { ChangeEvent } from 'react';
 import { useAppStore } from '../stores/appStore.ts';
 import { webSocketService } from '../services/WebSocketService.ts';
+import {
+  ENVIRONMENT_PRESETS,
+  type EnvironmentId,
+  type LevelOption,
+} from '../shared/constants/environmentPresets.ts';
 import './ControlBar.css';
 
 export function ControlBar() {
   const {
     selectedEnvironment,
     selectedLevel,
+    activeLessonId,
     setEnvironment,
     setLevel,
     experienceExpanded,
@@ -32,15 +38,25 @@ export function ControlBar() {
     setEnableShadows,
     setShowFPS,
     setGraphicsQuality,
+    openTutorialModal,
   } = useAppStore();
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const environmentOptions = Object.values(ENVIRONMENT_PRESETS);
+  const levelOptions: LevelOption[] =
+    ENVIRONMENT_PRESETS[selectedEnvironment]?.levels ?? [];
+  const levelIds = new Set(levelOptions.map((level) => level.id));
+  const levelSelectValue = levelIds.has(selectedLevel)
+    ? selectedLevel
+    : levelOptions[0]?.id ?? 'none';
+  const isTutorialEnvironment = selectedEnvironment === 'tutorial';
+  const hasTutorialLesson = Boolean(activeLessonId);
 
-  const handleEnvironmentChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setEnvironment(e.target.value);
+  const handleEnvironmentChange = (e: ChangeEvent<HTMLSelectElement>) => {
+    setEnvironment(e.target.value as EnvironmentId);
   };
 
-  const handleLevelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleLevelChange = (e: ChangeEvent<HTMLSelectElement>) => {
     setLevel(e.target.value);
   };
 
@@ -124,10 +140,11 @@ export function ControlBar() {
               onChange={handleEnvironmentChange}
               className='control-select'
             >
-              <option value='labyrinth'>Labyrinth</option>
-              <option value='playground'>Playground</option>
-              <option value='classroom'>Classroom</option>
-              <option value='outdoor'>Outdoor</option>
+              {environmentOptions.map((environment) => (
+                <option key={environment.id} value={environment.id}>
+                  {environment.label}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -135,15 +152,22 @@ export function ControlBar() {
             <label htmlFor='level-picker'>Level:</label>
             <select
               id='level-picker'
-              value={selectedLevel}
+              value={levelSelectValue}
               onChange={handleLevelChange}
               className='control-select'
+              disabled={levelOptions.length === 0}
             >
-              <option value='level1'>Level 1 - Easy</option>
-              <option value='level2'>Level 2 - Medium</option>
-              <option value='level3'>Level 3 - Hard</option>
-              <option value='level4'>Level 4 - Expert</option>
-              <option value='custom'>Custom</option>
+              {levelOptions.length === 0 && <option value='none'>No levels</option>}
+              {levelOptions.map((level) => {
+                const label = level.description
+                  ? `${level.label} · ${level.description}`
+                  : level.label;
+                return (
+                  <option key={level.id} value={level.id}>
+                    {label}
+                  </option>
+                );
+              })}
             </select>
           </div>
         </div>
@@ -186,6 +210,12 @@ export function ControlBar() {
           <button onClick={toggleSettings} className='control-button' title='Settings'>
             Settings
           </button>
+
+          {isTutorialEnvironment && hasTutorialLesson && (
+            <button onClick={openTutorialModal} className='control-button' title='View lesson brief'>
+              Lesson Briefing
+            </button>
+          )}
         </div>
       </div>
 

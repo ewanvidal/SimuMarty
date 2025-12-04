@@ -71,6 +71,11 @@ export default class Experience {
     this.renderer.update();
   }
 
+  loadScenePreset(presetId: string | null) {
+    if (!this.world) return;
+    this.world.applyScenePreset(presetId);
+  }
+
   dispose() {
     this.sizes.dispose();
     this.time.dispose();

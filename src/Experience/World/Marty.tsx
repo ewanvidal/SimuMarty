@@ -59,6 +59,10 @@ export default class Marty {
     groundColorSensor?: GroundColorSensor;
     obstacleSensor?: ObstacleSensor;
   };
+  private initialTransform = {
+    position: new THREE.Vector3(0, 0, 0),
+    rotationY: 0,
+  };
 
   constructor() {
     this.experience = (
@@ -127,6 +131,12 @@ export default class Marty {
     this.boneNodes = boneNodes;
     this.boneInitialRotations = boneInitialRotations;
     this.boneDebugFolder = boneDebugFolder;
+    if (this.model) {
+      this.initialTransform = {
+        position: this.model.position.clone(),
+        rotationY: this.model.rotation.y,
+      };
+    }
   }
 
   /**
@@ -138,6 +148,23 @@ export default class Marty {
     options?: SetJointAngleOptions,
   ): { success: boolean; message?: string } {
     return this.jointController.setJointAngle(joint, angle, options);
+  }
+
+  applyTransformPreset(transform?: { position?: [number, number, number]; rotationY?: number }) {
+    if (!this.model) return;
+
+    const position = transform?.position ?? [
+      this.initialTransform.position.x,
+      this.initialTransform.position.y,
+      this.initialTransform.position.z,
+    ];
+    this.model.position.set(position[0], position[1], position[2]);
+
+    if (typeof transform?.rotationY === 'number') {
+      this.model.rotation.y = THREE.MathUtils.degToRad(transform.rotationY);
+    } else {
+      this.model.rotation.y = this.initialTransform.rotationY;
+    }
   }
 
   private setMovement() {
@@ -210,7 +237,7 @@ export default class Marty {
    * Detect obstacles ahead of the robot
    * @returns Distance to nearest obstacle, or Infinity if nothing detected
    */
-  getDistanceAhead(): number {
+  getObstacleDistance(): number {
     if (!this.sensors.obstacleSensor) {
       console.warn('Obstacle detection sensor not initialized');
       return Infinity;

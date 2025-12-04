@@ -3,6 +3,18 @@ import type Experience from '../Experience.tsx';
 import type Resources from '../Utils/Resources.tsx';
 import type Debug from '../Utils/Debug.tsx';
 
+export interface EnvironmentPresetConfig {
+  sunLight?: {
+    intensity?: number;
+    color?: string;
+    position?: [number, number, number];
+  };
+  ambientLight?: {
+    intensity?: number;
+    color?: string;
+  };
+}
+
 /**
  * Environment
  * Handles lighting and environment map
@@ -18,6 +30,8 @@ export default class Environment {
     intensity: number;
     texture: THREE.Texture;
   };
+  private initialSunState?: Required<NonNullable<EnvironmentPresetConfig['sunLight']>>;
+  private initialAmbientState?: Required<NonNullable<EnvironmentPresetConfig['ambientLight']>>;
 
   constructor() {
     this.experience = (
@@ -30,6 +44,7 @@ export default class Environment {
     this.setSunLight();
     this.setAmbientLight();
     // this.setEnvironmentMap();
+    this.captureInitialStates();
   }
 
   private setSunLight() {
@@ -83,6 +98,50 @@ export default class Environment {
         .max(3)
         .step(0.001)
         .name('ambientIntensity');
+    }
+  }
+
+  private captureInitialStates() {
+    if (this.sunLight) {
+      this.initialSunState = {
+        intensity: this.sunLight.intensity,
+        color: `#${this.sunLight.color.getHexString()}`,
+        position: [this.sunLight.position.x, this.sunLight.position.y, this.sunLight.position.z],
+      };
+    }
+
+    if (this.ambientLight) {
+      this.initialAmbientState = {
+        intensity: this.ambientLight.intensity,
+        color: `#${this.ambientLight.color.getHexString()}`,
+      };
+    }
+  }
+
+  applyPreset(preset?: EnvironmentPresetConfig | null) {
+    const sunConfig = this.initialSunState
+      ? {
+          ...this.initialSunState,
+          ...(preset?.sunLight ?? {}),
+        }
+      : undefined;
+
+    if (this.sunLight && sunConfig) {
+      this.sunLight.intensity = sunConfig.intensity;
+      this.sunLight.color.set(sunConfig.color);
+      this.sunLight.position.set(...sunConfig.position);
+    }
+
+    const ambientConfig = this.initialAmbientState
+      ? {
+          ...this.initialAmbientState,
+          ...(preset?.ambientLight ?? {}),
+        }
+      : undefined;
+
+    if (this.ambientLight && ambientConfig) {
+      this.ambientLight.intensity = ambientConfig.intensity;
+      this.ambientLight.color.set(ambientConfig.color);
     }
   }
 
