@@ -32,7 +32,7 @@ export const TUTORIAL_LESSONS: Record<string, TutorialLesson> = {
     objectives: [
       'Use the `walk` command with a custom step count',
       'Chain two commands in the right order',
-      'Watch the debug grid to understand Martys stride',
+      'Watch the debug grid to understand Marty\'s stride',
     ],
     steps: [
       'Write `marty.walk(6)` in the code editor or use the Blockly equivalent.',
