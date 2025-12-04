@@ -137,7 +137,7 @@ export default class Floor {
   }
 
   private updateColor(color: string) {
-    if (!this.material || !color) return;
+    if (!this.material || color === undefined || color === null) return;
     this.material.color.set(color);
     this.material.needsUpdate = true;
   }
