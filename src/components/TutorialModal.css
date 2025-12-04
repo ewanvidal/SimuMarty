@@ -1,0 +1,98 @@
+.tutorial-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(12, 19, 33, 0.65);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+  padding: 1.5rem;
+}
+
+.tutorial-modal-window {
+  background: #ffffff;
+  border-radius: 18px;
+  max-width: 720px;
+  width: min(90vw, 720px);
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  padding: 2rem;
+  color: #0c1321;
+}
+
+.tutorial-modal-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.tutorial-meta {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6c7a9c;
+  margin: 0 0 0.25rem;
+}
+
+.tutorial-title {
+  margin: 0;
+  font-size: 1.7rem;
+}
+
+.tutorial-summary {
+  margin: 0.5rem 0 0;
+  color: #44506d;
+}
+
+.tutorial-close-button {
+  border: none;
+  background: #eef0f7;
+  color: #1f2740;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0;
+}
+
+.tutorial-media {
+  margin: 1.5rem 0;
+}
+
+.tutorial-media-content {
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid #e0e4f0;
+  background: #0c1321;
+}
+
+.tutorial-media-caption {
+  font-size: 0.85rem;
+  color: #5b6785;
+  margin-top: 0.35rem;
+}
+
+.tutorial-section {
+  margin-top: 1.5rem;
+}
+
+.tutorial-section h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6c7a9c;
+}
+
+.tutorial-section ul,
+.tutorial-section ol {
+  margin: 0.25rem 0 0 1.25rem;
+  color: #212a41;
+}
+
+.tutorial-section li + li {
+  margin-top: 0.35rem;
+}

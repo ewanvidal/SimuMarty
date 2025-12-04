@@ -1,14 +1,26 @@
 import { create } from 'zustand';
 import { BLOCKLY_INITIAL_WORKSPACE } from '../components/blocklyConfig';
+import {
+  DEFAULT_ENVIRONMENT_ID,
+  DEFAULT_LEVEL_ID,
+  ENVIRONMENT_PRESETS,
+  getLevelConfig,
+  type EnvironmentId,
+} from '../shared/constants/environmentPresets.ts';
 
 type EditorMode = 'monaco' | 'blockly';
 
 interface AppState {
   // Environment and Level
-  selectedEnvironment: string;
+  selectedEnvironment: EnvironmentId;
   selectedLevel: string;
-  setEnvironment: (environment: string) => void;
+  scenePresetId: string | null;
+  activeLessonId: string | null;
+  tutorialModalVisible: boolean;
+  setEnvironment: (environment: EnvironmentId) => void;
   setLevel: (level: string) => void;
+  openTutorialModal: () => void;
+  closeTutorialModal: () => void;
 
   // Panel Layout
   experienceExpanded: boolean;
@@ -43,6 +55,29 @@ interface AppState {
   setWsConnected: (connected: boolean) => void;
 }
 
+const resolveLevelSelection = (
+  environmentId: EnvironmentId,
+  requestedLevelId?: string,
+) => {
+  const environmentPreset =
+    ENVIRONMENT_PRESETS[environmentId] ?? ENVIRONMENT_PRESETS[DEFAULT_ENVIRONMENT_ID];
+
+  const fallbackLevelId = requestedLevelId ?? environmentPreset.defaultLevelId ?? DEFAULT_LEVEL_ID;
+  const levelPreset =
+    getLevelConfig(environmentId, fallbackLevelId) ??
+    getLevelConfig(environmentId, environmentPreset.defaultLevelId) ??
+    environmentPreset.levels[0];
+
+  return {
+    levelId: levelPreset?.id ?? environmentPreset.defaultLevelId ?? DEFAULT_LEVEL_ID,
+    scenePresetId: levelPreset?.scenePresetId ?? null,
+    lessonId: levelPreset?.lessonId ?? null,
+  };
+};
+
+const initialEnvironment: EnvironmentId = DEFAULT_ENVIRONMENT_ID;
+const initialLevel = resolveLevelSelection(initialEnvironment, DEFAULT_LEVEL_ID);
+
 const DEFAULT_CODE = `# Write your Python code here to control Marty
 # Click the "Run Code" button to execute
 # Example: Make Marty walk, turn and wave
@@ -75,21 +110,42 @@ marty.wave()
 
 export const useAppStore = create<AppState>((set) => ({
   // Environment and Level
-  selectedEnvironment: 'labyrinth',
-  selectedLevel: 'level1',
+  selectedEnvironment: initialEnvironment,
+  selectedLevel: initialLevel.levelId,
+  scenePresetId: initialLevel.scenePresetId,
+  activeLessonId: initialLevel.lessonId,
+  tutorialModalVisible: Boolean(initialLevel.lessonId),
   setEnvironment: (environment) => {
-    set({ selectedEnvironment: environment });
-    console.log('Environment changed to:', environment);
+    set(() => {
+      const levelState = resolveLevelSelection(environment);
+      console.log('Environment changed to:', environment);
+      return {
+        selectedEnvironment: environment,
+        selectedLevel: levelState.levelId,
+        scenePresetId: levelState.scenePresetId,
+        activeLessonId: levelState.lessonId,
+        tutorialModalVisible: Boolean(levelState.lessonId),
+      };
+    });
   },
   setLevel: (level) => {
-    set({ selectedLevel: level });
-    console.log('Level changed to:', level);
+    set((state) => {
+      const levelState = resolveLevelSelection(state.selectedEnvironment, level);
+      console.log('Level changed to:', levelState.levelId);
+      return {
+        selectedLevel: levelState.levelId,
+        scenePresetId: levelState.scenePresetId,
+        activeLessonId: levelState.lessonId,
+        tutorialModalVisible: Boolean(levelState.lessonId),
+      };
+    });
   },
+  openTutorialModal: () => set({ tutorialModalVisible: true }),
+  closeTutorialModal: () => set({ tutorialModalVisible: false }),
 
   // Panel Layout
   experienceExpanded: false,
   toggleExperienceExpanded: () => set((state) => ({ experienceExpanded: !state.experienceExpanded })),
-
   // Editor State
   editorMode: 'monaco',
   monacoCode: DEFAULT_CODE,

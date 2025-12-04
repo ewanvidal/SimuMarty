@@ -4,6 +4,7 @@ import { CodeEditor } from './components/CodeEditor.tsx';
 import { ControlBar } from './components/ControlBar.tsx';
 import { webSocketService } from './services/WebSocketService.ts';
 import { useAppStore } from './stores/appStore.ts';
+import { TutorialModal } from './components/TutorialModal.tsx';
 import './App.css';
 
 function App() {
@@ -67,6 +68,8 @@ function App() {
           <CodeEditor />
         </div>
       </div>
+
+      <TutorialModal />
     </div>
   );
 }
