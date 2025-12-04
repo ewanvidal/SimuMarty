@@ -131,7 +131,7 @@ export default class Floor {
   }
 
   private updateSize(size: number) {
-    if (!this.mesh || !size) return;
+    if (!this.mesh || size === undefined || size === null) return;
     const scale = size / this.initialPreset.size;
     this.mesh.scale.setScalar(scale);
   }
