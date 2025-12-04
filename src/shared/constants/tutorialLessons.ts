@@ -36,7 +36,7 @@ export const TUTORIAL_LESSONS: Record<string, TutorialLesson> = {
     ],
     steps: [
       'Write `marty.walk(6)` in the code editor or use the Blockly equivalent.',
-      'Run the code and observe Martys movement and balance.',
+      'Run the code and observe Marty\'s movement and balance.',
     ],
     scenePresetId: 'tutorial-grid-basic',
     estimatedTime: '5 min',
