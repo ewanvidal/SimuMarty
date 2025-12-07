@@ -105,9 +105,10 @@ export class MartyController {
             setTimeout(resolve, animationDuration),
           );
           
-          // Add getReady between cycles if steps > 2
+          // Add getReady between cycles if steps >= 2
+          // The value 500ms is an additional buffer to ensure smooth transition
           if (steps >= 2 || isLastCycle) {
-            await new Promise((resolve) => setTimeout(resolve, getReadyDuration));
+            await new Promise((resolve) => setTimeout(resolve, getReadyDuration + 500));
           }
         }
       }
