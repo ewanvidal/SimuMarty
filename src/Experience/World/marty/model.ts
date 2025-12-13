@@ -24,7 +24,31 @@ export interface PivotRotationState {
 }
 
 /**
- * Get the excluded bones and pivot bone for a given supporting leg
+ * Get the excluded bones and pivot bone for a given supporting leg.
+ * 
+ * This function returns the bone configuration needed for pivot rotation around a supporting leg.
+ * When the robot turns, it pivots around one foot while the rest of the body rotates. The supporting
+ * leg's bones need special handling to keep the foot stationary during rotation.
+ * 
+ * @param supportingLeg - Which leg is the supporting/pivot leg ('left' or 'right')
+ * @returns An object containing:
+ *   - `excludedBoneNames`: Array of bone names in the supporting leg that should not rotate with
+ *     the body. These bones are counter-rotated to keep the foot planted during pivot rotation.
+ *     Includes both the ankle and foot bones.
+ *   - `pivotBoneName`: The name of the foot bone (e.g., 'LegR003' or 'LegL003') that serves as
+ *     the pivot point. The model rotates around this bone's world position.
+ *   - `ankleBoneName`: The name of the ankle bone (e.g., 'LegR002' or 'LegL002'), which is the
+ *     root of the excluded bone chain. Counter-rotation is applied here and propagates down to
+ *     the foot through the bone hierarchy.
+ * 
+ * @example
+ * // For a right leg pivot:
+ * const config = getExcludedBonesForLeg('right');
+ * // Returns: {
+ * //   excludedBoneNames: ['LegR002', 'LegR003'],  // ankle and foot
+ * //   pivotBoneName: 'LegR003',                   // foot (pivot point)
+ * //   ankleBoneName: 'LegR002'                    // ankle (counter-rotation root)
+ * // }
  */
 export function getExcludedBonesForLeg(supportingLeg: SupportingLeg): {
   excludedBoneNames: string[];
