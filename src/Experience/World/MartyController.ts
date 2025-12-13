@@ -151,7 +151,7 @@ export class MartyController {
     const angle = (params?.angle as number) || 30; // Default 30 degrees
 
     // Use the new procedural turn system
-    const result = await this.marty.turn_right(angle);
+    const result = await this.marty.turnRight(angle);
     return result;
   }
 
@@ -164,7 +164,7 @@ export class MartyController {
     const angle = (params?.angle as number) || 30; // Default 30 degrees
 
     // Use the new procedural turn system
-    const result = await this.marty.turn_left(angle);
+    const result = await this.marty.turnLeft(angle);
     return result;
   }
 

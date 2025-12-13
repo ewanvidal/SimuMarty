@@ -15,16 +15,29 @@ export interface BoneNode {
 
 export type SupportingLeg = 'left' | 'right';
 
+/**
+ * Represents the captured state required for performing a pivot rotation on the model.
+ * Used during procedural turn animation to rotate around a fixed foot.
+ */
 export interface PivotRotationState {
+  /** The initial world position of the model root before pivot rotation */
   initialModelPos: THREE.Vector3;
+  /** The initial world orientation (quaternion) of the model root before pivot rotation */
   initialModelQuat: THREE.Quaternion;
+  /** The world position of the pivot bone (foot) at the start of the rotation */
   pivotWorldPos: THREE.Vector3;
-  // Store initial LOCAL rotations for excluded bones (to counter-rotate)
+  /** Map storing the initial local quaternions of bones excluded from pivot rotation (to counter-rotate) */
   excludedBoneLocalQuats: Map<string, THREE.Quaternion>;
 }
 
 /**
- * Get the excluded bones and pivot bone for a given supporting leg
+ * Get the bone configuration for a pivot rotation based on which leg is supporting.
+ * 
+ * @param supportingLeg - Which leg is planted on the ground ('left' or 'right')
+ * @returns Object containing:
+ *   - excludedBoneNames: Bones that should NOT rotate with the model (ankle + foot of supporting leg)
+ *   - pivotBoneName: The foot bone to pivot around (stays fixed in world space)
+ *   - ankleBoneName: The ankle bone of the supporting leg (for counter-rotation)
  */
 export function getExcludedBonesForLeg(supportingLeg: SupportingLeg): {
   excludedBoneNames: string[];

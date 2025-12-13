@@ -292,13 +292,12 @@ export default class Marty {
    * @param angle - Angle to turn in degrees (default 30)
    * @returns Promise that resolves when turn is complete
    */
-  async turn_right(angle: number = 30): Promise<{ success: boolean; message: string }> {
+  async turnRight(angle: number = 30): Promise<{ success: boolean; message: string }> {
     if (this.proceduralTurnController.isActive()) {
       return { success: false, message: 'Turn already in progress' };
     }
 
     try {
-      console.log(`🔄 Marty.turn_right(${angle}°) - Starting procedural turn`);
       await this.proceduralTurnController.turnRight(angle);
       return { success: true, message: `Turned right ${angle}°` };
     } catch (error) {
@@ -312,13 +311,12 @@ export default class Marty {
    * @param angle - Angle to turn in degrees (default 30)
    * @returns Promise that resolves when turn is complete
    */
-  async turn_left(angle: number = 30): Promise<{ success: boolean; message: string }> {
+  async turnLeft(angle: number = 30): Promise<{ success: boolean; message: string }> {
     if (this.proceduralTurnController.isActive()) {
       return { success: false, message: 'Turn already in progress' };
     }
 
     try {
-      console.log(`🔄 Marty.turn_left(${angle}°) - Starting procedural turn`);
       await this.proceduralTurnController.turnLeft(angle);
       return { success: true, message: `Turned left ${angle}°` };
     } catch (error) {

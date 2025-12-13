@@ -108,7 +108,7 @@ const LEG_BONES = {
  */
 const LEG_AXIS_MULT: Record<'left' | 'right', number> = { left: -1, right: 1 };
 
-/** Bone groups (exported for external use) */
+/** Bone groups (exported for reference/documentation) */
 const BONE_GROUPS = {
   leftLeg: ['LegL', 'LegL001', 'LegL002', 'LegL003'],
   rightLeg: ['LegR', 'LegR001', 'LegR002', 'LegR003'],
@@ -120,12 +120,6 @@ const BONE_GROUPS = {
 
 /** Bones that should NOT be animated during turn (arms stay still) */
 const EXCLUDED_FROM_TURN = ['ArmL', 'ArmR'];
-
-/** Bone role mapping (exported for external use) */
-const LEG_BONE_ROLES = {
-  left: { body: 'Body', upperThigh: 'LegL', knee: 'LegL001', ankle: 'LegL002' },
-  right: { body: 'LegR', upperThigh: 'LegR', knee: 'LegR001', ankle: 'LegR002' },
-};
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -148,9 +142,15 @@ function wrapPi(angle: number): number {
   return angle;
 }
 
-/** Interpolate between two angles, taking the shortest path */
-function lerpAngleShortest(a: number, b: number, t: number): number {
-  return a + wrapPi(b - a) * t;
+/**
+ * Interpolate between two angles, taking the shortest path.
+ * @param startAngle - The starting angle in radians
+ * @param endAngle - The ending angle in radians
+ * @param t - Interpolation factor (0 = startAngle, 1 = endAngle)
+ * @returns The interpolated angle in radians
+ */
+function lerpAngleShortest(startAngle: number, endAngle: number, t: number): number {
+  return startAngle + wrapPi(endAngle - startAngle) * t;
 }
 
 /** Calculate how many steps needed for a given angle */
@@ -184,12 +184,24 @@ function generateTurnStepSequence(direction: TurnDirection, totalAngleDeg: numbe
 /**
  * Decompose quaternion into swing (perpendicular) and twist (around axis) components.
  * This is useful for rotating around a specific axis (like the ankle hinge).
+ * 
+ * @param q - The quaternion to decompose
+ * @param axis - The axis to decompose around (e.g., X axis for ankle hinge)
+ * @returns Object with swing (orientation) and twist (rotation around axis) quaternions
  */
 function decomposeSwingTwist(q: THREE.Quaternion, axis: THREE.Vector3) {
   const a = axis.clone().normalize();
   const v = new THREE.Vector3(q.x, q.y, q.z);
   const proj = a.multiplyScalar(v.dot(a));
-  const twist = new THREE.Quaternion(proj.x, proj.y, proj.z, q.w).normalize();
+  
+  // Handle edge case: if projection is near zero, twist is identity-like
+  let twist: THREE.Quaternion;
+  if (proj.lengthSq() < 1e-8) {
+    twist = new THREE.Quaternion(0, 0, 0, q.w).normalize();
+  } else {
+    twist = new THREE.Quaternion(proj.x, proj.y, proj.z, q.w).normalize();
+  }
+  
   const swing = q.clone().multiply(twist.clone().invert());
   return { swing, twist };
 }
@@ -197,8 +209,8 @@ function decomposeSwingTwist(q: THREE.Quaternion, axis: THREE.Vector3) {
 /** Get the signed rotation angle around an axis from a twist quaternion */
 function getTwistAngle(twist: THREE.Quaternion, axis: THREE.Vector3): number {
   const a = axis.clone().normalize();
-  const s = a.dot(new THREE.Vector3(twist.x, twist.y, twist.z));
-  return 2 * Math.atan2(s, twist.w);
+  const dotProduct = a.dot(new THREE.Vector3(twist.x, twist.y, twist.z));
+  return 2 * Math.atan2(dotProduct, twist.w);
 }
 
 /** Extract rotation axis from a quaternion delta */
@@ -675,8 +687,11 @@ export function createProceduralTurnController({
   /** Get estimated duration for a turn (in milliseconds) */
   const getEstimatedDuration = (angleDeg: number): number => {
     const numSteps = calculateTurnSteps(angleDeg);
-    const phaseDurationSum = Object.values(PHASE_DURATIONS).reduce((a, b) => a + b, 0);
-    return numSteps * phaseDurationSum * 1000;
+    // Only sum durations of phases that occur per step (not final-reset)
+    const perStepPhases = ['shift-weight', 'lift-foot', 'rotate-body', 'lower-foot', 'straighten'] as const;
+    const perStepDuration = perStepPhases.reduce((sum, phase) => sum + PHASE_DURATIONS[phase], 0);
+    const finalResetDuration = PHASE_DURATIONS['final-reset'];
+    return (numSteps * perStepDuration + finalResetDuration) * 1000;
   };
   
   return {
@@ -694,4 +709,4 @@ export function createProceduralTurnController({
 // EXPORTS
 // ============================================================================
 
-export { BONE_GROUPS, LEG_BONE_ROLES, MAX_ANGLE_PER_STEP, PHASE_DURATIONS };
+export { BONE_GROUPS, MAX_ANGLE_PER_STEP, PHASE_DURATIONS };
