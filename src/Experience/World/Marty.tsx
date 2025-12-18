@@ -30,6 +30,10 @@ import {
   type SlideState,
   type TurnState,
 } from './marty/animationSystem.ts';
+import {
+  createProceduralTurnController,
+  type ProceduralTurnController,
+} from './marty/proceduralTurn.ts';
 import { GroundColorSensor, ObstacleSensor } from './sensors/index.tsx';
 
 /**
@@ -50,6 +54,7 @@ export default class Marty {
   boneDebugFolder?: ReturnType<typeof import('lil-gui').GUI.prototype.addFolder>;
   boneInitialRotations: Map<string, THREE.Euler> = new Map();
   jointController: JointController;
+  proceduralTurnController: ProceduralTurnController;
   wsUnsubscribe?: () => void;
   movement: MovementState;
   turn: TurnState;
@@ -91,6 +96,12 @@ export default class Marty {
     this.jointController = createJointController({
       getBoneNodes: () => this.boneNodes,
       getInitialRotation: (boneName) => this.boneInitialRotations.get(boneName),
+    });
+
+    this.proceduralTurnController = createProceduralTurnController({
+      getBoneNodes: () => this.boneNodes,
+      getInitialRotation: (boneName) => this.boneInitialRotations.get(boneName),
+      getModel: () => this.model,
     });
 
     this.setModel();
@@ -275,6 +286,65 @@ export default class Marty {
     return getAnimationDurationHelper(this.animation, this.turn, name, options);
   }
 
+  /**
+   * Turn right by a specified angle (in degrees)
+   * Uses procedural animation - no Blender animations required
+   * @param angle - Angle to turn in degrees (default 30)
+   * @returns Promise that resolves when turn is complete
+   */
+  async turnRight(angle: number = 30): Promise<{ success: boolean; message: string }> {
+    if (this.proceduralTurnController.isActive()) {
+      return { success: false, message: 'Turn already in progress' };
+    }
+
+    try {
+      await this.proceduralTurnController.turnRight(angle);
+      return { success: true, message: `Turned right ${angle}°` };
+    } catch (error) {
+      return { success: false, message: String(error) };
+    }
+  }
+
+  /**
+   * Turn left by a specified angle (in degrees)
+   * Uses procedural animation - no Blender animations required
+   * @param angle - Angle to turn in degrees (default 30)
+   * @returns Promise that resolves when turn is complete
+   */
+  async turnLeft(angle: number = 30): Promise<{ success: boolean; message: string }> {
+    if (this.proceduralTurnController.isActive()) {
+      return { success: false, message: 'Turn already in progress' };
+    }
+
+    try {
+      await this.proceduralTurnController.turnLeft(angle);
+      return { success: true, message: `Turned left ${angle}°` };
+    } catch (error) {
+      return { success: false, message: String(error) };
+    }
+  }
+
+  /**
+   * Get estimated duration for a procedural turn in milliseconds
+   */
+  getTurnDuration(angleDeg: number): number {
+    return this.proceduralTurnController.getEstimatedDuration(angleDeg);
+  }
+
+  /**
+   * Check if a turn animation is currently in progress
+   */
+  isTurning(): boolean {
+    return this.proceduralTurnController.isActive();
+  }
+
+  /**
+   * Cancel any ongoing turn animation
+   */
+  cancelTurn(): void {
+    this.proceduralTurnController.cancel();
+  }
+
   update() {
     const deltaSeconds = this.time.delta / 1000;
 
@@ -288,6 +358,7 @@ export default class Marty {
     });
 
     this.jointController.update(deltaSeconds);
+    this.proceduralTurnController.update(deltaSeconds);
   }
 
   dispose() {
