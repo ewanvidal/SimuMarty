@@ -35,6 +35,8 @@ import {
   type ProceduralTurnController,
 } from './marty/proceduralTurn.ts';
 import { GroundColorSensor, ObstacleSensor } from './sensors/index.tsx';
+import Physics from './Physics.tsx';
+import RobotPhysics from './RobotPhysics.tsx';
 
 /**
  * Marty
@@ -68,6 +70,8 @@ export default class Marty {
     position: new THREE.Vector3(0, 0, 0),
     rotationY: 0,
   };
+  physics?: Physics;
+  robotPhysics?: RobotPhysics;
 
   constructor() {
     this.experience = (
@@ -108,6 +112,7 @@ export default class Marty {
     this.setMovement();
     this.setAnimation();
     this.setupSensors();
+    this.setupPhysics();
     this.setupWebSocket();
   }
 
@@ -233,6 +238,20 @@ export default class Marty {
   }
 
   /**
+   * Setup physics system with bounding boxes attached to bones
+   */
+  private setupPhysics(): void {
+    if (!this.model || this.boneNodes.length === 0) return;
+
+    this.physics = new Physics();
+    this.robotPhysics = new RobotPhysics(
+      this.physics,
+      this.model,
+      this.boneNodes,
+    );
+  }
+
+  /**
    * Get the ground color beneath the robot
    * @returns RGB color object {r, g, b} with values 0-255
    */
@@ -348,6 +367,31 @@ export default class Marty {
   update() {
     const deltaSeconds = this.time.delta / 1000;
 
+    // Step physics world
+    if (this.physics) {
+      this.physics.update();
+    }
+
+    // Check if jumping - physics controls Y position
+    const isJumping = this.robotPhysics?.isJumping ?? false;
+    
+    if (isJumping && this.robotPhysics && this.model) {
+      const body = this.robotPhysics.getBody();
+      if (body) {
+        // Sync model Y from physics
+        this.model.position.y = body.position.y - 0.08;
+        
+        // Check if landed (on ground and velocity near zero)
+        if (this.model.position.y <= 0.001 && body.velocity.y <= 0) {
+          this.model.position.y = 0;
+          body.position.y = 0.08;
+          body.velocity.y = 0;
+          this.robotPhysics.isJumping = false;
+        }
+      }
+    }
+
+    // Update animations (includes walking movement)
     updateAnimationSystem({
       animation: this.animation,
       movement: this.movement,
@@ -356,6 +400,23 @@ export default class Marty {
       model: this.model,
       deltaSeconds,
     });
+
+    // Sync physics body X/Z to model (always), Y only when not jumping
+    if (this.robotPhysics && this.model) {
+      const body = this.robotPhysics.getBody();
+      if (body) {
+        body.position.x = this.model.position.x;
+        body.position.z = this.model.position.z;
+        if (!isJumping) {
+          body.position.y = this.model.position.y + 0.08;
+        }
+      }
+    }
+
+    // Update debug meshes
+    if (this.robotPhysics) {
+      this.robotPhysics.updateDebugMeshes();
+    }
 
     this.jointController.update(deltaSeconds);
     this.proceduralTurnController.update(deltaSeconds);
@@ -373,6 +434,14 @@ export default class Marty {
     }
     if (this.sensors.obstacleSensor) {
       this.sensors.obstacleSensor.dispose();
+    }
+
+    // Clean up physics
+    if (this.robotPhysics) {
+      this.robotPhysics.dispose();
+    }
+    if (this.physics) {
+      this.physics.dispose();
     }
 
     if (this.model) {
