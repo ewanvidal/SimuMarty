@@ -4,12 +4,58 @@ This directory contains the virtual sensor components for the Marty robot simula
 
 ## Overview
 
-The Marty robot is equipped with two types of virtual sensors:
+The Marty robot is equipped with three types of virtual sensors/components:
 
 1. **Ground Color Sensor** - Detects the color of the ground beneath the robot
 2. **Obstacle Sensor** - Detects walls and obstacles using raycasting
+3. **Foot Light** - Focused spotlight to illuminate the ground for color detection
 
 ## Components
+
+### FootLight.tsx
+
+A focused spotlight attached to the robot's foot to illuminate the ground beneath the color sensor.
+
+**Features:**
+- Narrow beam angle for focused ground illumination
+- Low intensity to avoid washing out colors (sensor would see only white 255 RGB otherwise)
+- Attached to foot bone so light moves with the robot
+- Configurable intensity, color, angle, and distance
+- Shadow casting enabled (feet block the light from passing through)
+- Optional debug helper for visualization
+
+**Implementation:**
+- SpotLight with narrow angle (~15°) for focused beam
+- Low intensity (0.25 default) to preserve color detection accuracy
+- Positioned inside the foot sole (simulating hole in the sole)
+- Target positioned on ground directly below the foot
+- Updates position every frame to follow foot bone movement
+
+**Usage:**
+```typescript
+const footLight = new FootLight(
+  footBone,        // Parent bone (LegL003 or LegR003)
+  scene,           // Three.js scene
+  {
+    intensity: 0.25,      // Low to avoid washing out colors
+    color: 0xffffff,      // Pure white for accurate detection
+    angle: Math.PI / 12,  // ~15 degrees narrow beam
+    penumbra: 0.2,        // Soft edge
+    distance: 0.3,        // Short range
+    heightOffset: -0.01,  // Inside the foot sole
+    showHelper: false     // Set true for debugging
+  }
+);
+
+// Update every frame
+footLight.update();
+
+// Adjust intensity dynamically
+footLight.setIntensity(0.3);
+
+// Enable/disable
+footLight.setEnabled(false);
+```
 
 ### GroundColorSensor.tsx
 
@@ -109,6 +155,7 @@ The sensors are automatically initialized in the `Marty` class:
 ```typescript
 // In Marty.tsx
 private setupSensors() {
+  // Ground Color Sensor
   this.sensors.groundColorSensor = new GroundColorSensor(
     this.model,
     this.scene,
@@ -121,11 +168,29 @@ private setupSensors() {
     }
   );
 
+  // Obstacle Sensor
   this.sensors.obstacleSensor = new ObstacleSensor(
     this.model,
     this.scene,
     { maxRange: 10, sensorHeight: 0.1 }
   );
+
+  // Foot Light - attached to left foot bone for ground illumination
+  const leftFootBone = this.boneNodes.find(b => b.name === 'LegL003');
+  if (leftFootBone) {
+    this.sensors.footLight = new FootLight(
+      leftFootBone.object,
+      this.scene,
+      {
+        intensity: 0.25,      // Low intensity for accurate color detection
+        color: 0xffffff,      // Pure white
+        angle: Math.PI / 12,  // ~15 degrees focused beam
+        penumbra: 0.2,
+        distance: 0.3,
+        heightOffset: -0.01,  // Inside the foot sole (hole)
+      }
+    );
+  }
 }
 ```
 

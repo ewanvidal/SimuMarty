@@ -34,7 +34,7 @@ import {
   createProceduralTurnController,
   type ProceduralTurnController,
 } from './marty/proceduralTurn.ts';
-import { GroundColorSensor, ObstacleSensor } from './sensors/index.tsx';
+import { GroundColorSensor, ObstacleSensor, FootLight } from './sensors/index.tsx';
 import Physics from './Physics.tsx';
 import RobotPhysics from './RobotPhysics.tsx';
 
@@ -65,6 +65,7 @@ export default class Marty {
   sensors: {
     groundColorSensor?: GroundColorSensor;
     obstacleSensor?: ObstacleSensor;
+    footLight?: FootLight;
   };
   private initialTransform = {
     position: new THREE.Vector3(0, 0, 0),
@@ -211,20 +212,25 @@ export default class Marty {
   private setupSensors() {
     if (!this.model || !this.experience.renderer.instance) return;
 
+    // Find the right foot bone - used for both color sensor and foot light
+    const rightFootBone = this.boneNodes.find(b => b.name === 'LegR003');
+
     // 1. Ground Color Sensor
-    // Position just below Marty's feet (0.001m below model origin)
-    // This ensures it's outside the robot mesh but close to the ground
-    this.sensors.groundColorSensor = new GroundColorSensor(
-      this.model,
-      this.scene,
-      this.experience.renderer.instance,
-      {
-        fov: 10,
-        sensorHeight: -0.001, // Just below feet to avoid being inside mesh
-        nearPlane: 0.0001,
-        farPlane: 10, // See far enough to detect ground
-      }
-    );
+    // Attached to the right foot bone (LegR003) where the foot light is located
+    // The sensor looks through the hollow sole to detect ground color
+    if (rightFootBone) {
+      this.sensors.groundColorSensor = new GroundColorSensor(
+        rightFootBone.object,
+        this.scene,
+        this.experience.renderer.instance,
+        {
+          fov: 30,              // Wider FOV to see more ground area
+          sensorHeight: 0.0,    // At foot level (inside hollow sole)
+          nearPlane: 0.001,
+          farPlane: 0.5,        // Short range - just need to see the ground
+        }
+      );
+    }
 
     // 2. Obstacle Detection Sensor
     this.sensors.obstacleSensor = new ObstacleSensor(
@@ -235,6 +241,26 @@ export default class Marty {
         sensorHeight: 0.1,
       }
     );
+
+    // 3. Foot Light for ground color sensor illumination
+    // Attached to the right foot bone (LegR003) - same location as color sensor
+    // The GLB model has hollow soles to accommodate this light
+    // Uses layer 1 so it's only visible to color sensor, not main camera
+    if (rightFootBone) {
+      this.sensors.footLight = new FootLight(
+        rightFootBone.object,
+        this.scene,
+        {
+          intensity: 0.25,       // Good illumination for color sensor (only visible on layer 1)
+          color: 0xffffff,      // Pure white for accurate color detection
+          angle: Math.PI,       // ~180 degrees - broad diffuse beam for whole space below foot
+          penumbra: 1.0,        // Maximum softness for even diffuse lighting
+          distance: 0.3,        // Short range to avoid over-illumination
+          heightOffset: 0.0,    // Position at foot level (inside hollow sole)
+          showHelper: false,    // Set to true for debugging
+        }
+      );
+    }
   }
 
   /**
@@ -420,6 +446,11 @@ export default class Marty {
 
     this.jointController.update(deltaSeconds);
     this.proceduralTurnController.update(deltaSeconds);
+
+    // Update foot light position to follow foot bone
+    if (this.sensors.footLight) {
+      this.sensors.footLight.update();
+    }
   }
 
   dispose() {
@@ -434,6 +465,9 @@ export default class Marty {
     }
     if (this.sensors.obstacleSensor) {
       this.sensors.obstacleSensor.dispose();
+    }
+    if (this.sensors.footLight) {
+      this.sensors.footLight.dispose();
     }
 
     // Clean up physics

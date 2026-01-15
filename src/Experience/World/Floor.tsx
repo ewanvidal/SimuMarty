@@ -76,7 +76,7 @@ export default class Floor {
 
   private setMaterial() {
     if (this.textures) {
-      // Material with textures
+      // Material with textures - use texture maps for realistic reflections
       this.material = new THREE.MeshStandardMaterial({
         map: this.textures.diffuse,
         normalMap: this.textures.normal,
