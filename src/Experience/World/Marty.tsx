@@ -30,7 +30,13 @@ import {
   type SlideState,
   type TurnState,
 } from './marty/animationSystem.ts';
+import {
+  createProceduralTurnController,
+  type ProceduralTurnController,
+} from './marty/proceduralTurn.ts';
 import { GroundColorSensor, ObstacleSensor, FootLight } from './sensors/index.tsx';
+import Physics from './Physics.tsx';
+import RobotPhysics from './RobotPhysics.tsx';
 
 /**
  * Marty
@@ -50,6 +56,7 @@ export default class Marty {
   boneDebugFolder?: ReturnType<typeof import('lil-gui').GUI.prototype.addFolder>;
   boneInitialRotations: Map<string, THREE.Euler> = new Map();
   jointController: JointController;
+  proceduralTurnController: ProceduralTurnController;
   wsUnsubscribe?: () => void;
   movement: MovementState;
   turn: TurnState;
@@ -64,6 +71,8 @@ export default class Marty {
     position: new THREE.Vector3(0, 0, 0),
     rotationY: 0,
   };
+  physics?: Physics;
+  robotPhysics?: RobotPhysics;
 
   constructor() {
     this.experience = (
@@ -94,10 +103,17 @@ export default class Marty {
       getInitialRotation: (boneName) => this.boneInitialRotations.get(boneName),
     });
 
+    this.proceduralTurnController = createProceduralTurnController({
+      getBoneNodes: () => this.boneNodes,
+      getInitialRotation: (boneName) => this.boneInitialRotations.get(boneName),
+      getModel: () => this.model,
+    });
+
     this.setModel();
     this.setMovement();
     this.setAnimation();
     this.setupSensors();
+    this.setupPhysics();
     this.setupWebSocket();
   }
 
@@ -248,6 +264,20 @@ export default class Marty {
   }
 
   /**
+   * Setup physics system with bounding boxes attached to bones
+   */
+  private setupPhysics(): void {
+    if (!this.model || this.boneNodes.length === 0) return;
+
+    this.physics = new Physics();
+    this.robotPhysics = new RobotPhysics(
+      this.physics,
+      this.model,
+      this.boneNodes,
+    );
+  }
+
+  /**
    * Get the ground color beneath the robot
    * @returns RGB color object {r, g, b} with values 0-255
    */
@@ -301,9 +331,93 @@ export default class Marty {
     return getAnimationDurationHelper(this.animation, this.turn, name, options);
   }
 
+  /**
+   * Turn right by a specified angle (in degrees)
+   * Uses procedural animation - no Blender animations required
+   * @param angle - Angle to turn in degrees (default 30)
+   * @returns Promise that resolves when turn is complete
+   */
+  async turnRight(angle: number = 30): Promise<{ success: boolean; message: string }> {
+    if (this.proceduralTurnController.isActive()) {
+      return { success: false, message: 'Turn already in progress' };
+    }
+
+    try {
+      await this.proceduralTurnController.turnRight(angle);
+      return { success: true, message: `Turned right ${angle}°` };
+    } catch (error) {
+      return { success: false, message: String(error) };
+    }
+  }
+
+  /**
+   * Turn left by a specified angle (in degrees)
+   * Uses procedural animation - no Blender animations required
+   * @param angle - Angle to turn in degrees (default 30)
+   * @returns Promise that resolves when turn is complete
+   */
+  async turnLeft(angle: number = 30): Promise<{ success: boolean; message: string }> {
+    if (this.proceduralTurnController.isActive()) {
+      return { success: false, message: 'Turn already in progress' };
+    }
+
+    try {
+      await this.proceduralTurnController.turnLeft(angle);
+      return { success: true, message: `Turned left ${angle}°` };
+    } catch (error) {
+      return { success: false, message: String(error) };
+    }
+  }
+
+  /**
+   * Get estimated duration for a procedural turn in milliseconds
+   */
+  getTurnDuration(angleDeg: number): number {
+    return this.proceduralTurnController.getEstimatedDuration(angleDeg);
+  }
+
+  /**
+   * Check if a turn animation is currently in progress
+   */
+  isTurning(): boolean {
+    return this.proceduralTurnController.isActive();
+  }
+
+  /**
+   * Cancel any ongoing turn animation
+   */
+  cancelTurn(): void {
+    this.proceduralTurnController.cancel();
+  }
+
   update() {
     const deltaSeconds = this.time.delta / 1000;
 
+    // Step physics world
+    if (this.physics) {
+      this.physics.update();
+    }
+
+    // Check if jumping - physics controls Y position
+    const isJumping = this.robotPhysics?.isJumping ?? false;
+    
+    if (isJumping && this.robotPhysics && this.model) {
+      const body = this.robotPhysics.getBody();
+      if (body) {
+        // Sync model Y from physics
+        this.model.position.y = body.position.y - 0.08;
+        
+        // Check if landed (on ground and velocity near zero)
+        if (this.model.position.y <= 0.001 && body.velocity.y <= 0) {
+          this.model.position.y = 0;
+          body.position.y = 0.08;
+          body.velocity.y = 0;
+          this.robotPhysics.isJumping = false;
+        }
+      }
+    }
+
+    // Update animations (includes walking movement)
     updateAnimationSystem({
       animation: this.animation,
       movement: this.movement,
@@ -313,7 +427,25 @@ export default class Marty {
       deltaSeconds,
     });
 
+    // Sync physics body X/Z to model (always), Y only when not jumping
+    if (this.robotPhysics && this.model) {
+      const body = this.robotPhysics.getBody();
+      if (body) {
+        body.position.x = this.model.position.x;
+        body.position.z = this.model.position.z;
+        if (!isJumping) {
+          body.position.y = this.model.position.y + 0.08;
+        }
+      }
+    }
+
+    // Update debug meshes
+    if (this.robotPhysics) {
+      this.robotPhysics.updateDebugMeshes();
+    }
+
     this.jointController.update(deltaSeconds);
+    this.proceduralTurnController.update(deltaSeconds);
 
     // Update foot light position to follow foot bone
     if (this.sensors.footLight) {
@@ -336,6 +468,14 @@ export default class Marty {
     }
     if (this.sensors.footLight) {
       this.sensors.footLight.dispose();
+    }
+
+    // Clean up physics
+    if (this.robotPhysics) {
+      this.robotPhysics.dispose();
+    }
+    if (this.physics) {
+      this.physics.dispose();
     }
 
     if (this.model) {
