@@ -245,13 +245,13 @@ export default class Marty {
     // 3. Foot Light for ground color sensor illumination
     // Attached to the right foot bone (LegR003) - same location as color sensor
     // The GLB model has hollow soles to accommodate this light
-    // Uses very low intensity for diffuse-only illumination (no bright specular)
+    // Uses layer 1 so it's only visible to color sensor, not main camera
     if (rightFootBone) {
       this.sensors.footLight = new FootLight(
         rightFootBone.object,
         this.scene,
         {
-          intensity: 0.06,      // Very low intensity for diffuse-only effect
+          intensity: 0.25,       // Good illumination for color sensor (only visible on layer 1)
           color: 0xffffff,      // Pure white for accurate color detection
           angle: Math.PI,       // ~180 degrees - broad diffuse beam for whole space below foot
           penumbra: 1.0,        // Maximum softness for even diffuse lighting

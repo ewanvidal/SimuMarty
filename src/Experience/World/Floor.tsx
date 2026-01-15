@@ -76,22 +76,22 @@ export default class Floor {
 
   private setMaterial() {
     if (this.textures) {
-      // Material with textures - high roughness for matte/diffuse look (no specular reflections)
+      // Material with textures - use texture maps for realistic reflections
       this.material = new THREE.MeshStandardMaterial({
         map: this.textures.diffuse,
         normalMap: this.textures.normal,
+        roughnessMap: this.textures.arm,
+        metalnessMap: this.textures.arm,
         aoMap: this.textures.arm,
         alphaMap: this.textures.alpha,
         transparent: true,
-        roughness: 1.0,         // Maximum roughness for fully matte/diffuse surface
-        metalness: 0.0,         // No metalness to prevent reflections
       });
     } else {
-      // Fallback simple material - also matte
+      // Fallback simple material
       this.material = new THREE.MeshStandardMaterial({
         color: this.defaultColor,
-        metalness: 0.0,
-        roughness: 1.0,
+        metalness: 0.3,
+        roughness: 0.7,
       });
     }
   }

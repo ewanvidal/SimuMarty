@@ -46,6 +46,10 @@ export class GroundColorSensor {
     );
     this.camera.rotation.x = -Math.PI / 2; // Point down
     
+    // Enable camera to see both layer 0 (default scene) and layer 1 (foot light)
+    this.camera.layers.enable(0);
+    this.camera.layers.enable(1);
+    
     // Add camera to scene (not parent) to avoid transform issues
     scene.add(this.camera);
 

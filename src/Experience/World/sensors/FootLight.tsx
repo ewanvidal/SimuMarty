@@ -64,6 +64,10 @@ export class FootLight {
     // Disable shadow casting - this is a soft fill light for color detection
     this.spotLight.castShadow = false;
 
+    // Put light on layer 1 - only visible to color sensor camera, not main camera
+    // This prevents visible specular reflections while still illuminating for color detection
+    this.spotLight.layers.set(1);
+
     // Add light to scene (not parent, to avoid transform issues)
     scene.add(this.spotLight);
 
