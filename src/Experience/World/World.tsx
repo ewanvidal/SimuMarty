@@ -6,6 +6,10 @@ import Floor from './Floor.tsx';
 import Marty from './Marty.tsx';
 import Labyrinth from './Labyrinth.tsx';
 import SceneDirector from './SceneDirector.ts';
+import { TutorialManager } from './tutorial/TutorialManager.ts';
+import { TUTORIAL_LESSONS } from '../../shared/constants/tutorialLessons.ts';
+import { LevelBuilder } from './LevelBuilder.ts';
+import { lesson1Map, lesson1MartyConfig } from '../../shared/constants/lessons/lesson1.ts';
 
 /**
  * World
@@ -20,7 +24,11 @@ export default class World {
   marty?: Marty;
   environment?: Environment;
   sceneDirector?: SceneDirector;
+  tutorialManager?: TutorialManager;
+  levelBuilder?: LevelBuilder;
   pendingScenePresetId: string | null = null;
+  pendingLessonId: string | null = null;
+
 
   constructor() {
     this.experience = (
@@ -40,8 +48,17 @@ export default class World {
         floor: this.floor,
         environment: this.environment,
         marty: this.marty,
+        camera: this.experience.camera,
       });
+      this.tutorialManager = new TutorialManager();
+      this.levelBuilder = new LevelBuilder(this.scene);
+      
       this.sceneDirector.applyScenePreset(this.pendingScenePresetId);
+      
+      // Load pending tutorial if any
+      if (this.pendingLessonId) {
+        this.loadTutorialLesson(this.pendingLessonId);
+      }
     });
   }
 
@@ -52,6 +69,16 @@ export default class World {
     if (this.labyrinth) {
       this.labyrinth.update();
     }
+    // Update tutorial manager (if needed for future features)
+    if (this.tutorialManager) {
+      this.tutorialManager.update();
+    }
+    // Update level builder goal detection
+    if (this.levelBuilder && this.marty) {
+      const deltaSeconds = this.experience.time.delta / 1000;
+      const pos = this.marty.getPosition();
+      this.levelBuilder.update(deltaSeconds, { x: pos.x, z: pos.z });
+    }
   }
 
   dispose() {
@@ -59,6 +86,8 @@ export default class World {
     this.labyrinth?.dispose();
     this.marty?.dispose();
     this.environment?.dispose();
+    this.tutorialManager?.dispose();
+    this.levelBuilder?.dispose();
   }
 
   applyScenePreset(presetId?: string | null) {
@@ -66,5 +95,61 @@ export default class World {
     if (this.sceneDirector) {
       this.sceneDirector.applyScenePreset(this.pendingScenePresetId);
     }
+  }
+
+  /**
+   * Load tutorial-specific objects for a lesson
+   * @param lessonId - The tutorial lesson ID to load
+   */
+  loadTutorialLesson(lessonId: string | null): void {
+    this.pendingLessonId = lessonId;
+    
+    if (!this.tutorialManager || !this.levelBuilder) return;
+    
+    // Clear previous level construction
+    this.levelBuilder.clear();
+
+    if (!lessonId) {
+      this.tutorialManager.clearLesson();
+      return;
+    }
+    
+    // 1. Load the basic tutorial configuration (text, state)
+    this.tutorialManager.loadLessonById(lessonId, TUTORIAL_LESSONS);
+
+    // 2. If this lesson has a specific Level Map, build it
+    if (lessonId === 'movement-basics') {
+      this.levelBuilder.build(lesson1Map);
+      
+      // Place Marty at start position and apply rotation
+      const startPos = this.levelBuilder.getStartPosition();
+      if (startPos && this.marty) {
+        this.marty.setPosition(startPos.x, startPos.y, startPos.z);
+        this.marty.setRotationY(lesson1MartyConfig.rotationY);
+      }
+      
+      // Listen for goal reached event
+      this.levelBuilder.on('goalReached', () => {
+        console.log('🎉 Goal reached! Marty completed the level!');
+        // Could trigger UI notification, next lesson, etc.
+      });
+    }
+  }
+
+  /**
+   * Check if Marty has reached the tutorial goal
+   * @returns True if goal is reached
+   */
+  checkTutorialGoalReached(): boolean {
+    if (!this.levelBuilder || !this.marty) return false;
+    return this.levelBuilder.hasReachedGoal();
+  }
+
+  /**
+   * Clear tutorial objects from scene
+   */
+  clearTutorial(): void {
+    this.pendingLessonId = null;
+    this.tutorialManager?.clearLesson();
   }
 }

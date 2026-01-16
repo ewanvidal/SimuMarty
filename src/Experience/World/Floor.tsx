@@ -85,6 +85,8 @@ export default class Floor {
         aoMap: this.textures.arm,
         alphaMap: this.textures.alpha,
         transparent: true,
+        depthWrite: false,
+        depthTest: true,
       });
     } else {
       // Fallback simple material
@@ -103,6 +105,7 @@ export default class Floor {
     this.mesh.rotation.x = -Math.PI * 0.5;
     this.mesh.position.set(0, 0, 0);
     this.mesh.receiveShadow = true;
+    this.mesh.renderOrder = -1; // allows it not to cause issues with other transparent object as this one will be rendered first
     this.scene.add(this.mesh);
   }
 

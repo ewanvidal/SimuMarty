@@ -167,21 +167,72 @@ export default class Marty {
     return this.jointController.setJointAngle(joint, angle, options);
   }
 
+  /**
+   * Apply a transform preset (position and rotation) from scene configuration
+   * @param transform - Optional transform with position [x, y, z] and rotationY in degrees
+   */
   applyTransformPreset(transform?: { position?: [number, number, number]; rotationY?: number }) {
-    if (!this.model) return;
+    console.log('[Marty] applyTransformPreset called with:', transform, 'model exists:', !!this.model);
+    if (!this.model) {
+      console.warn('[Marty] No model to apply transform to!');
+      return;
+    }
 
     const position = transform?.position ?? [
       this.initialTransform.position.x,
       this.initialTransform.position.y,
       this.initialTransform.position.z,
     ];
-    this.model.position.set(position[0], position[1], position[2]);
+    console.log('[Marty] Setting position to:', position);
+    this.setPosition(position[0], position[1], position[2]);
 
     if (typeof transform?.rotationY === 'number') {
-      this.model.rotation.y = THREE.MathUtils.degToRad(transform.rotationY);
+      this.setRotationY(transform.rotationY);
     } else {
       this.model.rotation.y = this.initialTransform.rotationY;
     }
+  }
+
+  /**
+   * Move Marty to specific world coordinates
+   * @param x - X coordinate (left/right)
+   * @param y - Y coordinate (up/down, usually 0 for ground level)
+   * @param z - Z coordinate (forward/backward)
+   */
+  setPosition(x: number, y: number, z: number): void {
+    if (!this.model) return;
+    this.model.position.set(x, y, z);
+  }
+
+  /**
+   * Get Marty's current world position
+   * @returns Current position as {x, y, z}
+   */
+  getPosition(): { x: number; y: number; z: number } {
+    if (!this.model) return { x: 0, y: 0, z: 0 };
+    return {
+      x: this.model.position.x,
+      y: this.model.position.y,
+      z: this.model.position.z,
+    };
+  }
+
+  /**
+   * Set Marty's Y-axis rotation (heading direction)
+   * @param degrees - Rotation angle in degrees
+   */
+  setRotationY(degrees: number): void {
+    if (!this.model) return;
+    this.model.rotation.y = THREE.MathUtils.degToRad(degrees);
+  }
+
+  /**
+   * Get Marty's current Y-axis rotation in degrees
+   * @returns Rotation in degrees
+   */
+  getRotationY(): number {
+    if (!this.model) return 0;
+    return THREE.MathUtils.radToDeg(this.model.rotation.y);
   }
 
   private setMovement() {

@@ -12,6 +12,7 @@ export function ExperienceCanvas() {
   const experienceRef = useRef<Experience | null>(null);
   const [experienceReady, setExperienceReady] = useState(false);
   const scenePresetId = useAppStore((state) => state.scenePresetId);
+  const activeLessonId = useAppStore((state) => state.activeLessonId);
 
   useEffect(() => {
     if (!canvasRef.current) {
@@ -35,12 +36,21 @@ export function ExperienceCanvas() {
     };
   }, []);
 
+  // Apply scene preset when it changes
   useEffect(() => {
     if (!experienceReady || !experienceRef.current) {
       return;
     }
     experienceRef.current.loadScenePreset(scenePresetId ?? null);
   }, [scenePresetId, experienceReady]);
+
+  // Load tutorial lesson objects when lesson changes
+  useEffect(() => {
+    if (!experienceReady || !experienceRef.current) {
+      return;
+    }
+    experienceRef.current.loadTutorialLesson(activeLessonId ?? null);
+  }, [activeLessonId, experienceReady]);
 
   return (
     <div className='experience-container'>

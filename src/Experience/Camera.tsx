@@ -53,9 +53,37 @@ export default class Camera {
     this.instance.updateProjectionMatrix();
   }
 
+  /**
+   * Set the OrbitControls target (point the camera orbits around)
+   * @param x - X coordinate
+   * @param y - Y coordinate  
+   * @param z - Z coordinate
+   */
+  setTarget(x: number, y: number, z: number) {
+    if (!this.controls) return;
+    this.controls.target.set(x, y, z);
+    this.controls.update();
+  }
+
+  /**
+   * Get the current OrbitControls target
+   */
+  getTarget(): { x: number; y: number; z: number } {
+    if (!this.controls) return { x: 0, y: 0, z: 0 };
+    return {
+      x: this.controls.target.x,
+      y: this.controls.target.y,
+      z: this.controls.target.z,
+    };
+  }
+
   update() {
+    // Update OrbitControls target to follow Marty
+    const martyPos = this.experience.world?.marty?.model?.position;
+    if (martyPos) {
+      this.controls?.target.set(martyPos.x, martyPos.y, martyPos.z);
+    }
     this.controls?.update();
-    this.instance?.lookAt(this.experience.world.marty?.model?.position ?? new THREE.Vector3(0, 0, 0));
   }
 
   dispose() {
