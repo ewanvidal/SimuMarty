@@ -5,6 +5,7 @@ import Environment from './Environment.tsx';
 import Floor from './Floor.tsx';
 import Marty from './Marty.tsx';
 import Labyrinth from './Labyrinth.tsx';
+import TestChair from './TestChair.tsx';
 import SceneDirector from './SceneDirector.ts';
 
 /**
@@ -19,6 +20,7 @@ export default class World {
   labyrinth?: Labyrinth;
   marty?: Marty;
   environment?: Environment;
+  testChair?: TestChair;
   sceneDirector?: SceneDirector;
   pendingScenePresetId: string | null = null;
 
@@ -35,6 +37,11 @@ export default class World {
       this.floor = new Floor();
       // this.labyrinth = new Labyrinth(); // Disabled for now
       this.marty = new Marty();
+      
+      // Create chair with physics (get physics from marty)
+      const physics = this.marty.physics;
+      this.testChair = new TestChair(new THREE.Vector3(0.0, 0, 0), physics);
+      
       this.environment = new Environment();
       this.sceneDirector = new SceneDirector({
         floor: this.floor,
@@ -42,6 +49,13 @@ export default class World {
         marty: this.marty,
       });
       this.sceneDirector.applyScenePreset(this.pendingScenePresetId);
+
+      // Position robot on top of the chair after preset is applied
+      if (this.testChair && this.marty) {
+        const chairPosition = this.testChair.getRobotSpawnPosition();
+        this.marty.setSpawnPosition(chairPosition);
+        console.log('🤖 Robot placed on chair at', chairPosition.toArray());
+      }
     });
   }
 
@@ -57,6 +71,7 @@ export default class World {
   dispose() {
     this.floor?.dispose();
     this.labyrinth?.dispose();
+    this.testChair?.dispose();
     this.marty?.dispose();
     this.environment?.dispose();
   }

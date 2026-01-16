@@ -39,6 +39,14 @@ import Physics from './Physics.tsx';
 import RobotPhysics from './RobotPhysics.tsx';
 
 /**
+ * Predefined velocities for animations used during falls
+ */
+const FALL_SPEEDS = {
+  forward: 0.4,
+  backward: -0.2,
+};
+
+/**
  * Marty
  * The robot character with animations and movement
  */
@@ -67,12 +75,13 @@ export default class Marty {
     obstacleSensor?: ObstacleSensor;
     footLight?: FootLight;
   };
-  private initialTransform = {
+  initialTransform = {
     position: new THREE.Vector3(0, 0, 0),
     rotationY: 0,
   };
   physics?: Physics;
   robotPhysics?: RobotPhysics;
+  isFalling: boolean = false;
 
   constructor() {
     this.experience = (
@@ -148,6 +157,7 @@ export default class Marty {
     this.boneNodes = boneNodes;
     this.boneInitialRotations = boneInitialRotations;
     this.boneDebugFolder = boneDebugFolder;
+
     if (this.model) {
       this.initialTransform = {
         position: this.model.position.clone(),
@@ -182,6 +192,35 @@ export default class Marty {
     } else {
       this.model.rotation.y = this.initialTransform.rotationY;
     }
+
+    // Synchronize physics immediately to prevent jumping/glitching on preset apply
+    if (this.robotPhysics) {
+      const body = this.robotPhysics.getBody();
+      if (body) {
+        body.position.set(
+          this.model.position.x,
+          this.model.position.y + this.robotPhysics.autoCalculatedOffset,
+          this.model.position.z
+        );
+        body.velocity.set(0, 0, 0);
+        body.angularVelocity.set(0, 0, 0);
+      }
+    }
+  }
+
+  /**
+   * Set a new default spawn position and immediately move the robot there
+   */
+  setSpawnPosition(position: THREE.Vector3, rotationY?: number): void {
+    if (!this.model) return;
+
+    this.initialTransform.position.copy(position);
+    if (rotationY !== undefined) {
+      this.initialTransform.rotationY = rotationY;
+    }
+
+    // Apply it now
+    this.applyTransformPreset();
   }
 
   private setMovement() {
@@ -393,61 +432,114 @@ export default class Marty {
   update() {
     const deltaSeconds = this.time.delta / 1000;
 
-    // Step physics world
+    // 1. Step physics world
     if (this.physics) {
       this.physics.update();
     }
 
-    // Check if jumping - physics controls Y position
-    const isJumping = this.robotPhysics?.isJumping ?? false;
-    
-    if (isJumping && this.robotPhysics && this.model) {
-      const body = this.robotPhysics.getBody();
-      if (body) {
-        // Sync model Y from physics
-        this.model.position.y = body.position.y - 0.08;
-        
-        // Check if landed (on ground and velocity near zero)
-        if (this.model.position.y <= 0.001 && body.velocity.y <= 0) {
-          this.model.position.y = 0;
-          body.position.y = 0.08;
-          body.velocity.y = 0;
-          this.robotPhysics.isJumping = false;
-        }
-      }
-    }
-
-    // Update animations (includes walking movement)
-    updateAnimationSystem({
-      animation: this.animation,
-      movement: this.movement,
-      turn: this.turn,
-      slide: this.slide,
-      model: this.model,
-      deltaSeconds,
-    });
-
-    // Sync physics body X/Z to model (always), Y only when not jumping
-    if (this.robotPhysics && this.model) {
-      const body = this.robotPhysics.getBody();
-      if (body) {
-        body.position.x = this.model.position.x;
-        body.position.z = this.model.position.z;
-        if (!isJumping) {
-          body.position.y = this.model.position.y + 0.08;
-        }
-      }
-    }
-
-    // Update debug meshes
-    if (this.robotPhysics) {
-      this.robotPhysics.updateDebugMeshes();
-    }
-
+    // 2. Update auxiliary controllers (Joints & Turn)
     this.jointController.update(deltaSeconds);
     this.proceduralTurnController.update(deltaSeconds);
 
-    // Update foot light position to follow foot bone
+    // 3. Main Physics & Animation Synchronization
+    if (this.robotPhysics && this.model) {
+      const body = this.robotPhysics.getBody();
+      if (!body) return;
+
+      const offset = this.robotPhysics.autoCalculatedOffset;
+      const isGrounded = this.robotPhysics.checkGrounded();
+      const isJumping = this.robotPhysics.isJumping;
+
+      // --- LOGIQUE DE CHUTE ---
+      // On tombe si on n'est pas au sol ET qu'on n'est pas en train de sauter (volontairement)
+      if (!isGrounded && !isJumping) {
+        if (!this.isFalling) {
+          // --- DÉBUT DE CHUTE ---
+          this.isFalling = true;
+          
+          // PAUSE DES ANIMATIONS : Les jambes s'immobilisent
+          if (this.animation.mixer) {
+            this.animation.mixer.timeScale = 0; 
+          }
+
+          // IMPULSION INITIALE (Forward/Backward)
+          const direction = this.robotPhysics.fallDirection;
+          let speed = 0;
+          if (direction === 'forward') speed = FALL_SPEEDS.forward;
+          if (direction === 'backward') speed = FALL_SPEEDS.backward;
+
+          console.log(`📉 Chute engagée ! Vitesse locale : ${speed}`);
+
+          const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(this.model.quaternion);
+          body.velocity.x = forward.x * speed;
+          body.velocity.z = forward.z * speed;
+        }
+
+        // PENDANT LA CHUTE : La Physique dicte Position ET Rotation
+        this.model.position.set(body.position.x, body.position.y, body.position.z);
+        this.model.position.y -= offset;
+        this.model.quaternion.set(body.quaternion.x, body.quaternion.y, body.quaternion.z, body.quaternion.w); 
+
+      } else {
+        // --- LOGIQUE AU SOL (Stable) ou SAUT ---
+        
+        if (this.isFalling) {
+          // --- ATTERRISSAGE ---
+          console.log('✅ Atterrissage validé');
+          this.isFalling = false;
+          
+          // RELANCE DES ANIMATIONS
+          if (this.animation.mixer) {
+            this.animation.mixer.timeScale = 1;
+          }
+
+          // RESET ROTATION : Le robot se remet droit sur ses pieds
+          // On garde l'orientation Y actuelle mais on annule X/Z (bascule)
+          const currentYRotation = new THREE.Euler().setFromQuaternion(this.model.quaternion).y;
+          this.model.rotation.set(0, currentYRotation, 0);
+          body.quaternion.set(this.model.quaternion.x, this.model.quaternion.y, this.model.quaternion.z, this.model.quaternion.w);
+          
+          body.velocity.set(0, 0, 0);
+          body.angularVelocity.set(0, 0, 0);
+        }
+
+        // UPDATE DES ANIMATIONS (Seulement si au sol/saut)
+        updateAnimationSystem({
+          animation: this.animation,
+          movement: this.movement,
+          turn: this.turn,
+          slide: this.slide,
+          model: this.model,
+          deltaSeconds,
+        });
+
+        // SYNCHRO ANIMATION -> PHYSIQUE
+        if (isJumping) {
+          // En saut, la physique dicte Y
+          this.model.position.y = body.position.y - offset;
+
+          // Détection atterrissage saut
+          if (isGrounded && body.velocity.y <= 0) {
+            this.robotPhysics.isJumping = false;
+            body.velocity.set(0, 0, 0);
+            body.position.y = this.model.position.y + offset;
+          }
+          // X/Z : Modèle -> Physique
+          body.position.x = this.model.position.x;
+          body.position.z = this.model.position.z;
+        } else {
+          // Au sol : Modèle (Animations) dicte tout
+          body.position.x = this.model.position.x;
+          body.position.z = this.model.position.z;
+          body.position.y = this.model.position.y + offset;
+          body.velocity.set(0, 0, 0);
+        }
+      }
+
+      this.robotPhysics.updateDebugMeshes();
+    }
+
+    // Update sensors
     if (this.sensors.footLight) {
       this.sensors.footLight.update();
     }
