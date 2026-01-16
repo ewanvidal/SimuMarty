@@ -76,6 +76,15 @@ export default class Experience {
     this.world.applyScenePreset(presetId);
   }
 
+  /**
+   * Load tutorial-specific objects (goal tiles, markers) for a lesson
+   * @param lessonId - The lesson ID to load, or null to clear
+   */
+  loadTutorialLesson(lessonId: string | null) {
+    if (!this.world) return;
+    this.world.loadTutorialLesson(lessonId);
+  }
+
   dispose() {
     this.sizes.dispose();
     this.time.dispose();
