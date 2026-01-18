@@ -16,11 +16,26 @@ export const MapCode = {
  * Uses the Tile system for animated tiles (start, goal, etc.)
  * Emits 'goalReached' event when Marty stays on goal for required duration.
  */
+/** Obstacle definition for level building */
+export interface ObstacleConfig {
+  row: number;
+  col: number;
+  type: 'fence' | 'wall' | 'box';
+  /** Optional offset in grid units (e.g., -0.5 to place at tile edge) */
+  offsetX?: number;
+  offsetZ?: number;
+}
+
 export class LevelBuilder extends EventEmitter {
   private scene: THREE.Scene;
   private container: THREE.Group;
   private tiles: Tile[] = [];
   private tileEntries: Array<{ tile: Tile; type: TileTypeName }> = [];
+  private obstacles: THREE.Object3D[] = [];
+  
+  // Map dimensions (stored for obstacle placement)
+  private mapRows: number = 0;
+  private mapCols: number = 0;
   
   // Goal detection
   private goalEntry: { tile: Tile; type: TileTypeName } | null = null;
@@ -43,11 +58,15 @@ export class LevelBuilder extends EventEmitter {
    * Build level from a 2D map array
    * @param map - 2D array where: 0=void, 1=path, 3=goal, 9=start
    */
-  build(map: number[][]): void {
+  build(map: number[][], obstacles?: ObstacleConfig[]): void {
     this.clear();
 
     const rows = map.length;
     const cols = map[0].length;
+    
+    // Store dimensions for obstacle placement
+    this.mapRows = rows;
+    this.mapCols = cols;
     
     // Center the level and align with floor grid
     // Floor texture tiles are at integer multiples of TILE_SIZE
@@ -86,6 +105,69 @@ export class LevelBuilder extends EventEmitter {
 
       if (tileDef.code === MapCode.GOAL) {
         this.goalEntry = { tile, type: tileDef.type };
+      }
+    }
+    
+    // Build obstacles if provided
+    if (obstacles) {
+      this.buildObstacles(obstacles);
+    }
+  }
+  
+  /**
+   * Build obstacles from configuration
+   */
+  private buildObstacles(obstacles: ObstacleConfig[]): void {
+    const offsetX = (this.mapCols * TILE_SIZE) / 2;
+    const offsetZ = (this.mapRows * TILE_SIZE) / 2;
+    
+    for (const obs of obstacles) {
+      // Base position from grid
+      let x = obs.col * TILE_SIZE - offsetX;
+      let z = obs.row * TILE_SIZE - offsetZ;
+      
+      // Apply optional offsets (in grid units, converted to world units)
+      if (obs.offsetX !== undefined) {
+        x += obs.offsetX * TILE_SIZE;
+      }
+      if (obs.offsetZ !== undefined) {
+        z += obs.offsetZ * TILE_SIZE;
+      }
+      
+      let mesh: THREE.Mesh | null = null;
+      
+      switch (obs.type) {
+        case 'fence': {
+          // Fence: horizontal barrier blocking path (wide on Z, thin on X)
+          const geometry = new THREE.BoxGeometry(TILE_SIZE * 0.1, TILE_SIZE, TILE_SIZE);
+          const material = new THREE.MeshStandardMaterial({ color: '#8B4513' }); // Brown wood color
+          mesh = new THREE.Mesh(geometry, material);
+          mesh.position.set(x, geometry.parameters.height / 2, z);
+          break;
+        }
+        case 'wall': {
+          // Wall: taller obstacle
+          const geometry = new THREE.BoxGeometry(TILE_SIZE, TILE_SIZE * 2, TILE_SIZE * 0.15);
+          const material = new THREE.MeshStandardMaterial({ color: '#696969' });
+          mesh = new THREE.Mesh(geometry, material);
+          mesh.position.set(x, TILE_SIZE, z);
+          break;
+        }
+        case 'box': {
+          // Box: cubic obstacle
+          const geometry = new THREE.BoxGeometry(TILE_SIZE * 0.8, TILE_SIZE * 0.8, TILE_SIZE * 0.8);
+          const material = new THREE.MeshStandardMaterial({ color: '#D2691E' });
+          mesh = new THREE.Mesh(geometry, material);
+          mesh.position.set(x, TILE_SIZE * 0.4, z);
+          break;
+        }
+      }
+      
+      if (mesh) {
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        this.container.add(mesh);
+        this.obstacles.push(mesh);
       }
     }
   }
@@ -222,6 +304,20 @@ export class LevelBuilder extends EventEmitter {
     this.goalReached = false;
     this.timeOnGoal = 0;
     this.lastTileKey = null;
+    
+    // Dispose obstacles
+    for (const obs of this.obstacles) {
+      if (obs instanceof THREE.Mesh) {
+        obs.geometry.dispose();
+        if (Array.isArray(obs.material)) {
+          obs.material.forEach((m) => m.dispose());
+        } else {
+          obs.material.dispose();
+        }
+      }
+      this.container.remove(obs);
+    }
+    this.obstacles = [];
   }
 
   private getTileEntryAtPosition(position: { x: number; z: number }): { tile: Tile; type: TileTypeName } | null {

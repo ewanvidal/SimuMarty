@@ -253,6 +253,7 @@ export default class Marty {
       animation: this.animation,
       debug: this.debug,
       debugFolder: this.debugFolder,
+      time: this.time,
       onMovementChange: () => this.syncMovementDurations(),
     });
   }

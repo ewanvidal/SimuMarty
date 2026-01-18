@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import type Experience from './Experience.tsx';
 import type Sizes from './Utils/Sizes.tsx';
+import type Debug from './Utils/Debug.tsx';
 
 /**
  * Camera
@@ -14,6 +15,9 @@ export default class Camera {
   canvas: HTMLCanvasElement;
   instance?: THREE.PerspectiveCamera;
   controls?: OrbitControls;
+  debug: Debug;
+  debugFolder?: ReturnType<typeof import('lil-gui').GUI.prototype.addFolder>;
+  followTarget = true;
 
   constructor() {
     this.experience = (
@@ -22,9 +26,11 @@ export default class Camera {
     this.sizes = this.experience.sizes;
     this.scene = this.experience.scene;
     this.canvas = this.experience.canvas;
+    this.debug = this.experience.debug;
 
     this.setInstance();
     this.setControls();
+    this.setDebug();
   }
 
   private setInstance() {
@@ -44,6 +50,12 @@ export default class Camera {
     this.controls = new OrbitControls(this.instance, this.canvas);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.05;
+  }
+
+  private setDebug() {
+    if (!this.debug.active || !this.debug.ui) return;
+    this.debugFolder = this.debug.ui.addFolder('camera');
+    this.debugFolder.add(this, 'followTarget').name('Follow Marty');
   }
 
   resize() {
@@ -79,9 +91,11 @@ export default class Camera {
 
   update() {
     // Update OrbitControls target to follow Marty
-    const martyPos = this.experience.world?.marty?.model?.position;
-    if (martyPos) {
-      this.controls?.target.set(martyPos.x, martyPos.y, martyPos.z);
+    if (this.followTarget) {
+      const martyPos = this.experience.world?.marty?.model?.position;
+      if (martyPos) {
+        this.controls?.target.set(martyPos.x, martyPos.y, martyPos.z);
+      }
     }
     this.controls?.update();
   }

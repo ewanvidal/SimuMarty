@@ -44,6 +44,17 @@ export default class Experience {
     this.time = new Time();
     this.scene = new THREE.Scene();
     this.debug = new Debug();
+
+    // Debug Time
+    if (this.debug.active && this.debug.ui) {
+      this.debug.ui
+        .add(this.time, 'timeScale')
+        .min(0)
+        .max(15)
+        .step(0.1)
+        .name('Time Scale');
+    }
+
     this.resources = new Resources(sources);
     this.camera = new Camera();
     this.renderer = new Renderer();
