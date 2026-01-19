@@ -10,6 +10,8 @@ import { TutorialManager } from './tutorial/TutorialManager.ts';
 import { TUTORIAL_LESSONS } from '../../shared/constants/tutorialLessons.ts';
 import { LevelBuilder } from './LevelBuilder.ts';
 import { lesson1Map, lesson1MartyConfig } from '../../shared/constants/lessons/lesson1.ts';
+import { lesson2Map, lesson2MartyConfig } from '../../shared/constants/lessons/lesson2.ts';
+import { lesson3Map, lesson3MartyConfig, lesson3Obstacles } from '../../shared/constants/lessons/lesson3.ts';
 
 /**
  * World
@@ -133,11 +135,41 @@ export default class World {
         console.log('🎉 Goal reached! Marty completed the level!');
         // Could trigger UI notification, next lesson, etc.
       });
+    } else if (lessonId === 'turning-and-orientation') {
+      this.levelBuilder.build(lesson2Map);
+      
+      // Place Marty at start position and apply rotation
+      const startPos = this.levelBuilder.getStartPosition();
+      if (startPos && this.marty) {
+        this.marty.setPosition(startPos.x, startPos.y, startPos.z);
+        this.marty.setRotationY(lesson2MartyConfig.rotationY);
+      }
+      
+      // Listen for goal reached event
+      this.levelBuilder.on('goalReached', () => {
+        console.log('🎉 Goal reached! Marty completed the level!');
+        // Could trigger UI notification, next lesson, etc.
+      });
+    } else if (lessonId === 'sensors-and-obstacles') {
+      this.levelBuilder.build(lesson3Map, lesson3Obstacles);
+      
+      // Place Marty at start position and apply rotation
+      const startPos = this.levelBuilder.getStartPosition();
+      if (startPos && this.marty) {
+        this.marty.setPosition(startPos.x, startPos.y, startPos.z);
+        this.marty.setRotationY(lesson3MartyConfig.rotationY);
+      }
+      
+      // Listen for goal reached event
+      this.levelBuilder.on('goalReached', () => {
+        console.log('🎉 Goal reached! Marty completed the level!');
+      });
     }
   }
 
   /**
    * Check if Marty has reached the tutorial goal
+
    * @returns True if goal is reached
    */
   checkTutorialGoalReached(): boolean {
@@ -151,5 +183,6 @@ export default class World {
   clearTutorial(): void {
     this.pendingLessonId = null;
     this.tutorialManager?.clearLesson();
+    this.levelBuilder?.clear();
   }
 }

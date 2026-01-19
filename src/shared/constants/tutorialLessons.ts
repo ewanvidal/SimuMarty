@@ -1,4 +1,4 @@
-export type TutorialMediaType = 'video' | 'image';
+export type TutorialMediaType = 'video' | 'image' | 'youtube';
 
 export interface TutorialMedia {
   type: TutorialMediaType;
@@ -35,15 +35,14 @@ export const TUTORIAL_LESSONS: Record<string, TutorialLesson> = {
       'Watch the debug grid to understand Marty\'s stride',
     ],
     steps: [
-      'Write `marty.walk(6)` in the code editor or use the Blockly equivalent.',
+      'Write `marty.walk(x)` in the code editor or use the Blockly equivalent.',
       'Run the code and observe Marty\'s movement and balance.',
     ],
     scenePresetId: 'tutorial-grid-basic',
     estimatedTime: '5 min',
     media: {
-      type: 'video',
-      src: '/media/tutorials/movement-basics.mp4',
-      poster: '/media/tutorials/movement-basics-poster.jpg',
+      type: 'youtube',
+      src: 'https://www.youtube.com/watch?v=J0yDapyiE34',
       caption: 'Walk command demo.',
     },
     tips: [
@@ -60,15 +59,14 @@ export const TUTORIAL_LESSONS: Record<string, TutorialLesson> = {
       'Combine rotation and walking to reach the target',
     ],
     steps: [
-      'Reset the scene, then add a `marty.turnRight(x)` call.',
-      'Append `marty.walk(x)` to move toward the cone.',
+      'Combine `marty.turnRight/Left(x)` and `marty.walk(x)` to face and approach the green tile.',   
       'Experiment with smaller angles to understand partial rotations.',
     ],
     scenePresetId: 'tutorial-grid-basic',
     estimatedTime: '7 min',
     media: {
-      type: 'image',
-      src: '/media/tutorials/turning-and-orientation.gif',
+      type: 'youtube',
+      src: 'https://www.youtube.com/watch?v=wWB82axdpa4',
       caption: 'Target cone objective preview.',
     },
     tips: [
@@ -93,9 +91,8 @@ export const TUTORIAL_LESSONS: Record<string, TutorialLesson> = {
     scenePresetId: 'tutorial-obstacle-course',
     estimatedTime: '10 min',
     media: {
-      type: 'video',
-      src: '/media/tutorials/sensors-and-obstacles.mp4',
-      poster: '/media/tutorials/sensors-and-obstacles-poster.jpg',
+      type: 'youtube',
+      src: 'https://www.youtube.com/watch?v=98VN88fS1dw', // TODO: Remplacer par le lien YouTube réel
       caption: 'Sensor-based stop before obstacle.',
     },
     tips: [

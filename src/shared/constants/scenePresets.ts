@@ -127,7 +127,7 @@ export const SCENE_PRESETS: Record<string, ScenePreset> = {
       textureRepeat: 80,
     },
     marty: {
-      position: [0.05, 0, 0.05],
+      position: [0, 0, 0],
       rotationY: 0,
     },
   },
@@ -137,12 +137,12 @@ export const SCENE_PRESETS: Record<string, ScenePreset> = {
     description: 'Directional light and long floor to highlight obstacle runs.',
     tags: ['tutorial', 'advanced'],
     lighting: {
-      sunLight: { intensity: 3.7, color: '#ffe8c8', position: [3.2, 2.5, -2.5] },
-      ambientLight: { intensity: 1.4, color: '#fff2df' },
+      sunLight: { intensity: 3.1, color: '#ffffff', position: [2.2, 2.6, -1.2] },
+      ambientLight: { intensity: 1.6, color: '#ffffff' },
     },
     floor: {
       size: 40,
-      color: '#fdf1e6',
+      color: '#f5f7fb',
       textureRepeat: 80,
     },
     marty: {

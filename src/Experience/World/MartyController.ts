@@ -101,14 +101,12 @@ export class MartyController {
           // Always auto-stop to trigger getReady if steps > 2
           this.marty.animation.play('walking', { autoStop: true });
           // Wait for animation to complete using actual duration
-          await new Promise((resolve) =>
-            setTimeout(resolve, animationDuration),
-          );
+          await this.marty.time.wait(animationDuration);
           
           // Add getReady between cycles if steps >= 2
           // The value 500ms is an additional buffer to ensure smooth transition
           if (steps >= 2 || isLastCycle) {
-            await new Promise((resolve) => setTimeout(resolve, getReadyDuration + 500));
+            await this.marty.time.wait(getReadyDuration + 500);
           }
         }
       }
@@ -131,10 +129,10 @@ export class MartyController {
       const getReadyDuration = this.marty.getAnimationDuration('getReady');
 
       // Wait for animation to complete
-      await new Promise((resolve) => setTimeout(resolve, animationDuration));
+      await this.marty.time.wait(animationDuration);
       
       // Wait for getReady transition
-      await new Promise((resolve) => setTimeout(resolve, getReadyDuration));
+      await this.marty.time.wait(getReadyDuration);
 
       return { success: true, message: 'Waving' };
     }
@@ -180,10 +178,10 @@ export class MartyController {
       const getReadyDuration = this.marty.getAnimationDuration('getReady');
 
       // Wait for animation to complete
-      await new Promise((resolve) => setTimeout(resolve, animationDuration));
+      await this.marty.time.wait(animationDuration);
       
       // Wait for getReady transition
-      await new Promise((resolve) => setTimeout(resolve, getReadyDuration));
+      await this.marty.time.wait(getReadyDuration);
 
       return { success: true, message: 'Kicking' };
     }
@@ -203,10 +201,10 @@ export class MartyController {
       const getReadyDuration = this.marty.getAnimationDuration('getReady');
 
       // Wait for animation to complete
-      await new Promise((resolve) => setTimeout(resolve, animationDuration));
+      await this.marty.time.wait(animationDuration);
       
       // Wait for getReady transition
-      await new Promise((resolve) => setTimeout(resolve, getReadyDuration));
+      await this.marty.time.wait(getReadyDuration);
 
       return { success: true, message: 'Dancing' };
     }
@@ -226,10 +224,10 @@ export class MartyController {
       const getReadyDuration = this.marty.getAnimationDuration('getReady');
 
       // Wait for animation to complete
-      await new Promise((resolve) => setTimeout(resolve, animationDuration));
+      await this.marty.time.wait(animationDuration);
       
       // Wait for getReady transition
-      await new Promise((resolve) => setTimeout(resolve, getReadyDuration));
+      await this.marty.time.wait(getReadyDuration);
 
       return { success: true, message: 'Sliding left' };
     }
@@ -249,10 +247,10 @@ export class MartyController {
       const getReadyDuration = this.marty.getAnimationDuration('getReady');
 
       // Wait for animation to complete
-      await new Promise((resolve) => setTimeout(resolve, animationDuration));
+      await this.marty.time.wait(animationDuration);
       
       // Wait for getReady transition
-      await new Promise((resolve) => setTimeout(resolve, getReadyDuration));
+      await this.marty.time.wait(getReadyDuration);
 
       return { success: true, message: 'Sliding right' };
     }

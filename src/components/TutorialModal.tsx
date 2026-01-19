@@ -2,6 +2,21 @@ import { useMemo } from 'react';
 import { TUTORIAL_LESSONS } from '../shared/constants/tutorialLessons.ts';
 import { useAppStore } from '../stores/appStore.ts';
 import './TutorialModal.css';
+import './TutorialModalCode.css';
+
+const formatTutorialText = (text: string) => {
+  const parts = text.split(/(`[^`]+`)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('`') && part.endsWith('`')) {
+      return (
+        <code key={i} className='tutorial-code-highlight'>
+          {part.slice(1, -1)}
+        </code>
+      );
+    }
+    return part;
+  });
+};
 
 export function TutorialModal() {
   const tutorialModalVisible = useAppStore((state) => state.tutorialModalVisible);
@@ -44,6 +59,16 @@ export function TutorialModal() {
                 src={media.src}
                 className='tutorial-media-content'
               />
+            ) : media.type === 'youtube' ? (
+              <iframe
+                src={media.src.replace('watch?v=', 'embed/')}
+                title={media.caption || lesson.title}
+                className='tutorial-media-content'
+                style={{ aspectRatio: '16/9' }}
+                frameBorder='0'
+                allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'
+                allowFullScreen
+              />
             ) : (
               <img src={media.src} alt={media.caption || lesson.title} className='tutorial-media-content' />
             )}
@@ -60,7 +85,7 @@ export function TutorialModal() {
           <h3>Objectives</h3>
           <ul>
             {lesson.objectives.map((objective, index) => (
-              <li key={index}>{objective}</li>
+              <li key={index}>{formatTutorialText(objective)}</li>
             ))}
           </ul>
         </section>
@@ -69,7 +94,7 @@ export function TutorialModal() {
           <h3>Steps</h3>
           <ol>
             {lesson.steps.map((step, index) => (
-              <li key={index}>{step}</li>
+              <li key={index}>{formatTutorialText(step)}</li>
             ))}
           </ol>
         </section>
