@@ -172,9 +172,7 @@ export default class Marty {
    * @param transform - Optional transform with position [x, y, z] and rotationY in degrees
    */
   applyTransformPreset(transform?: { position?: [number, number, number]; rotationY?: number }) {
-    console.log('[Marty] applyTransformPreset called with:', transform, 'model exists:', !!this.model);
     if (!this.model) {
-      console.warn('[Marty] No model to apply transform to!');
       return;
     }
 
@@ -183,7 +181,6 @@ export default class Marty {
       this.initialTransform.position.y,
       this.initialTransform.position.z,
     ];
-    console.log('[Marty] Setting position to:', position);
     this.setPosition(position[0], position[1], position[2]);
 
     if (typeof transform?.rotationY === 'number') {
@@ -290,7 +287,9 @@ export default class Marty {
       this.scene,
       {
         maxRange: 10,
-        sensorHeight: 0.1,
+        sensorHeight: 0.25,      // 25cm from ground
+        forwardOffset: 0.4,      // 40cm in front of robot center
+        minDistance: 0.35,       // Ignore hits closer than 35cm
       }
     );
 
@@ -335,7 +334,6 @@ export default class Marty {
    */
   getGroundColor(): { r: number; g: number; b: number } | null {
     if (!this.sensors.groundColorSensor) {
-      console.warn('Ground color sensor not initialized');
       return null;
     }
     return this.sensors.groundColorSensor.getColor();
@@ -347,7 +345,6 @@ export default class Marty {
    */
   getObstacleDistance(): number {
     if (!this.sensors.obstacleSensor) {
-      console.warn('Obstacle detection sensor not initialized');
       return Infinity;
     }
     return this.sensors.obstacleSensor.getDistance();

@@ -118,7 +118,6 @@ export const useAppStore = create<AppState>((set) => ({
   setEnvironment: (environment) => {
     set(() => {
       const levelState = resolveLevelSelection(environment);
-      console.log('Environment changed to:', environment);
       return {
         selectedEnvironment: environment,
         selectedLevel: levelState.levelId,
@@ -131,7 +130,6 @@ export const useAppStore = create<AppState>((set) => ({
   setLevel: (level) => {
     set((state) => {
       const levelState = resolveLevelSelection(state.selectedEnvironment, level);
-      console.log('Level changed to:', levelState.levelId);
       return {
         selectedLevel: levelState.levelId,
         scenePresetId: levelState.scenePresetId,

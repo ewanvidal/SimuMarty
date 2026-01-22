@@ -13,8 +13,6 @@ export default class Debug {
 
     if (this.active) {
       this.ui = new GUI();
-    } else {
-      console.log('🐛 Debug UI not active. Add #debug to URL to enable.');
     }
   }
 

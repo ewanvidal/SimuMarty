@@ -32,7 +32,6 @@ export default class SceneDirector {
 
     const preset = SCENE_PRESETS[presetId];
     if (!preset) {
-      console.warn(`Unknown scene preset: ${presetId}`);
       this.applyPreset(undefined);
       return;
     }
@@ -41,7 +40,6 @@ export default class SceneDirector {
   }
 
   private applyPreset(preset?: ScenePreset) {
-    console.log('[SceneDirector] Applying preset:', preset?.id, 'marty config:', preset?.marty);
     this.floor?.applyPreset(preset?.floor ?? null);
     this.environment?.applyPreset(preset?.lighting ?? null);
     this.marty?.applyTransformPreset(preset?.marty);

@@ -66,14 +66,12 @@ export class MartyController {
           return this.handleGetObstacleDistance();
 
         default:
-          console.warn('⚠️ Unknown command:', command.action);
           return {
             success: false,
             message: `Unknown command: ${command.action}`,
           };
       }
     } catch (error) {
-      console.error('❌ Error processing command:', error);
       return { success: false, message: String(error) };
     }
   }

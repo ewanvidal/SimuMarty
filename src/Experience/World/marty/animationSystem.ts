@@ -216,11 +216,6 @@ export const setupAnimationSystem = ({
   animation.mixer = new THREE.AnimationMixer(model);
   animation.actions = {};
 
-  console.log('📋 Available animations in GLTF:');
-  resource.animations.forEach((clip: THREE.AnimationClip, index: number) => {
-    console.log(`Animation ${index}:`, clip.name, 'Duration:', clip.duration);
-  });
-
   const walkingClip =
     resource.animations.find((clip) =>
       clip.name.toLowerCase().includes('walking'),
@@ -258,13 +253,11 @@ export const setupAnimationSystem = ({
     clip.name.toLowerCase().includes('slide') &&
     clip.name.toLowerCase().includes('left'),
   );
-  console.log('🔍 slideLeftClip found:', slideLeftClip?.name || 'NOT FOUND');
 
   const slideRightClip = resource.animations.find((clip) =>
     clip.name.toLowerCase().includes('slide') &&
     clip.name.toLowerCase().includes('right'),
   );
-  console.log('🔍 slideRightClip found:', slideRightClip?.name || 'NOT FOUND');
 
   animation.clips = {
     walking: walkingClip,
@@ -355,7 +348,6 @@ export const setupAnimationSystem = ({
     animation.actions.current = newAction;
 
     if (name === 'walking') {
-      console.log('🎯 walk state:', movement);
       movement.enabled = true;
       // Tightened intervals to reduce foot sliding:
       // First step: delayed start (33 vs 30) to let animation plant the right foot first
@@ -442,7 +434,6 @@ export const setupAnimationSystem = ({
     }
 
     if (name === 'turnRight' || name === 'turnLeft') {
-      console.log('🎯 turn state:', turn);
       movement.enabled = false;
       movement.active = false;
 
@@ -473,7 +464,6 @@ export const setupAnimationSystem = ({
       slide.enabled = true;
       slide.direction = 'left';
       slide.elapsed = 0;
-      console.log('🎯 slide state:', slide);
     }
 
     if (name === 'slideRight') {
@@ -482,7 +472,6 @@ export const setupAnimationSystem = ({
       slide.enabled = true;
       slide.direction = 'right';
       slide.elapsed = 0;
-      console.log('🎯 slide state:', slide);
     }
 
     const animationsWithGetReady = ['turnRight', 'turnLeft', 'kick', 'dance', 'slideLeft', 'slideRight'] as const;
@@ -790,7 +779,6 @@ const updateSlide = (
   }
 
   if (slide.elapsed >= slide.duration) {
-    console.log('✅ Slide complete');
     slide.enabled = false;
     slide.elapsed = 0;
   }

@@ -65,10 +65,7 @@ export function ControlBar() {
       alert('WebSocket not connected! Please check if the server is running.');
       return;
     }
-    const success = webSocketService.executeCode(currentCode);
-    if (!success) {
-      console.error('Failed to send code');
-    }
+    webSocketService.executeCode(currentCode);
   };
 
   const handleSaveJson = () => {
@@ -90,7 +87,6 @@ export function ControlBar() {
       link.click();
       URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Failed to export JSON:', error);
       window.alert('Unable to save the code as JSON.');
     }
   };
@@ -121,7 +117,6 @@ export function ControlBar() {
         setEditorMode(data.editorMode);
       }
     } catch (error) {
-      console.error('Failed to import JSON:', error);
       window.alert('Failed to import JSON file. Please ensure it was exported from this editor.');
     } finally {
       event.target.value = '';

@@ -19,9 +19,6 @@ export class TutorialManager {
     if (lesson) {
       this.currentLessonId = lessonId;
       this.currentLesson = lesson;
-      console.log(`[TutorialManager] Loaded lesson: ${lesson.title}`);
-    } else {
-      console.warn(`[TutorialManager] Unknown lesson ID: ${lessonId}`);
     }
   }
 
