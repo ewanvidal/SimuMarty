@@ -287,7 +287,9 @@ export default class Marty {
       this.scene,
       {
         maxRange: 10,
-        sensorHeight: 0.1,
+        sensorHeight: 0.25,      // 25cm from ground
+        forwardOffset: 0.4,      // 40cm in front of robot center
+        minDistance: 0.35,       // Ignore hits closer than 35cm
       }
     );
 

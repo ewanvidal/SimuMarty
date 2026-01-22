@@ -2,16 +2,19 @@ import * as THREE from 'three';
 
 /**
  * Obstacle Detection Sensor
- * Raycaster-based sensor that detects obstacles in front of the robot
+ * Casts a horizontal ray from the robot's torso to detect walls and obstacles
  */
 export class ObstacleSensor {
   private raycaster: THREE.Raycaster;
-  private direction: THREE.Vector3;
   private parent: THREE.Object3D;
   private scene: THREE.Scene;
+  
   private maxRange: number;
   private sensorHeight: number;
-  private sensorOffset: THREE.Vector3;
+  private forwardOffset: number;
+  private minDistance: number;
+  
+  private ignoredObjects: Set<THREE.Object3D> = new Set();
 
   constructor(
     parent: THREE.Object3D,
@@ -19,179 +22,203 @@ export class ObstacleSensor {
     options?: {
       maxRange?: number;
       sensorHeight?: number;
-      sensorOffset?: THREE.Vector3;
+      forwardOffset?: number;
+      minDistance?: number;
     }
   ) {
     this.parent = parent;
     this.scene = scene;
-    this.maxRange = options?.maxRange ?? 10;
-    this.sensorHeight = options?.sensorHeight ?? 0.1;
-    this.sensorOffset = options?.sensorOffset ?? new THREE.Vector3(0, 0, 0);
-
-    // Initialize raycaster
+    
+    this.maxRange = options?.maxRange ?? 5.0;
+    this.sensorHeight = options?.sensorHeight ?? 0.25;
+    this.forwardOffset = options?.forwardOffset ?? 0.3;
+    this.minDistance = options?.minDistance ?? 0.3;
+    
     this.raycaster = new THREE.Raycaster();
     this.raycaster.far = this.maxRange;
-    this.direction = new THREE.Vector3();
+    this.raycaster.near = 0;
+
+    // Auto-find and ignore ground objects
+    this.findAndIgnoreGround();
   }
 
   /**
-   * Detect obstacles ahead of the robot
-   * @param excludeObjects Optional array of objects to exclude from detection
-   * @returns Distance to nearest obstacle, or Infinity if nothing detected
+   * Find ground plane(s) and large horizontal surfaces to ignore
    */
-  getDistance(excludeObjects?: THREE.Object3D[]): number {
-    // Get robot's forward direction in world space
-    this.parent.getWorldDirection(this.direction);
+  private findAndIgnoreGround(): void {
+    this.scene.traverse((obj) => {
+      const name = obj.name.toLowerCase();
+      
+      // 1. Ignore by name
+      if (name.includes('floor') || 
+          name.includes('ground') || 
+          name.includes('plane') ||
+          name.includes('terrain')) {
+        this.ignoredObjects.add(obj);
+        return;
+      }
+      
+      // 2. Ignore large flat meshes (likely ground)
+      if (obj instanceof THREE.Mesh) {
+        const geometry = obj.geometry;
+        geometry.computeBoundingBox();
+        const box = geometry.boundingBox;
+        
+        if (box) {
+          const sizeX = box.max.x - box.min.x;
+          const sizeY = box.max.y - box.min.y;
+          const sizeZ = box.max.z - box.min.z;
+          
+          // Very flat AND large = ground
+          if (sizeY < 0.2 && (sizeX > 5 || sizeZ > 5)) {
+            this.ignoredObjects.add(obj);
+          }
+        }
+      }
+    });
+  }
 
-    // Set raycaster origin (sensor position)
-    const origin = this.parent.position.clone();
-    origin.y += this.sensorHeight;
-    origin.add(this.sensorOffset);
+  /**
+   * Manually add object(s) to ignore
+   */
+  addIgnoredObject(obj: THREE.Object3D): void {
+    this.ignoredObjects.add(obj);
+  }
 
-    // Configure and cast ray
-    this.raycaster.set(origin, this.direction);
-
-    // Filter out excluded objects (including the parent/robot itself)
-    const objectsToExclude = excludeObjects || [];
-    objectsToExclude.push(this.parent);
-
-    const sceneChildren = this.scene.children.filter(
-      (child) => !objectsToExclude.includes(child)
-    );
-
-    // Intersect with scene objects
-    const intersects = this.raycaster.intersectObjects(sceneChildren, true);
-
-    if (intersects.length > 0) {
-      return intersects[0].distance;
+  /**
+   * Check if object or any of its parents should be ignored
+   */
+  private shouldIgnore(obj: THREE.Object3D): boolean {
+    let current: THREE.Object3D | null = obj;
+    
+    while (current) {
+      // Check ignored set
+      if (this.ignoredObjects.has(current)) {
+        return true;
+      }
+      
+      // Check if it's the robot
+      if (current === this.parent) {
+        return true;
+      }
+      
+      current = current.parent;
     }
 
-    return Infinity; // Nothing detected
+    return false;
   }
 
   /**
-   * Check if there's an obstacle within a specific distance
-   * @param threshold Distance threshold in world units
-   * @returns True if obstacle detected within threshold
+   * Cast ray and return first valid intersection
    */
-  isObstacleWithin(threshold: number): boolean {
-    const distance = this.getDistance();
-    return distance < threshold;
-  }
+  private cast(): THREE.Intersection | null {
+    if (!this.parent) return null;
 
-  /**
-   * Get detailed information about the detected obstacle
-   * @returns Object with distance, position, and intersected object, or null
-   */
-  getObstacleInfo(excludeObjects?: THREE.Object3D[]): {
-    distance: number;
-    point: THREE.Vector3;
-    object: THREE.Object3D;
-    normal: THREE.Vector3;
-  } | null {
-    // Get robot's forward direction in world space
-    this.parent.getWorldDirection(this.direction);
+    // 1. Get robot world position
+    const origin = new THREE.Vector3();
+    this.parent.getWorldPosition(origin);
 
-    // Set raycaster origin
-    const origin = this.parent.position.clone();
-    origin.y += this.sensorHeight;
-    origin.add(this.sensorOffset);
+    // 2. Get robot's forward direction (horizontal only)
+    const forward = new THREE.Vector3(0, 0, 1)
+      .applyQuaternion(this.parent.quaternion);
+    forward.y = 0;
+    forward.normalize();
 
-    // Configure and cast ray
-    this.raycaster.set(origin, this.direction);
-
-    // Filter out excluded objects
-    const objectsToExclude = excludeObjects || [];
-    objectsToExclude.push(this.parent);
-
-    const sceneChildren = this.scene.children.filter(
-      (child) => !objectsToExclude.includes(child)
+    // 3. Position sensor origin
+    // IMPORTANT: Use absolute Y coordinate (not relative to robot)
+    const sensorOrigin = new THREE.Vector3(
+      origin.x,
+      this.sensorHeight, // Absolute height from ground
+      origin.z
     );
+    
+    // Move forward from robot center
+    sensorOrigin.add(forward.clone().multiplyScalar(this.forwardOffset));
 
-    const intersects = this.raycaster.intersectObjects(sceneChildren, true);
+    // 4. Cast ray
+    this.raycaster.set(sensorOrigin, forward);
+    const intersects = this.raycaster.intersectObjects(this.scene.children, true);
 
-    if (intersects.length > 0) {
-      const hit = intersects[0];
-      return {
-        distance: hit.distance,
-        point: hit.point,
-        object: hit.object,
-        normal: hit.face?.normal ?? new THREE.Vector3(0, 1, 0),
-      };
+    // 5. Find first valid hit
+    for (const hit of intersects) {
+      if (this.shouldIgnore(hit.object)) continue;
+      if (hit.distance < this.minDistance) continue;
+      return hit;
     }
 
     return null;
   }
 
   /**
-   * Cast ray in a custom direction relative to the parent
-   * @param direction Direction vector (will be normalized)
-   * @returns Distance to obstacle or Infinity
+   * Get distance to nearest obstacle (Infinity if none)
    */
-  castInDirection(direction: THREE.Vector3, excludeObjects?: THREE.Object3D[]): number {
-    const origin = this.parent.position.clone();
-    origin.y += this.sensorHeight;
-    origin.add(this.sensorOffset);
+  getDistance(): number {
+    const hit = this.cast();
+    return hit ? hit.distance : Infinity;
+  }
 
-    const worldDirection = direction.clone().normalize();
+  /**
+   * Get detailed obstacle info for debugging
+   */
+  getObstacleInfo() {
+    const hit = this.cast();
+    if (!hit) return null;
     
-    // Transform direction to world space if needed
-    worldDirection.applyQuaternion(this.parent.quaternion);
-
-    this.raycaster.set(origin, worldDirection);
-
-    const objectsToExclude = excludeObjects || [];
-    objectsToExclude.push(this.parent);
-
-    const sceneChildren = this.scene.children.filter(
-      (child) => !objectsToExclude.includes(child)
-    );
-
-    const intersects = this.raycaster.intersectObjects(sceneChildren, true);
-
-    if (intersects.length > 0) {
-      return intersects[0].distance;
-    }
-
-    return Infinity;
+    return {
+      distance: hit.distance,
+      point: hit.point,
+      object: hit.object,
+      objectName: hit.object.name || 'unnamed',
+      normal: hit.face?.normal
+    };
   }
 
   /**
-   * Update sensor configuration
-   */
-  setMaxRange(range: number): void {
-    this.maxRange = range;
-    this.raycaster.far = range;
-  }
-
-  setSensorHeight(height: number): void {
-    this.sensorHeight = height;
-  }
-
-  setSensorOffset(offset: THREE.Vector3): void {
-    this.sensorOffset.copy(offset);
-  }
-
-  /**
-   * Get the raycaster for advanced usage
-   */
-  getRaycaster(): THREE.Raycaster {
-    return this.raycaster;
-  }
-
-  /**
-   * Get current sensor origin in world space (useful for debugging)
+   * Get ray origin (for visualization)
    */
   getSensorOrigin(): THREE.Vector3 {
-    const origin = this.parent.position.clone();
-    origin.y += this.sensorHeight;
-    origin.add(this.sensorOffset);
-    return origin;
+    if (!this.parent) return new THREE.Vector3();
+    
+    const origin = new THREE.Vector3();
+    this.parent.getWorldPosition(origin);
+    
+    const forward = new THREE.Vector3(0, 0, 1)
+      .applyQuaternion(this.parent.quaternion);
+    forward.y = 0;
+    forward.normalize();
+    
+    const sensorOrigin = new THREE.Vector3(
+      origin.x,
+      this.sensorHeight,
+      origin.z
+    );
+    sensorOrigin.add(forward.multiplyScalar(this.forwardOffset));
+    
+    return sensorOrigin;
   }
 
   /**
-   * Clean up resources
+   * Get ray direction (for visualization)
    */
+  getSensorDirection(): THREE.Vector3 {
+    if (!this.parent) return new THREE.Vector3(0, 0, 1);
+    
+    const forward = new THREE.Vector3(0, 0, 1)
+      .applyQuaternion(this.parent.quaternion);
+    forward.y = 0;
+    forward.normalize();
+    
+    return forward;
+  }
+
+  /**
+   * Check if obstacle within threshold
+   */
+  isObstacleWithin(threshold: number): boolean {
+    return this.getDistance() < threshold;
+  }
+
   dispose(): void {
+    this.ignoredObjects.clear();
   }
 }
