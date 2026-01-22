@@ -94,9 +94,11 @@ class WebSocketService {
   private heartbeatInterval: number | null = null;
   private listeners: Map<WebSocketEventType, Set<EventCallback>> = new Map();
   private isConnecting = false;
+  private suppressConnectionErrors: boolean;
 
-  constructor(url: string = 'ws://localhost:8765') {
+  constructor(url: string = 'ws://localhost:8765', suppressConnectionErrors: boolean = true) {
     this.url = url;
+    this.suppressConnectionErrors = suppressConnectionErrors;
     this.initializeListeners();
   }
 
@@ -154,25 +156,21 @@ class WebSocketService {
   connect(): Promise<void> {
     return new Promise((resolve, reject) => {
       if (this.ws?.readyState === WebSocket.OPEN) {
-        console.log('✅ WebSocket already connected');
         resolve();
         return;
       }
 
       if (this.isConnecting) {
-        console.log('⏳ WebSocket connection already in progress');
         reject(new Error('Connection already in progress'));
         return;
       }
 
       this.isConnecting = true;
-      console.log('🔌 Connecting to WebSocket:', this.url);
 
       try {
         this.ws = new WebSocket(this.url);
 
         this.ws.onopen = () => {
-          console.log('✅ WebSocket connected');
           this.isConnecting = false;
           this.reconnectAttempts = 0;
           this.startHeartbeat();
@@ -185,29 +183,29 @@ class WebSocketService {
         };
 
         this.ws.onerror = (error) => {
-          console.error('❌ WebSocket error:', error);
+          if (!this.suppressConnectionErrors) {
+            console.error('❌ WebSocket error:', error);
+          }
           this.isConnecting = false;
           this.emit('error', error);
           reject(error);
         };
 
         this.ws.onclose = (event) => {
-          console.log('🔌 WebSocket disconnected:', event.code, event.reason);
           this.isConnecting = false;
           this.stopHeartbeat();
           this.emit('disconnected', { code: event.code, reason: event.reason });
 
-          // Attempt reconnection
+          // Attempt reconnection silently
           if (this.reconnectAttempts < this.maxReconnectAttempts) {
             this.reconnectAttempts++;
-            console.log(
-              `🔄 Reconnecting... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`,
-            );
             setTimeout(() => this.connect(), this.reconnectDelay);
           }
         };
       } catch (error) {
-        console.error('❌ Failed to create WebSocket:', error);
+        if (!this.suppressConnectionErrors) {
+          console.error('❌ Failed to create WebSocket:', error);
+        }
         this.isConnecting = false;
         reject(error);
       }
@@ -237,7 +235,6 @@ class WebSocketService {
    */
   send(message: WebSocketMessage): boolean {
     if (!this.isConnected()) {
-      console.warn('⚠️ WebSocket not connected, message not sent');
       return false;
     }
 
@@ -245,7 +242,9 @@ class WebSocketService {
       this.ws!.send(JSON.stringify(message));
       return true;
     } catch (error) {
-      console.error('❌ Failed to send message:', error);
+      if (!this.suppressConnectionErrors) {
+        console.error('❌ Failed to send message:', error);
+      }
       this.emit('error', error);
       return false;
     }
@@ -286,7 +285,6 @@ class WebSocketService {
 
       switch (message.type) {
         case 'ack':
-          console.log('✅ WebSocket connected');
           break;
 
         case 'commandAck':
@@ -314,7 +312,9 @@ class WebSocketService {
           break;
 
         case 'error':
-          console.error('❌ Server error:', message.payload);
+          if (!this.suppressConnectionErrors) {
+            console.error('❌ Server error:', message.payload);
+          }
           this.emit('error', message.payload);
           break;
 
@@ -323,10 +323,13 @@ class WebSocketService {
           break;
 
         default:
-          console.warn('⚠️ Unknown message type:', message.type);
+          // Silently ignore unknown message types
+          break;
       }
     } catch (error) {
-      console.error('❌ Failed to parse message:', error);
+      if (!this.suppressConnectionErrors) {
+        console.error('❌ Failed to parse message:', error);
+      }
       this.emit('error', error);
     }
   }

@@ -25,21 +25,19 @@ function App() {
     });
 
     const unsubscribeError = webSocketService.on('error', (error) => {
-      console.error('WebSocket error:', error);
+      // Silently ignore connection errors
     });
 
     const unsubscribeCommand = webSocketService.on('command', (data) => {
       const commandData = data as { status?: string; message?: string };
-      if (commandData.status === 'success') {
-        console.log('Command executed successfully');
-      } else if (commandData.status === 'error') {
+      if (commandData.status === 'error') {
         console.error(`Error: ${commandData.message || 'Unknown error'}`);
       }
     });
 
     // Attempt to connect
     webSocketService.connect().catch((err) => {
-      console.error('Failed to connect:', err);
+      // Silently ignore connection errors
     });
 
     // Cleanup on unmount

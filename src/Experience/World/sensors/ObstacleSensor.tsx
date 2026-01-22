@@ -32,8 +32,6 @@ export class ObstacleSensor {
     this.raycaster = new THREE.Raycaster();
     this.raycaster.far = this.maxRange;
     this.direction = new THREE.Vector3();
-
-    console.log('✅ Obstacle Sensor initialized (range:', this.maxRange, 'units)');
   }
 
   /**
@@ -195,6 +193,5 @@ export class ObstacleSensor {
    * Clean up resources
    */
   dispose(): void {
-    console.log('🗑️ Obstacle Sensor disposed');
   }
 }

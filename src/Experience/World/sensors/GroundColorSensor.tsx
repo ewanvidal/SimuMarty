@@ -52,8 +52,6 @@ export class GroundColorSensor {
     
     // Add camera to scene (not parent) to avoid transform issues
     scene.add(this.camera);
-
-    console.log('✅ Ground Color Sensor initialized');
   }
 
   /**
@@ -98,7 +96,6 @@ export class GroundColorSensor {
         b: pixel[2],
       };
     } catch (error) {
-      console.error('Error reading ground color:', error);
       return null;
     }
   }
@@ -183,6 +180,5 @@ export class GroundColorSensor {
     this.renderTarget.dispose();
     this.scene.remove(this.camera);
     this.parent.remove(this.helperObject);
-    console.log('🗑️ Ground Color Sensor disposed');
   }
 }

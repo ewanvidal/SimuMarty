@@ -69,8 +69,6 @@ export default class Floor {
       });
 
       this.textures = { diffuse, normal, arm, alpha };
-    } else {
-      console.warn('⚠️ Floor textures not loaded');
     }
   }
 

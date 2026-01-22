@@ -76,8 +76,6 @@ export class FootLight {
       this.spotLightHelper = new THREE.SpotLightHelper(this.spotLight);
       scene.add(this.spotLightHelper);
     }
-
-    console.log('💡 Foot Light initialized (diffuse mode)');
   }
 
   /**
@@ -158,6 +156,5 @@ export class FootLight {
     }
 
     this.spotLight.dispose();
-    console.log('🗑️ Foot Light disposed');
   }
 }

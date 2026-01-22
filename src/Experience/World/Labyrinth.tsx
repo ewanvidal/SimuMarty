@@ -41,8 +41,6 @@ export default class Labyrinth {
       this.model!.position.set(0, 0, 0);
 
       this.scene.add(this.model!);
-    } else {
-      console.warn('⚠️ Labyrinth model not loaded');
     }
   }
 
