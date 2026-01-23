@@ -13,6 +13,8 @@ export function ExperienceCanvas() {
   const [experienceReady, setExperienceReady] = useState(false);
   const scenePresetId = useAppStore((state) => state.scenePresetId);
   const activeLessonId = useAppStore((state) => state.activeLessonId);
+  const selectedEnvironment = useAppStore((state) => state.selectedEnvironment);
+  const selectedLevel = useAppStore((state) => state.selectedLevel);
 
   useEffect(() => {
     if (!canvasRef.current) {
@@ -43,6 +45,14 @@ export function ExperienceCanvas() {
     }
     experienceRef.current.loadScenePreset(scenePresetId ?? null);
   }, [scenePresetId, experienceReady]);
+
+  // Load level when environment or level changes
+  useEffect(() => {
+    if (!experienceReady || !experienceRef.current) {
+      return;
+    }
+    experienceRef.current.loadLevel(selectedEnvironment, selectedLevel);
+  }, [selectedEnvironment, selectedLevel, experienceReady]);
 
   // Load tutorial lesson objects when lesson changes
   useEffect(() => {

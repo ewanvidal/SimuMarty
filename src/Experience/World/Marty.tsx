@@ -442,31 +442,8 @@ export default class Marty {
   update() {
     const deltaSeconds = this.time.delta / 1000;
 
-    // Step physics world
-    if (this.physics) {
-      this.physics.update();
-    }
-
-    // Check if jumping - physics controls Y position
-    const isJumping = this.robotPhysics?.isJumping ?? false;
-    
-    if (isJumping && this.robotPhysics && this.model) {
-      const body = this.robotPhysics.getBody();
-      if (body) {
-        // Sync model Y from physics
-        this.model.position.y = body.position.y - 0.08;
-        
-        // Check if landed (on ground and velocity near zero)
-        if (this.model.position.y <= 0.001 && body.velocity.y <= 0) {
-          this.model.position.y = 0;
-          body.position.y = 0.08;
-          body.velocity.y = 0;
-          this.robotPhysics.isJumping = false;
-        }
-      }
-    }
-
-    // Update animations (includes walking movement)
+    // 1. Update animations (Calculate where animation WANTS to go)
+    // We update model position via animations FIRST
     updateAnimationSystem({
       animation: this.animation,
       movement: this.movement,
@@ -476,7 +453,8 @@ export default class Marty {
       deltaSeconds,
     });
 
-    // Sync physics body X/Z to model (always), Y only when not jumping
+    // 2. Sync physics body to model (prepare for collision detection)
+    const isJumping = this.robotPhysics?.isJumping ?? false;
     if (this.robotPhysics && this.model) {
       const body = this.robotPhysics.getBody();
       if (body) {
@@ -484,6 +462,34 @@ export default class Marty {
         body.position.z = this.model.position.z;
         if (!isJumping) {
           body.position.y = this.model.position.y + 0.08;
+        }
+      }
+    }
+
+    // 3. Step physics world (This resolves any collisions occurred after animation move)
+    if (this.physics) {
+      this.physics.update();
+    }
+
+    // 4. Sync model BACK from physics body (To respect collisions)
+    if (this.robotPhysics && this.model) {
+      const body = this.robotPhysics.getBody();
+      if (body) {
+        // Sync model X/Z from physics (collision resolution)
+        this.model.position.x = body.position.x;
+        this.model.position.z = body.position.z;
+
+        // Sync model Y from physics (especially for jumping)
+        if (isJumping) {
+          this.model.position.y = body.position.y - 0.08;
+
+          // Check if landed (on ground and velocity near zero)
+          if (this.model.position.y <= 0.001 && body.velocity.y <= 0) {
+            this.model.position.y = 0;
+            body.position.y = 0.08;
+            body.velocity.y = 0;
+            this.robotPhysics.isJumping = false;
+          }
         }
       }
     }

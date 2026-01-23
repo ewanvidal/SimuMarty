@@ -1,4 +1,3 @@
-import { DEFAULT_SCENE_PRESET_ID } from './scenePresets.ts';
 import { DEFAULT_TUTORIAL_LESSON_ID } from './tutorialLessons.ts';
 
 export type EnvironmentId =
@@ -31,8 +30,14 @@ export const ENVIRONMENT_PRESETS: Record<EnvironmentId, EnvironmentPreset> = {
   labyrinth: {
     id: 'labyrinth',
     label: 'Labyrinth',
-    defaultLevelId: 'level1',
+    defaultLevelId: 'custom',
     levels: [
+      {
+        id: 'custom',
+        label: 'Custom Layout',
+        difficulty: 'custom',
+        scenePresetId: 'labyrinth-default',
+      },
       {
         id: 'level1',
         label: 'Level 1 · Easy',
@@ -56,12 +61,6 @@ export const ENVIRONMENT_PRESETS: Record<EnvironmentId, EnvironmentPreset> = {
         label: 'Level 4 · Expert',
         difficulty: 'expert',
         scenePresetId: 'labyrinth-default',
-      },
-      {
-        id: 'custom',
-        label: 'Custom Layout',
-        difficulty: 'custom',
-        scenePresetId: DEFAULT_SCENE_PRESET_ID,
       },
     ],
   },
