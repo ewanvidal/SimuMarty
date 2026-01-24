@@ -81,8 +81,9 @@ export class Tile {
   private config: Required<TileConfig>;
   private animationTime = 0;
   private baseOpacity: number;
+  private size: number;
 
-  constructor(parent: THREE.Object3D, config: TileConfig, position: { x: number; z: number }) {
+  constructor(parent: THREE.Object3D, config: TileConfig, position: { x: number; z: number }, size: number = TILE_SIZE) {
     // Merge with defaults
     this.config = {
       name: config.name,
@@ -94,6 +95,7 @@ export class Tile {
     };
 
     this.baseOpacity = this.config.opacity;
+    this.size = size;
 
     // Create material
     this.material = new THREE.MeshStandardMaterial({
@@ -101,10 +103,14 @@ export class Tile {
       roughness: 0.8,
       transparent: this.config.animated || this.config.opacity < 1,
       opacity: this.config.opacity,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1,
+      depthWrite: false,
     });
 
     // Create mesh
-    const geometry = new THREE.PlaneGeometry(TILE_SIZE, TILE_SIZE);
+    const geometry = new THREE.PlaneGeometry(this.size, this.size);
     this.mesh = new THREE.Mesh(geometry, this.material);
     this.mesh.rotation.x = -Math.PI / 2;
     this.mesh.position.set(position.x, 0.0002, position.z);
@@ -145,7 +151,7 @@ export class Tile {
    * Check if a position is on this tile
    */
   isPositionOnTile(position: { x: number; z: number }, tolerance = 0): boolean {
-    const halfSize = TILE_SIZE / 2 + tolerance;
+    const halfSize = this.size / 2 + tolerance;
     const dx = Math.abs(position.x - this.mesh.position.x);
     const dz = Math.abs(position.z - this.mesh.position.z);
     return dx <= halfSize && dz <= halfSize;
@@ -184,8 +190,9 @@ export class Tile {
 export function createTile(
   parent: THREE.Object3D,
   type: TileTypeName | TileConfig,
-  position: { x: number; z: number }
+  position: { x: number; z: number },
+  size?: number
 ): Tile {
   const config = typeof type === 'string' ? TileTypes[type] : type;
-  return new Tile(parent, config, position);
+  return new Tile(parent, config, position, size);
 }

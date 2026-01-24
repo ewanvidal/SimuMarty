@@ -96,6 +96,16 @@ export default class Experience {
     this.world.loadTutorialLesson(lessonId);
   }
 
+  /**
+   * Load a specific level for an environment
+   * @param environmentId - The environment ID
+   * @param levelId - The level ID
+   */
+  loadLevel(environmentId: string, levelId: string) {
+    if (!this.world) return;
+    this.world.loadLevel(environmentId, levelId);
+  }
+
   dispose() {
     this.sizes.dispose();
     this.time.dispose();

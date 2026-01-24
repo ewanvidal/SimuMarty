@@ -123,6 +123,21 @@ export function ControlBar() {
     }
   };
 
+  const handleGenerateMaze = () => {
+    // Access experience singleton globally
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const experience = (window as any).experience;
+    if (experience?.world?.levelBuilder && experience?.world?.marty) {
+      // Force a re-load of the current level selection (or custom)
+      experience.loadLevel(selectedEnvironment, 'custom');
+      
+      // Update store to match
+      if (selectedLevel !== 'custom') {
+        setLevel('custom');
+      }
+    }
+  };
+
   return (
     <>
       <div className='control-bar'>
@@ -165,6 +180,17 @@ export function ControlBar() {
               })}
             </select>
           </div>
+          
+          {selectedEnvironment === 'labyrinth' && (
+            <button
+              className="control-button"
+              onClick={handleGenerateMaze}
+              title="Generate New Random Maze"
+              style={{ marginLeft: '10px' }}
+            >
+              <span className="icon">Generate Random Maze</span>
+            </button>
+          )}
         </div>
 
         <div className='control-bar-section'>

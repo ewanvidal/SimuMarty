@@ -4,7 +4,6 @@ import type Resources from '../Utils/Resources.tsx';
 import Environment from './Environment.tsx';
 import Floor from './Floor.tsx';
 import Marty from './Marty.tsx';
-import Labyrinth from './Labyrinth.tsx';
 import SceneDirector from './SceneDirector.ts';
 import { TutorialManager } from './tutorial/TutorialManager.ts';
 import { TUTORIAL_LESSONS } from '../../shared/constants/tutorialLessons.ts';
@@ -22,7 +21,6 @@ export default class World {
   scene: THREE.Scene;
   resources: Resources;
   floor?: Floor;
-  labyrinth?: Labyrinth;
   marty?: Marty;
   environment?: Environment;
   sceneDirector?: SceneDirector;
@@ -30,6 +28,7 @@ export default class World {
   levelBuilder?: LevelBuilder;
   pendingScenePresetId: string | null = null;
   pendingLessonId: string | null = null;
+  pendingLevelSelection: { envId: string; levelId: string } | null = null;
 
 
   constructor() {
@@ -43,7 +42,6 @@ export default class World {
     this.resources.on('ready', () => {
       // Setup world objects
       this.floor = new Floor();
-      // this.labyrinth = new Labyrinth(); // Disabled for now
       this.marty = new Marty();
       this.environment = new Environment();
       this.sceneDirector = new SceneDirector({
@@ -54,6 +52,11 @@ export default class World {
       });
       this.tutorialManager = new TutorialManager();
       this.levelBuilder = new LevelBuilder(this.scene);
+
+      // Inject physics from Marty into LevelBuilder for obstacle collisions
+      if (this.marty?.physics) {
+        this.levelBuilder.setPhysics(this.marty.physics);
+      }
       
       this.sceneDirector.applyScenePreset(this.pendingScenePresetId);
       
@@ -61,15 +64,17 @@ export default class World {
       if (this.pendingLessonId) {
         this.loadTutorialLesson(this.pendingLessonId);
       }
+
+      // Load pending level selection if any
+      if (this.pendingLevelSelection) {
+        this.loadLevel(this.pendingLevelSelection.envId, this.pendingLevelSelection.levelId);
+      }
     });
   }
 
   update() {
     if (this.marty) {
       this.marty.update();
-    }
-    if (this.labyrinth) {
-      this.labyrinth.update();
     }
     // Update tutorial manager (if needed for future features)
     if (this.tutorialManager) {
@@ -85,7 +90,6 @@ export default class World {
 
   dispose() {
     this.floor?.dispose();
-    this.labyrinth?.dispose();
     this.marty?.dispose();
     this.environment?.dispose();
     this.tutorialManager?.dispose();
@@ -100,6 +104,55 @@ export default class World {
   }
 
   /**
+   * Load a specific level for an environment
+   */
+  loadLevel(environmentId: string, levelId: string): void {
+    if (!this.levelBuilder) {
+      this.pendingLevelSelection = { envId: environmentId, levelId };
+      return;
+    }
+
+    console.log(`Loading level: ${levelId} for environment: ${environmentId}`);
+
+    // Always clear the previous construction when switching levels/environments
+    this.levelBuilder.clear();
+
+    // Disable Marty's shadow in Labyrinth mode (looks better with transparent walls and floor tiles)
+    // and re-enable it for other environments.
+    if (this.marty) {
+      this.marty.setCastShadow(environmentId !== 'labyrinth');
+    }
+
+    if (environmentId === 'labyrinth') {
+      if (levelId === 'level1') {
+        this.levelBuilder.generateMaze(7, 7);
+      } else if (levelId === 'level2') {
+        this.levelBuilder.generateMaze(11, 11);
+      } else if (levelId === 'level3') {
+        this.levelBuilder.generateMaze(17, 17);
+      } else if (levelId === 'level4') {
+        this.levelBuilder.generateMaze(25, 25);
+      } else {
+        // Default or "custom" random maze
+        this.levelBuilder.generateMaze(21, 21);
+      }
+      
+      // After building the maze, teleport Marty to start
+      const startPos = this.levelBuilder.getStartPosition();
+      if (startPos && this.marty) {
+        this.marty.setPosition(startPos.x, 0, startPos.z);
+        this.marty.setRotationY(0);
+      }
+    } else if (environmentId !== 'tutorial') {
+      // Reset Marty to center for non-level-based environments (except tutorial which handles its own)
+      if (this.marty) {
+        this.marty.setPosition(0, 0, 0);
+        this.marty.setRotationY(0);
+      }
+    }
+  }
+
+  /**
    * Load tutorial-specific objects for a lesson
    * @param lessonId - The tutorial lesson ID to load
    */
@@ -108,13 +161,17 @@ export default class World {
     
     if (!this.tutorialManager || !this.levelBuilder) return;
     
-    // Clear previous level construction
-    this.levelBuilder.clear();
-
+    // Only handle tutorial clearing/loading if we have an active lesson
+    // or if we are explicitly clearing a lesson while in the tutorial environment.
+    // If lessonId is null and we aren't in tutorial mode, we should NOT clear the level builder
+    // as it might have just built a non-tutorial level (like a labyrinth).
     if (!lessonId) {
       this.tutorialManager.clearLesson();
       return;
     }
+
+    // Clear previous level construction
+    this.levelBuilder.clear();
     
     // 1. Load the basic tutorial configuration (text, state)
     this.tutorialManager.loadLessonById(lessonId, TUTORIAL_LESSONS);
@@ -151,7 +208,7 @@ export default class World {
         // Could trigger UI notification, next lesson, etc.
       });
     } else if (lessonId === 'sensors-and-obstacles') {
-      this.levelBuilder.build(lesson3Map, lesson3Obstacles);
+      this.levelBuilder.build(lesson3Map, { obstacles: lesson3Obstacles });
       
       // Place Marty at start position and apply rotation
       const startPos = this.levelBuilder.getStartPosition();
