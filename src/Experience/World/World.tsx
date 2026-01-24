@@ -4,7 +4,6 @@ import type Resources from '../Utils/Resources.tsx';
 import Environment from './Environment.tsx';
 import Floor from './Floor.tsx';
 import Marty from './Marty.tsx';
-import Labyrinth from './Labyrinth.tsx';
 import SceneDirector from './SceneDirector.ts';
 import { TutorialManager } from './tutorial/TutorialManager.ts';
 import { TUTORIAL_LESSONS } from '../../shared/constants/tutorialLessons.ts';
@@ -22,7 +21,6 @@ export default class World {
   scene: THREE.Scene;
   resources: Resources;
   floor?: Floor;
-  labyrinth?: Labyrinth;
   marty?: Marty;
   environment?: Environment;
   sceneDirector?: SceneDirector;
@@ -44,7 +42,6 @@ export default class World {
     this.resources.on('ready', () => {
       // Setup world objects
       this.floor = new Floor();
-      // this.labyrinth = new Labyrinth(); // Disabled for now
       this.marty = new Marty();
       this.environment = new Environment();
       this.sceneDirector = new SceneDirector({
@@ -79,9 +76,6 @@ export default class World {
     if (this.marty) {
       this.marty.update();
     }
-    if (this.labyrinth) {
-      this.labyrinth.update();
-    }
     // Update tutorial manager (if needed for future features)
     if (this.tutorialManager) {
       this.tutorialManager.update();
@@ -96,7 +90,6 @@ export default class World {
 
   dispose() {
     this.floor?.dispose();
-    this.labyrinth?.dispose();
     this.marty?.dispose();
     this.environment?.dispose();
     this.tutorialManager?.dispose();
@@ -123,6 +116,12 @@ export default class World {
 
     // Always clear the previous construction when switching levels/environments
     this.levelBuilder.clear();
+
+    // Disable Marty's shadow in Labyrinth mode (looks better with transparent walls and floor tiles)
+    // and re-enable it for other environments.
+    if (this.marty) {
+      this.marty.setCastShadow(environmentId !== 'labyrinth');
+    }
 
     if (environmentId === 'labyrinth') {
       if (levelId === 'level1') {

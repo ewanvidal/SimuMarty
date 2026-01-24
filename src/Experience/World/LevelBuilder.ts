@@ -199,7 +199,7 @@ export class LevelBuilder extends EventEmitter {
           const d = obs.depth ?? 1;
           const width = w * this.currentTileSize;
           const depth = d * this.currentTileSize;
-          const height = this.currentTileSize * 3;
+          const height = this.currentTileSize * 2;
 
           const xCenterOffset = ((w - 1) * this.currentTileSize) / 2;
           const zCenterOffset = ((d - 1) * this.currentTileSize) / 2;

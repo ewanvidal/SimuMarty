@@ -118,6 +118,18 @@ export default class Marty {
   }
 
   /**
+   * Enable or disable shadow casting for Marty's model
+   */
+  setCastShadow(enabled: boolean): void {
+    if (!this.model) return;
+    this.model.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        child.castShadow = enabled;
+      }
+    });
+  }
+
+  /**
    * Setup WebSocket connection to receive commands
    */
   private setupWebSocket() {
