@@ -43,7 +43,7 @@ export default class RobotPhysics {
   parts: Map<string, PhysicsPart> = new Map();
   body?: CANNON.Body;
   robotMaterial?: CANNON.Material;
-  showDebugMeshes: boolean = true;
+  showDebugMeshes: boolean = false;
   isJumping: boolean = false;
   isGrounded: boolean = true;
   autoCalculatedOffset: number = 0;
@@ -135,9 +135,12 @@ export default class RobotPhysics {
    */
   jump(force: number = 5): void {
     if (!this.body) return;
-    if (Math.abs(this.body.velocity.y) > 0.1) return;
+    // Allow jumping if grounded, even if there's small gravity velocity
+    if (!this.isGrounded && Math.abs(this.body.velocity.y) > 0.2) return;
+    
     this.body.velocity.y = force;
     this.isJumping = true;
+    console.log('🦘 Jump triggered!');
   }
 
   private getBoneLength(bone: THREE.Bone): number {
@@ -175,6 +178,7 @@ export default class RobotPhysics {
       });
       const debugMesh = new THREE.Mesh(geometry, material);
       debugMesh.name = `bb_${partName}`;
+      debugMesh.visible = this.showDebugMeshes;
       this.scene.add(debugMesh);
 
       // Cannon shape
@@ -216,8 +220,8 @@ export default class RobotPhysics {
     this.body = new CANNON.Body({
       mass: totalMass,
       material: this.robotMaterial,
-      linearDamping: 0.1,
-      angularDamping: 0.5, // Ajusté pour permettre la bascule pendant la chute
+      linearDamping: 0.8,   // Augmenté pour réduire le glissement (sliding)
+      angularDamping: 0.8,  // Réduit les micro-rotations (wobbling)
       fixedRotation: false, // Permet au corps de tourner physiquement
     });
 
@@ -297,13 +301,17 @@ export default class RobotPhysics {
     // Cannon le fait souvent automatiquement, mais c'est plus sûr ici.
     this.body.updateMassProperties();
 
-    // Contact material (inchangé)
+    // Contact material (inchangé avec correctifs de stabilité)
     if (this.physics.groundBody?.material && this.robotMaterial) {
       this.physics.createContactMaterial(
         this.physics.groundBody.material,
         this.robotMaterial,
-        0.5,
-        0.0,
+        {
+          friction: 1.0,           // Maximum friction pour éviter le glissement
+          restitution: 0.0,
+          contactEquationStiffness: 1e7,
+          contactEquationRelaxation: 3
+        }
       );
     }
   }

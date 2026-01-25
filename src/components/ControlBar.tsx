@@ -65,10 +65,7 @@ export function ControlBar() {
       alert('WebSocket not connected! Please check if the server is running.');
       return;
     }
-    const success = webSocketService.executeCode(currentCode);
-    if (!success) {
-      console.error('Failed to send code');
-    }
+    webSocketService.executeCode(currentCode);
   };
 
   const handleSaveJson = () => {
@@ -90,7 +87,6 @@ export function ControlBar() {
       link.click();
       URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Failed to export JSON:', error);
       window.alert('Unable to save the code as JSON.');
     }
   };
@@ -121,10 +117,24 @@ export function ControlBar() {
         setEditorMode(data.editorMode);
       }
     } catch (error) {
-      console.error('Failed to import JSON:', error);
       window.alert('Failed to import JSON file. Please ensure it was exported from this editor.');
     } finally {
       event.target.value = '';
+    }
+  };
+
+  const handleGenerateMaze = () => {
+    // Access experience singleton globally
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const experience = (window as any).experience;
+    if (experience?.world?.levelBuilder && experience?.world?.marty) {
+      // Force a re-load of the current level selection (or custom)
+      experience.loadLevel(selectedEnvironment, 'custom');
+      
+      // Update store to match
+      if (selectedLevel !== 'custom') {
+        setLevel('custom');
+      }
     }
   };
 
@@ -170,6 +180,17 @@ export function ControlBar() {
               })}
             </select>
           </div>
+          
+          {selectedEnvironment === 'labyrinth' && (
+            <button
+              className="control-button"
+              onClick={handleGenerateMaze}
+              title="Generate New Random Maze"
+              style={{ marginLeft: '10px' }}
+            >
+              <span className="icon">Generate Random Maze</span>
+            </button>
+          )}
         </div>
 
         <div className='control-bar-section'>

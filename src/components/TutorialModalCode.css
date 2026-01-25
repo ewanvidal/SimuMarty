@@ -1,0 +1,10 @@
+.tutorial-code-highlight {
+  background-color: #f1f3f9;
+  color: #d33c56; /* Red-ish color similar to standard code highlights */
+  padding: 0.1em 0.4em;
+  border-radius: 4px;
+  border: 1px solid #e1e4ea;
+  font-family: 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.9em;
+  font-weight: 500;
+}

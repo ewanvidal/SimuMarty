@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import * as CANNON from 'cannon-es';
 import type Experience from '../Experience.tsx';
 import type Resources from '../Utils/Resources.tsx';
 import type Time from '../Utils/Time.tsx';
@@ -127,6 +128,18 @@ export default class Marty {
   }
 
   /**
+   * Enable or disable shadow casting for Marty's model
+   */
+  setCastShadow(enabled: boolean): void {
+    if (!this.model) return;
+    this.model.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        child.castShadow = enabled;
+      }
+    });
+  }
+
+  /**
    * Setup WebSocket connection to receive commands
    */
   private setupWebSocket() {
@@ -177,18 +190,24 @@ export default class Marty {
     return this.jointController.setJointAngle(joint, angle, options);
   }
 
+  /**
+   * Apply a transform preset (position and rotation) from scene configuration
+   * @param transform - Optional transform with position [x, y, z] and rotationY in degrees
+   */
   applyTransformPreset(transform?: { position?: [number, number, number]; rotationY?: number }) {
-    if (!this.model) return;
+    if (!this.model) {
+      return;
+    }
 
     const position = transform?.position ?? [
       this.initialTransform.position.x,
       this.initialTransform.position.y,
       this.initialTransform.position.z,
     ];
-    this.model.position.set(position[0], position[1], position[2]);
+    this.setPosition(position[0], position[1], position[2]);
 
     if (typeof transform?.rotationY === 'number') {
-      this.model.rotation.y = THREE.MathUtils.degToRad(transform.rotationY);
+      this.setRotationY(transform.rotationY);
     } else {
       this.model.rotation.y = this.initialTransform.rotationY;
     }
@@ -223,6 +242,48 @@ export default class Marty {
     this.applyTransformPreset();
   }
 
+  /**
+   * Move Marty to specific world coordinates
+   * @param x - X coordinate (left/right)
+   * @param y - Y coordinate (up/down, usually 0 for ground level)
+   * @param z - Z coordinate (forward/backward)
+   */
+  setPosition(x: number, y: number, z: number): void {
+    if (!this.model) return;
+    this.model.position.set(x, y, z);
+  }
+
+  /**
+   * Get Marty's current world position
+   * @returns Current position as {x, y, z}
+   */
+  getPosition(): { x: number; y: number; z: number } {
+    if (!this.model) return { x: 0, y: 0, z: 0 };
+    return {
+      x: this.model.position.x,
+      y: this.model.position.y,
+      z: this.model.position.z,
+    };
+  }
+
+  /**
+   * Set Marty's Y-axis rotation (heading direction)
+   * @param degrees - Rotation angle in degrees
+   */
+  setRotationY(degrees: number): void {
+    if (!this.model) return;
+    this.model.rotation.y = THREE.MathUtils.degToRad(degrees);
+  }
+
+  /**
+   * Get Marty's current Y-axis rotation in degrees
+   * @returns Rotation in degrees
+   */
+  getRotationY(): number {
+    if (!this.model) return 0;
+    return THREE.MathUtils.radToDeg(this.model.rotation.y);
+  }
+
   private setMovement() {
     this.syncMovementDurations();
   }
@@ -241,6 +302,7 @@ export default class Marty {
       animation: this.animation,
       debug: this.debug,
       debugFolder: this.debugFolder,
+      time: this.time,
       onMovementChange: () => this.syncMovementDurations(),
     });
   }
@@ -276,8 +338,10 @@ export default class Marty {
       this.model,
       this.scene,
       {
-        maxRange: 10,
-        sensorHeight: 0.1,
+        maxRange: 5.0,           // Range in meters
+        sensorHeight: 0.15,      // 15cm from robot base (torso level)
+        forwardOffset: 0.05,     // 5cm in front of robot center
+        minDistance: 0.01,       // Reduced to detect close obstacles
       }
     );
 
@@ -322,7 +386,6 @@ export default class Marty {
    */
   getGroundColor(): { r: number; g: number; b: number } | null {
     if (!this.sensors.groundColorSensor) {
-      console.warn('Ground color sensor not initialized');
       return null;
     }
     return this.sensors.groundColorSensor.getColor();
@@ -334,7 +397,6 @@ export default class Marty {
    */
   getObstacleDistance(): number {
     if (!this.sensors.obstacleSensor) {
-      console.warn('Obstacle detection sensor not initialized');
       return Infinity;
     }
     return this.sensors.obstacleSensor.getDistance();
@@ -432,16 +494,10 @@ export default class Marty {
   update() {
     const deltaSeconds = this.time.delta / 1000;
 
-    // 1. Step physics world
-    if (this.physics) {
-      this.physics.update();
-    }
-
-    // 2. Update auxiliary controllers (Joints & Turn)
+    // 1. Update auxiliary controllers (Joints & Turn)
     this.jointController.update(deltaSeconds);
     this.proceduralTurnController.update(deltaSeconds);
 
-    // 3. Main Physics & Animation Synchronization
     if (this.robotPhysics && this.model) {
       const body = this.robotPhysics.getBody();
       if (!body) return;
@@ -468,24 +524,17 @@ export default class Marty {
           if (direction === 'forward') speed = FALL_SPEEDS.forward;
           if (direction === 'backward') speed = FALL_SPEEDS.backward;
 
-          console.log(`📉 Chute engagée ! Vitesse locale : ${speed}`);
 
           const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(this.model.quaternion);
           body.velocity.x = forward.x * speed;
           body.velocity.z = forward.z * speed;
         }
-
-        // PENDANT LA CHUTE : La Physique dicte Position ET Rotation
-        this.model.position.set(body.position.x, body.position.y, body.position.z);
-        this.model.position.y -= offset;
-        this.model.quaternion.set(body.quaternion.x, body.quaternion.y, body.quaternion.z, body.quaternion.w); 
-
+        // Pendant la chute, le body évolue seul (gravité) -> on ne le force pas à la position du modèle
       } else {
         // --- LOGIQUE AU SOL (Stable) ou SAUT ---
         
         if (this.isFalling) {
           // --- ATTERRISSAGE ---
-          console.log('✅ Atterrissage validé');
           this.isFalling = false;
           
           // RELANCE DES ANIMATIONS
@@ -503,7 +552,7 @@ export default class Marty {
           body.angularVelocity.set(0, 0, 0);
         }
 
-        // UPDATE DES ANIMATIONS (Seulement si au sol/saut)
+        // 1. UPDATE DES ANIMATIONS (Calcul de l'intention de mouvement)
         updateAnimationSystem({
           animation: this.animation,
           movement: this.movement,
@@ -513,30 +562,69 @@ export default class Marty {
           deltaSeconds,
         });
 
-        // SYNCHRO ANIMATION -> PHYSIQUE
+        // 2. SYNCHRO ANIMATION -> PHYSIQUE (Proposer la nouvelle position)
+        body.position.x = this.model.position.x;
+        body.position.z = this.model.position.z;
+        
+        if (!isJumping) {
+          body.position.y = this.model.position.y + offset;
+          // Kill all micro-velocities to prevent "ghost sliding"
+          body.velocity.set(0, 0, 0);
+          body.angularVelocity.set(0, 0, 0);
+          
+          // Force upright rotation to stop any tipping micro-forces
+          body.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), this.model.rotation.y);
+        }
+        // En saut, on ne touche pas à Y du body, la physique gère
+      }
+
+      // 3. STEP PHYSICS WORLD (Résolution des collisions)
+      if (this.physics) {
+        this.physics.update();
+      }
+
+      // 4. SYNCHRO PHYSIQUE -> MODÈLE (Appliquer les contraintes/collisions)
+      if (!isGrounded && !isJumping) {
+        // CHUTE : La Physique dicte tout
+        this.model.position.set(body.position.x, body.position.y, body.position.z);
+        this.model.position.y -= offset;
+        this.model.quaternion.set(body.quaternion.x, body.quaternion.y, body.quaternion.z, body.quaternion.w); 
+      } else {
+        // SOL/SAUT : On récupère la position corrigée (si mur, on est repoussé)
+        this.model.position.x = body.position.x;
+        this.model.position.z = body.position.z;
+
         if (isJumping) {
-          // En saut, la physique dicte Y
+          // 1. Let physics dictate the position
           this.model.position.y = body.position.y - offset;
 
-          // Détection atterrissage saut
+          // 2. Hard-clamp the model to the ground if it goes below 0
+          // (Assuming 0 is your ground level)
+          if (this.model.position.y < 0) {
+            this.model.position.y = 0;
+            body.position.y = offset;
+            body.velocity.y = 0;
+          }
+
+          // 3. Grounding detection
           if (isGrounded && body.velocity.y <= 0) {
             this.robotPhysics.isJumping = false;
             body.velocity.set(0, 0, 0);
+            body.angularVelocity.set(0, 0, 0);
             body.position.y = this.model.position.y + offset;
+            
+            // Force upright rotation on landing
+            body.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), this.model.rotation.y);
           }
-          // X/Z : Modèle -> Physique
-          body.position.x = this.model.position.x;
-          body.position.z = this.model.position.z;
-        } else {
-          // Au sol : Modèle (Animations) dicte tout
-          body.position.x = this.model.position.x;
-          body.position.z = this.model.position.z;
-          body.position.y = this.model.position.y + offset;
-          body.velocity.set(0, 0, 0);
         }
       }
 
       this.robotPhysics.updateDebugMeshes();
+    } else {
+      // Fallback si pas de robotPhysics
+      if (this.physics) {
+        this.physics.update();
+      }
     }
 
     // Update sensors

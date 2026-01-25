@@ -179,7 +179,6 @@ export function createJointController({
 
     // Check if the joint is a twist joint and warn the user
     if (target.id === JointID.LEFT_TWIST || target.id === JointID.RIGHT_TWIST) {
-      console.warn(`⚠️ Twist command for ${target.name} is not yet implemented.`);
       return {
         success: false,
         message: `Twist command for ${target.name} is not yet implemented.`,
@@ -194,11 +193,9 @@ export function createJointController({
     let clampedAngle = numericAngle;
     if (target.clamp) {
       if (target.clamp.min !== undefined && clampedAngle < target.clamp.min) {
-        console.warn(`⚠️ Joint ${target.name} angle ${clampedAngle}° clamped to min ${target.clamp.min}°`);
         clampedAngle = target.clamp.min;
       }
       if (target.clamp.max !== undefined && clampedAngle > target.clamp.max) {
-        console.warn(`⚠️ Joint ${target.name} angle ${clampedAngle}° clamped to max ${target.clamp.max}°`);
         clampedAngle = target.clamp.max;
       }
     }
@@ -211,7 +208,6 @@ export function createJointController({
     const processBone = (boneName: string, invertBone: boolean) => {
       const boneEntry = boneNodes.find((bone) => bone.name === boneName);
       if (!boneEntry) {
-        console.warn(`⚠️ Bone ${boneName} not found for joint ${target.name}`);
         return;
       }
 

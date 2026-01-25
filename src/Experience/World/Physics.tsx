@@ -111,12 +111,14 @@ export default class Physics {
   createContactMaterial(
     material1: CANNON.Material,
     material2: CANNON.Material,
-    friction?: number,
-    restitution?: number,
+    options?: CANNON.IContactMaterialOptions
   ): CANNON.ContactMaterial {
     const contactMaterial = new CANNON.ContactMaterial(material1, material2, {
-      friction: friction ?? 0.5,
-      restitution: restitution ?? 0.1,
+      friction: options?.friction ?? 0.5,
+      restitution: options?.restitution ?? 0.1,
+      contactEquationStiffness: options?.contactEquationStiffness ?? 1e6,
+      contactEquationRelaxation: options?.contactEquationRelaxation ?? 3,
+      ...options
     });
     this.world.addContactMaterial(contactMaterial);
     return contactMaterial;

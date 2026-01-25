@@ -429,7 +429,7 @@ export const BlocklyEditor = ({
         const xml = Blockly.utils.xml.textToDom(initialXml);
         Blockly.Xml.domToWorkspace(xml, workspace);
       } catch (e) {
-        console.error('Error loading initial XML:', e);
+        // Silently ignore
       }
     }
 
@@ -467,7 +467,7 @@ export const BlocklyEditor = ({
         }
         workspaceRef.current = null;
       } catch (error) {
-        console.warn('Error disposing Blockly workspace:', error);
+        // Silently ignore
       }
       if (resizeObserverRef.current) {
         resizeObserverRef.current.disconnect();
@@ -486,7 +486,6 @@ export const BlocklyEditor = ({
         return;
       }
     } catch (error) {
-      console.warn('Failed to read current Blockly XML:', error);
       return;
     }
 
@@ -497,7 +496,7 @@ export const BlocklyEditor = ({
         try {
           block.dispose(false);
         } catch (e) {
-          console.warn('Error disposing block:', e);
+          // Silently ignore
         }
       });
       
@@ -505,7 +504,7 @@ export const BlocklyEditor = ({
       const xml = Blockly.utils.xml.textToDom(initialXml);
       Blockly.Xml.domToWorkspace(xml, workspaceRef.current);
     } catch (error) {
-      console.error('Error syncing Blockly XML:', error);
+      // Silently ignore
     }
   }, [initialXml]);
 

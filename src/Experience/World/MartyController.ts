@@ -66,14 +66,12 @@ export class MartyController {
           return this.handleGetObstacleDistance();
 
         default:
-          console.warn('⚠️ Unknown command:', command.action);
           return {
             success: false,
             message: `Unknown command: ${command.action}`,
           };
       }
     } catch (error) {
-      console.error('❌ Error processing command:', error);
       return { success: false, message: String(error) };
     }
   }
@@ -101,14 +99,12 @@ export class MartyController {
           // Always auto-stop to trigger getReady if steps > 2
           this.marty.animation.play('walking', { autoStop: true });
           // Wait for animation to complete using actual duration
-          await new Promise((resolve) =>
-            setTimeout(resolve, animationDuration),
-          );
+          await this.marty.time.wait(animationDuration);
           
           // Add getReady between cycles if steps >= 2
           // The value 500ms is an additional buffer to ensure smooth transition
           if (steps >= 2 || isLastCycle) {
-            await new Promise((resolve) => setTimeout(resolve, getReadyDuration + 500));
+            await this.marty.time.wait(getReadyDuration + 500);
           }
         }
       }
@@ -131,10 +127,10 @@ export class MartyController {
       const getReadyDuration = this.marty.getAnimationDuration('getReady');
 
       // Wait for animation to complete
-      await new Promise((resolve) => setTimeout(resolve, animationDuration));
+      await this.marty.time.wait(animationDuration);
       
       // Wait for getReady transition
-      await new Promise((resolve) => setTimeout(resolve, getReadyDuration));
+      await this.marty.time.wait(getReadyDuration);
 
       return { success: true, message: 'Waving' };
     }
@@ -180,10 +176,10 @@ export class MartyController {
       const getReadyDuration = this.marty.getAnimationDuration('getReady');
 
       // Wait for animation to complete
-      await new Promise((resolve) => setTimeout(resolve, animationDuration));
+      await this.marty.time.wait(animationDuration);
       
       // Wait for getReady transition
-      await new Promise((resolve) => setTimeout(resolve, getReadyDuration));
+      await this.marty.time.wait(getReadyDuration);
 
       return { success: true, message: 'Kicking' };
     }
@@ -203,10 +199,10 @@ export class MartyController {
       const getReadyDuration = this.marty.getAnimationDuration('getReady');
 
       // Wait for animation to complete
-      await new Promise((resolve) => setTimeout(resolve, animationDuration));
+      await this.marty.time.wait(animationDuration);
       
       // Wait for getReady transition
-      await new Promise((resolve) => setTimeout(resolve, getReadyDuration));
+      await this.marty.time.wait(getReadyDuration);
 
       return { success: true, message: 'Dancing' };
     }
@@ -226,10 +222,10 @@ export class MartyController {
       const getReadyDuration = this.marty.getAnimationDuration('getReady');
 
       // Wait for animation to complete
-      await new Promise((resolve) => setTimeout(resolve, animationDuration));
+      await this.marty.time.wait(animationDuration);
       
       // Wait for getReady transition
-      await new Promise((resolve) => setTimeout(resolve, getReadyDuration));
+      await this.marty.time.wait(getReadyDuration);
 
       return { success: true, message: 'Sliding left' };
     }
@@ -249,10 +245,10 @@ export class MartyController {
       const getReadyDuration = this.marty.getAnimationDuration('getReady');
 
       // Wait for animation to complete
-      await new Promise((resolve) => setTimeout(resolve, animationDuration));
+      await this.marty.time.wait(animationDuration);
       
       // Wait for getReady transition
-      await new Promise((resolve) => setTimeout(resolve, getReadyDuration));
+      await this.marty.time.wait(getReadyDuration);
 
       return { success: true, message: 'Sliding right' };
     }
@@ -478,16 +474,6 @@ export class MartyController {
       distance,
       detected: distance !== Infinity,
     };
-    
-    // Log to browser console
-    if (obstacleData.detected) {
-      console.log('📡 Obstacle Distance:', distance.toFixed(2), 'units');
-      if (distance < 2) {
-        console.log('   ⚠️ WARNING: Too close!');
-      }
-    } else {
-      console.log('📡 Obstacle Distance: Clear (no obstacle detected)');
-    }
     
     // Send sensor data back via WebSocket
     import('../../services/WebSocketService').then(({ webSocketService }) => {

@@ -16,12 +16,6 @@ export const sources: Source[] = [
     type: 'gltfModel',
     path: '/blender/models/marty.glb',
   },
-  // Labyrinth environment (disabled for now)
-  // {
-  //   name: 'labyrinthModel',
-  //   type: 'gltfModel',
-  //   path: '/blender/environments/labyrinth.glb'
-  // },
   // Floor textures
   {
     name: 'floorDiffuseTexture',

@@ -26,6 +26,14 @@ export interface MovementState {
   active: boolean;
   moveTimer: number;
   restTimer: number;
+  phases: MovementPhase[];
+  currentPhaseIndex: number;
+}
+
+export interface MovementPhase {
+  type: 'rest' | 'move';
+  duration: number; // in seconds
+  elapsed: number;
 }
 
 export interface TurnState {
@@ -93,6 +101,8 @@ export const createMovementState = (): MovementState => ({
   active: false,
   moveTimer: 0,
   restTimer: 0,
+  phases: [],
+  currentPhaseIndex: 0,
 });
 
 export const createTurnState = (): TurnState => ({
@@ -136,6 +146,44 @@ export const syncMovementDurations = (movement: MovementState, turn: TurnState) 
   }
 };
 
+export const configureMultiStepTiming = (
+  movement: MovementState,
+  intervals: { start: number; end: number }[],
+  fps: number = movement.fps,
+) => {
+  const phases: MovementPhase[] = [];
+  const sorted = [...intervals].sort((a, b) => a.start - b.start);
+
+  let cursor = 0;
+  for (const interval of sorted) {
+    const restFrames = Math.max(interval.start - cursor, 0);
+    if (restFrames > 0) {
+      phases.push({
+        type: 'rest',
+        duration: restFrames / fps,
+        elapsed: 0,
+      });
+    }
+
+    const moveFrames = Math.max(interval.end - interval.start, 0);
+    if (moveFrames > 0) {
+      phases.push({
+        type: 'move',
+        duration: moveFrames / fps,
+        elapsed: 0,
+      });
+    }
+
+    cursor = Math.max(cursor, interval.end);
+  }
+
+  movement.phases = phases;
+  movement.currentPhaseIndex = 0;
+  movement.active = phases[0]?.type === 'move';
+};
+
+import type Time from '../../Utils/Time.tsx';
+
 interface AnimationSetupParams {
   model?: THREE.Group;
   resource?: GLTF;
@@ -145,6 +193,7 @@ interface AnimationSetupParams {
   animation: AnimationState;
   debug: Debug;
   debugFolder?: GuiFolder;
+  time?: Time;
   onMovementChange: () => void;
 }
 
@@ -157,6 +206,7 @@ export const setupAnimationSystem = ({
   animation,
   debug,
   debugFolder,
+  time,
   onMovementChange,
 }: AnimationSetupParams) => {
   if (!model || !resource?.animations) {
@@ -165,11 +215,6 @@ export const setupAnimationSystem = ({
 
   animation.mixer = new THREE.AnimationMixer(model);
   animation.actions = {};
-
-  console.log('📋 Available animations in GLTF:');
-  resource.animations.forEach((clip: THREE.AnimationClip, index: number) => {
-    console.log(`Animation ${index}:`, clip.name, 'Duration:', clip.duration);
-  });
 
   const walkingClip =
     resource.animations.find((clip) =>
@@ -208,13 +253,11 @@ export const setupAnimationSystem = ({
     clip.name.toLowerCase().includes('slide') &&
     clip.name.toLowerCase().includes('left'),
   );
-  console.log('🔍 slideLeftClip found:', slideLeftClip?.name || 'NOT FOUND');
 
   const slideRightClip = resource.animations.find((clip) =>
     clip.name.toLowerCase().includes('slide') &&
     clip.name.toLowerCase().includes('right'),
   );
-  console.log('🔍 slideRightClip found:', slideRightClip?.name || 'NOT FOUND');
 
   animation.clips = {
     walking: walkingClip,
@@ -305,9 +348,18 @@ export const setupAnimationSystem = ({
     animation.actions.current = newAction;
 
     if (name === 'walking') {
-      console.log('🎯 walk state:', movement);
       movement.enabled = true;
-      movement.active = false;
+      // Tightened intervals to reduce foot sliding:
+      // First step: delayed start (33 vs 30) to let animation plant the right foot first
+      // Second step: similar tightening for consistency
+      configureMultiStepTiming(
+        movement,
+        [
+          { start: 35, end: 53 },   // First step: left foot lifts, right foot planted
+          { start: 112, end: 132 }, // Second step: right foot lifts, left foot planted
+        ],
+        30,
+      );
       movement.moveTimer = 0;
       movement.restTimer = 0;
 
@@ -315,7 +367,7 @@ export const setupAnimationSystem = ({
       if (shouldAutoStop) {
         const animationDuration = getAnimationDuration(animation, turn, 'walking');
 
-        setTimeout(() => {
+        const onComplete = () => {
           movement.enabled = false;
           movement.active = false;
 
@@ -333,7 +385,13 @@ export const setupAnimationSystem = ({
 
             animation.actions.current = getReadyAction;
           }
-        }, animationDuration);
+        };
+
+        if (time) {
+          time.wait(animationDuration).then(onComplete);
+        } else {
+          setTimeout(onComplete, animationDuration);
+        }
       }
     }
 
@@ -345,7 +403,7 @@ export const setupAnimationSystem = ({
       if (shouldAutoStop) {
         const animationDuration = getAnimationDuration(animation, turn, 'waving');
 
-        setTimeout(() => {
+        const onComplete = () => {
           if (animation.actions?.getReady) {
             const getReadyAction = animation.actions.getReady;
             const currentAction = animation.actions.current;
@@ -360,7 +418,13 @@ export const setupAnimationSystem = ({
 
             animation.actions.current = getReadyAction;
           }
-        }, animationDuration);
+        };
+
+        if (time) {
+          time.wait(animationDuration).then(onComplete);
+        } else {
+          setTimeout(onComplete, animationDuration);
+        }
       }
     }
 
@@ -370,7 +434,6 @@ export const setupAnimationSystem = ({
     }
 
     if (name === 'turnRight' || name === 'turnLeft') {
-      console.log('🎯 turn state:', turn);
       movement.enabled = false;
       movement.active = false;
 
@@ -401,7 +464,6 @@ export const setupAnimationSystem = ({
       slide.enabled = true;
       slide.direction = 'left';
       slide.elapsed = 0;
-      console.log('🎯 slide state:', slide);
     }
 
     if (name === 'slideRight') {
@@ -410,7 +472,6 @@ export const setupAnimationSystem = ({
       slide.enabled = true;
       slide.direction = 'right';
       slide.elapsed = 0;
-      console.log('🎯 slide state:', slide);
     }
 
     const animationsWithGetReady = ['turnRight', 'turnLeft', 'kick', 'dance', 'slideLeft', 'slideRight'] as const;
@@ -423,7 +484,7 @@ export const setupAnimationSystem = ({
       if (shouldAutoStop) {
         const animationDuration = getAnimationDuration(animation, turn, name as AnimationName);
 
-        setTimeout(() => {
+        const onComplete = () => {
           slide.enabled = false;
 
           if (animation.actions?.getReady) {
@@ -440,7 +501,13 @@ export const setupAnimationSystem = ({
 
             animation.actions.current = getReadyAction;
           }
-        }, animationDuration);
+        };
+
+        if (time) {
+          time.wait(animationDuration).then(onComplete);
+        } else {
+          setTimeout(onComplete, animationDuration);
+        }
       }
     }
   };
@@ -613,23 +680,37 @@ const updateMovement = (
 ) => {
   if (!model) return;
 
-  if (movement.active) {
-    movement.moveTimer += deltaSeconds;
-    const distance = movement.speed * deltaSeconds;
-    model.translateZ(distance);
-
-    if (movement.moveTimer >= movement.moveDuration) {
-      movement.active = false;
-      movement.moveTimer = 0;
-      movement.restTimer = 0;
-    }
+  if (!movement.phases.length) {
+    movement.enabled = false;
+    movement.active = false;
     return;
   }
 
-  movement.restTimer += deltaSeconds;
-  if (movement.restTimer >= movement.restDuration) {
-    movement.active = true;
-    movement.restTimer = 0;
+  let remaining = deltaSeconds;
+  while (remaining > 0 && movement.currentPhaseIndex < movement.phases.length) {
+    const phase = movement.phases[movement.currentPhaseIndex];
+    const remainingPhaseTime = Math.max(phase.duration - phase.elapsed, 0);
+    const step = Math.min(remaining, remainingPhaseTime);
+
+    if (phase.type === 'move') {
+      const distance = movement.speed * step;
+      model.translateZ(distance);
+    }
+
+    phase.elapsed += step;
+    remaining -= step;
+
+    if (phase.elapsed >= phase.duration) {
+      movement.currentPhaseIndex += 1;
+    }
+  }
+
+  const current = movement.phases[movement.currentPhaseIndex];
+  movement.active = current?.type === 'move';
+
+  if (movement.currentPhaseIndex >= movement.phases.length) {
+    movement.enabled = false;
+    movement.active = false;
   }
 };
 
@@ -698,7 +779,6 @@ const updateSlide = (
   }
 
   if (slide.elapsed >= slide.duration) {
-    console.log('✅ Slide complete');
     slide.enabled = false;
     slide.elapsed = 0;
   }
