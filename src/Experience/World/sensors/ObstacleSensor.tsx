@@ -53,7 +53,8 @@ export class ObstacleSensor {
       if (name.includes('floor') || 
           name.includes('ground') || 
           name.includes('plane') ||
-          name.includes('terrain')) {
+          name.includes('terrain') ||
+          name.includes('tile')) {
         this.ignoredObjects.add(obj);
         return;
       }
@@ -101,6 +102,11 @@ export class ObstacleSensor {
       if (current === this.parent) {
         return true;
       }
+
+      // Ignore physics debug meshes
+      if (current.name && current.name.startsWith('bb_')) {
+        return true;
+      }
       
       current = current.parent;
     }
@@ -125,10 +131,10 @@ export class ObstacleSensor {
     forward.normalize();
 
     // 3. Position sensor origin
-    // IMPORTANT: Use absolute Y coordinate (not relative to robot)
+    // Use relative Y coordinate from robot world position (usually feet level)
     const sensorOrigin = new THREE.Vector3(
       origin.x,
-      this.sensorHeight, // Absolute height from ground
+      origin.y + this.sensorHeight,
       origin.z
     );
     
@@ -142,6 +148,11 @@ export class ObstacleSensor {
     // 5. Find first valid hit
     for (const hit of intersects) {
       if (this.shouldIgnore(hit.object)) continue;
+      
+      // Ignore lines (e.g. tile borders, helpers)
+      if (hit.object instanceof THREE.Line || hit.object instanceof THREE.LineSegments) continue;
+
+      // The hit must be at least minDistance away from the sensor origin
       if (hit.distance < this.minDistance) continue;
       return hit;
     }
@@ -154,6 +165,9 @@ export class ObstacleSensor {
    */
   getDistance(): number {
     const hit = this.cast();
+    if (hit) {
+      console.log('🎯 ObstacleSensor hit:', hit.object.name || 'unnamed', 'at', hit.distance.toFixed(3), 'parent:', hit.object.parent?.name);
+    }
     return hit ? hit.distance : Infinity;
   }
 

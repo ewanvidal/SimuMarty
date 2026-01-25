@@ -53,6 +53,10 @@ class MartyWebSocketServer:
         self.port = port
         self.clients: Set[WebSocketServerProtocol] = set()
         self.telemetry_task: Optional[asyncio.Task] = None
+        self.last_sensor_data = {
+            "obstacle": {"distance": float('inf'), "detected": False},
+            "groundColor": {"r": 0, "g": 0, "b": 0}
+        }
         
     async def register_client(self, websocket: WebSocketServerProtocol):
         """Register a new client connection"""
@@ -164,6 +168,7 @@ class MartyWebSocketServer:
         
         # Create a command queue to capture marty commands
         commands = []
+        server_instance = self
         
         # Create a mock marty object that captures commands instead of executing them
         class MockMarty:
@@ -240,16 +245,21 @@ class MartyWebSocketServer:
 
             # --- Sensor helpers -------------------------------------------------
             def getGroundColor(self):
-                logger.info(f"  → Captured: getGroundColor()")
+                logger.info("  → Captured: getGroundColor()")
                 commands.append({"action": "getGroundColor", "params": {}})
-                print("Ground Color sensor called - check browser console for results")
-                return None
+                return server_instance.last_sensor_data.get("groundColor")
+            
+            def get_ground_color(self):
+                return self.getGroundColor()
             
             def getObstacleDistance(self):
-                logger.info(f"  → Captured: getObstacleDistance()")
+                logger.info("  → Captured: getObstacleDistance()")
                 commands.append({"action": "getObstacleDistance", "params": {}})
-                print("Obstacle Distance sensor called - check browser console for results")
-                return None
+                # Returns distance in meters as per the simulation
+                return server_instance.last_sensor_data.get("obstacle", {}).get("distance", float('inf'))
+
+            def get_distance_sensor(self):
+                return self.getObstacleDistance()
 
             def _normalize_joint_identifier(self, joint) -> Optional[int]:
                 if isinstance(joint, (int, float)):
@@ -349,6 +359,12 @@ class MartyWebSocketServer:
                     
                     if msg_type == "command":
                         await self.handle_command(websocket, data.get("payload", {}))
+                    elif msg_type == "sensorData":
+                        payload = data.get("payload", {})
+                        sensor_type = payload.get("sensorType")
+                        if sensor_type in self.last_sensor_data:
+                            self.last_sensor_data[sensor_type] = payload.get("data")
+                            logger.debug(f"Updated sensor {sensor_type}: {self.last_sensor_data[sensor_type]}")
                     elif msg_type == "ping":
                         # Respond to heartbeat
                         await self.send_message(websocket, {

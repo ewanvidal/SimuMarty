@@ -475,16 +475,6 @@ export class MartyController {
       detected: distance !== Infinity,
     };
     
-    // Log to browser console
-    if (obstacleData.detected) {
-      console.log('📡 Obstacle Distance:', distance.toFixed(2), 'units');
-      if (distance < 2) {
-        console.log('   ⚠️ WARNING: Too close!');
-      }
-    } else {
-      console.log('📡 Obstacle Distance: Clear (no obstacle detected)');
-    }
-    
     // Send sensor data back via WebSocket
     import('../../services/WebSocketService').then(({ webSocketService }) => {
       webSocketService.send({

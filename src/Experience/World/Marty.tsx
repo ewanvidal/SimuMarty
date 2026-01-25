@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import * as CANNON from 'cannon-es';
 import type Experience from '../Experience.tsx';
 import type Resources from '../Utils/Resources.tsx';
 import type Time from '../Utils/Time.tsx';
@@ -39,6 +40,14 @@ import Physics from './Physics.tsx';
 import RobotPhysics from './RobotPhysics.tsx';
 
 /**
+ * Predefined velocities for animations used during falls
+ */
+const FALL_SPEEDS = {
+  forward: 0.4,
+  backward: -0.2,
+};
+
+/**
  * Marty
  * The robot character with animations and movement
  */
@@ -67,12 +76,13 @@ export default class Marty {
     obstacleSensor?: ObstacleSensor;
     footLight?: FootLight;
   };
-  private initialTransform = {
+  initialTransform = {
     position: new THREE.Vector3(0, 0, 0),
     rotationY: 0,
   };
   physics?: Physics;
   robotPhysics?: RobotPhysics;
+  isFalling: boolean = false;
 
   constructor() {
     this.experience = (
@@ -160,6 +170,7 @@ export default class Marty {
     this.boneNodes = boneNodes;
     this.boneInitialRotations = boneInitialRotations;
     this.boneDebugFolder = boneDebugFolder;
+
     if (this.model) {
       this.initialTransform = {
         position: this.model.position.clone(),
@@ -200,6 +211,35 @@ export default class Marty {
     } else {
       this.model.rotation.y = this.initialTransform.rotationY;
     }
+
+    // Synchronize physics immediately to prevent jumping/glitching on preset apply
+    if (this.robotPhysics) {
+      const body = this.robotPhysics.getBody();
+      if (body) {
+        body.position.set(
+          this.model.position.x,
+          this.model.position.y + this.robotPhysics.autoCalculatedOffset,
+          this.model.position.z
+        );
+        body.velocity.set(0, 0, 0);
+        body.angularVelocity.set(0, 0, 0);
+      }
+    }
+  }
+
+  /**
+   * Set a new default spawn position and immediately move the robot there
+   */
+  setSpawnPosition(position: THREE.Vector3, rotationY?: number): void {
+    if (!this.model) return;
+
+    this.initialTransform.position.copy(position);
+    if (rotationY !== undefined) {
+      this.initialTransform.rotationY = rotationY;
+    }
+
+    // Apply it now
+    this.applyTransformPreset();
   }
 
   /**
@@ -298,10 +338,10 @@ export default class Marty {
       this.model,
       this.scene,
       {
-        maxRange: 10,
-        sensorHeight: 0.25,      // 25cm from ground
-        forwardOffset: 0.4,      // 40cm in front of robot center
-        minDistance: 0.35,       // Ignore hits closer than 35cm
+        maxRange: 5.0,           // Range in meters
+        sensorHeight: 0.15,      // 15cm from robot base (torso level)
+        forwardOffset: 0.05,     // 5cm in front of robot center
+        minDistance: 0.01,       // Reduced to detect close obstacles
       }
     );
 
@@ -454,67 +494,140 @@ export default class Marty {
   update() {
     const deltaSeconds = this.time.delta / 1000;
 
-    // 1. Update animations (Calculate where animation WANTS to go)
-    // We update model position via animations FIRST
-    updateAnimationSystem({
-      animation: this.animation,
-      movement: this.movement,
-      turn: this.turn,
-      slide: this.slide,
-      model: this.model,
-      deltaSeconds,
-    });
-
-    // 2. Sync physics body to model (prepare for collision detection)
-    const isJumping = this.robotPhysics?.isJumping ?? false;
-    if (this.robotPhysics && this.model) {
-      const body = this.robotPhysics.getBody();
-      if (body) {
-        body.position.x = this.model.position.x;
-        body.position.z = this.model.position.z;
-        if (!isJumping) {
-          body.position.y = this.model.position.y + 0.08;
-        }
-      }
-    }
-
-    // 3. Step physics world (This resolves any collisions occurred after animation move)
-    if (this.physics) {
-      this.physics.update();
-    }
-
-    // 4. Sync model BACK from physics body (To respect collisions)
-    if (this.robotPhysics && this.model) {
-      const body = this.robotPhysics.getBody();
-      if (body) {
-        // Sync model X/Z from physics (collision resolution)
-        this.model.position.x = body.position.x;
-        this.model.position.z = body.position.z;
-
-        // Sync model Y from physics (especially for jumping)
-        if (isJumping) {
-          this.model.position.y = body.position.y - 0.08;
-
-          // Check if landed (on ground and velocity near zero)
-          if (this.model.position.y <= 0.001 && body.velocity.y <= 0) {
-            this.model.position.y = 0;
-            body.position.y = 0.08;
-            body.velocity.y = 0;
-            this.robotPhysics.isJumping = false;
-          }
-        }
-      }
-    }
-
-    // Update debug meshes
-    if (this.robotPhysics) {
-      this.robotPhysics.updateDebugMeshes();
-    }
-
+    // 1. Update auxiliary controllers (Joints & Turn)
     this.jointController.update(deltaSeconds);
     this.proceduralTurnController.update(deltaSeconds);
 
-    // Update foot light position to follow foot bone
+    if (this.robotPhysics && this.model) {
+      const body = this.robotPhysics.getBody();
+      if (!body) return;
+
+      const offset = this.robotPhysics.autoCalculatedOffset;
+      const isGrounded = this.robotPhysics.checkGrounded();
+      const isJumping = this.robotPhysics.isJumping;
+
+      // --- LOGIQUE DE CHUTE ---
+      // On tombe si on n'est pas au sol ET qu'on n'est pas en train de sauter (volontairement)
+      if (!isGrounded && !isJumping) {
+        if (!this.isFalling) {
+          // --- DÉBUT DE CHUTE ---
+          this.isFalling = true;
+          
+          // PAUSE DES ANIMATIONS : Les jambes s'immobilisent
+          if (this.animation.mixer) {
+            this.animation.mixer.timeScale = 0; 
+          }
+
+          // IMPULSION INITIALE (Forward/Backward)
+          const direction = this.robotPhysics.fallDirection;
+          let speed = 0;
+          if (direction === 'forward') speed = FALL_SPEEDS.forward;
+          if (direction === 'backward') speed = FALL_SPEEDS.backward;
+
+
+          const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(this.model.quaternion);
+          body.velocity.x = forward.x * speed;
+          body.velocity.z = forward.z * speed;
+        }
+        // Pendant la chute, le body évolue seul (gravité) -> on ne le force pas à la position du modèle
+      } else {
+        // --- LOGIQUE AU SOL (Stable) ou SAUT ---
+        
+        if (this.isFalling) {
+          // --- ATTERRISSAGE ---
+          this.isFalling = false;
+          
+          // RELANCE DES ANIMATIONS
+          if (this.animation.mixer) {
+            this.animation.mixer.timeScale = 1;
+          }
+
+          // RESET ROTATION : Le robot se remet droit sur ses pieds
+          // On garde l'orientation Y actuelle mais on annule X/Z (bascule)
+          const currentYRotation = new THREE.Euler().setFromQuaternion(this.model.quaternion).y;
+          this.model.rotation.set(0, currentYRotation, 0);
+          body.quaternion.set(this.model.quaternion.x, this.model.quaternion.y, this.model.quaternion.z, this.model.quaternion.w);
+          
+          body.velocity.set(0, 0, 0);
+          body.angularVelocity.set(0, 0, 0);
+        }
+
+        // 1. UPDATE DES ANIMATIONS (Calcul de l'intention de mouvement)
+        updateAnimationSystem({
+          animation: this.animation,
+          movement: this.movement,
+          turn: this.turn,
+          slide: this.slide,
+          model: this.model,
+          deltaSeconds,
+        });
+
+        // 2. SYNCHRO ANIMATION -> PHYSIQUE (Proposer la nouvelle position)
+        body.position.x = this.model.position.x;
+        body.position.z = this.model.position.z;
+        
+        if (!isJumping) {
+          body.position.y = this.model.position.y + offset;
+          // Kill all micro-velocities to prevent "ghost sliding"
+          body.velocity.set(0, 0, 0);
+          body.angularVelocity.set(0, 0, 0);
+          
+          // Force upright rotation to stop any tipping micro-forces
+          body.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), this.model.rotation.y);
+        }
+        // En saut, on ne touche pas à Y du body, la physique gère
+      }
+
+      // 3. STEP PHYSICS WORLD (Résolution des collisions)
+      if (this.physics) {
+        this.physics.update();
+      }
+
+      // 4. SYNCHRO PHYSIQUE -> MODÈLE (Appliquer les contraintes/collisions)
+      if (!isGrounded && !isJumping) {
+        // CHUTE : La Physique dicte tout
+        this.model.position.set(body.position.x, body.position.y, body.position.z);
+        this.model.position.y -= offset;
+        this.model.quaternion.set(body.quaternion.x, body.quaternion.y, body.quaternion.z, body.quaternion.w); 
+      } else {
+        // SOL/SAUT : On récupère la position corrigée (si mur, on est repoussé)
+        this.model.position.x = body.position.x;
+        this.model.position.z = body.position.z;
+
+        if (isJumping) {
+          // 1. Let physics dictate the position
+          this.model.position.y = body.position.y - offset;
+
+          // 2. Hard-clamp the model to the ground if it goes below 0
+          // (Assuming 0 is your ground level)
+          if (this.model.position.y < 0) {
+            this.model.position.y = 0;
+            body.position.y = offset;
+            body.velocity.y = 0;
+          }
+
+          // 3. Grounding detection
+          if (isGrounded && body.velocity.y <= 0) {
+            this.robotPhysics.isJumping = false;
+            body.velocity.set(0, 0, 0);
+            body.angularVelocity.set(0, 0, 0);
+            body.position.y = this.model.position.y + offset;
+            
+            // Force upright rotation on landing
+            body.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), this.model.rotation.y);
+          }
+        }
+      }
+
+      this.robotPhysics.updateDebugMeshes();
+    } else {
+      // Fallback si pas de robotPhysics
+      if (this.physics) {
+        this.physics.update();
+      }
+    }
+
+    // Update sensors
     if (this.sensors.footLight) {
       this.sensors.footLight.update();
     }

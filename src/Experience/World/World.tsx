@@ -43,6 +43,9 @@ export default class World {
       // Setup world objects
       this.floor = new Floor();
       this.marty = new Marty();
+      
+      const physics = this.marty.physics;
+      
       this.environment = new Environment();
       this.sceneDirector = new SceneDirector({
         floor: this.floor,
@@ -90,6 +93,7 @@ export default class World {
 
   dispose() {
     this.floor?.dispose();
+    this.testChair?.dispose();
     this.marty?.dispose();
     this.environment?.dispose();
     this.tutorialManager?.dispose();
