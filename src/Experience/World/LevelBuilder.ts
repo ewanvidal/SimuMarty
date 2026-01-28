@@ -44,6 +44,8 @@ export class LevelBuilder extends EventEmitter {
   
   // Custom tile size for the current build
   private currentTileSize: number = TILE_SIZE;
+  // Editor tile size (smaller for non-labyrinth environments)
+  private editorTileSize: number = TILE_SIZE * 1;
 
   // Map dimensions (stored for obstacle placement)
   private mapRows: number = 0;
@@ -97,6 +99,8 @@ export class LevelBuilder extends EventEmitter {
 
     const obstacles = config?.obstacles;
     this.currentTileSize = config?.tileSize ?? TILE_SIZE;
+    // Editor uses smaller tiles except for labyrinth (larger tile size)
+    this.editorTileSize = this.currentTileSize > TILE_SIZE ? this.currentTileSize : TILE_SIZE * 1;
 
     const rows = map.length;
     const cols = map[0].length;
@@ -667,15 +671,15 @@ export class LevelBuilder extends EventEmitter {
       this.gridHelper = null;
     }
 
-    const mapSize = Math.max(this.mapRows, this.mapCols, 10) * this.currentTileSize; // At least 10 tiles coverage
+    const mapSize = Math.max(this.mapRows, this.mapCols, 10) * this.editorTileSize; // At least 10 tiles coverage
     const gridSize = Math.max(2, mapSize); // At least 2 meters
-    const divisions = Math.round(gridSize / this.currentTileSize); // Use currentTileSize for grid divisions
+    const divisions = Math.round(gridSize / this.editorTileSize); // Use editorTileSize for grid divisions
     
     this.gridHelper = new THREE.GridHelper(gridSize, divisions, 0x444444, 0x222222);
     this.gridHelper.position.y = 0.002; // Slightly above floor
     // Offset grid by half tile in labyrinth mode so grid lines align with tile edges
-    if (this.currentTileSize > TILE_SIZE) {
-      const offset = this.currentTileSize / 2;
+    if (this.editorTileSize > TILE_SIZE) {
+      const offset = this.editorTileSize / 2;
       this.gridHelper.position.x = offset;
       this.gridHelper.position.z = offset;
     }
@@ -690,8 +694,8 @@ export class LevelBuilder extends EventEmitter {
       this.hoverIndicator = null;
     }
 
-    // Use currentTileSize for hover indicator to match level tile size
-    const indicatorSize = this.currentTileSize * 0.98;
+    // Use editorTileSize for hover indicator
+    const indicatorSize = this.editorTileSize * 0.98;
     const geometry = new THREE.PlaneGeometry(indicatorSize, indicatorSize);
     const material = new THREE.MeshBasicMaterial({
       color: this.placementColor,
@@ -756,22 +760,22 @@ export class LevelBuilder extends EventEmitter {
       this.gridHelper = null;
     }
 
-    const mapSize = Math.max(this.mapRows, this.mapCols, 10) * this.currentTileSize;
+    const mapSize = Math.max(this.mapRows, this.mapCols, 10) * this.editorTileSize;
     const gridSize = Math.max(2, mapSize);
-    const divisions = Math.round(gridSize / this.currentTileSize); // Use currentTileSize for grid divisions
+    const divisions = Math.round(gridSize / this.editorTileSize); // Use editorTileSize for grid divisions
     
     this.gridHelper = new THREE.GridHelper(gridSize, divisions, 0x444444, 0x222222);
     this.gridHelper.position.y = 0.002;
     // Offset grid by half tile in labyrinth mode so grid lines align with tile edges
-    if (this.currentTileSize > TILE_SIZE) {
-      const offset = this.currentTileSize / 2;
+    if (this.editorTileSize > TILE_SIZE) {
+      const offset = this.editorTileSize / 2;
       this.gridHelper.position.x = offset;
       this.gridHelper.position.z = offset;
     }
     this.scene.add(this.gridHelper);
     this.gridHelper.visible = true;
 
-    // Create eraser indicator (red) - use currentTileSize to match level tile size
+    // Create eraser indicator (red) - use editorTileSize
     if (this.hoverIndicator) {
       this.scene.remove(this.hoverIndicator);
       this.hoverIndicator.geometry.dispose();
@@ -779,7 +783,7 @@ export class LevelBuilder extends EventEmitter {
       this.hoverIndicator = null;
     }
 
-    const indicatorSize = this.currentTileSize * 0.98;
+    const indicatorSize = this.editorTileSize * 0.98;
     const geometry = new THREE.PlaneGeometry(indicatorSize, indicatorSize);
     const material = new THREE.MeshBasicMaterial({
       color: 0xff4444,
@@ -835,10 +839,10 @@ export class LevelBuilder extends EventEmitter {
 
     if (intersects.length > 0) {
       const point = intersects[0].point;
-      // Snap to grid using currentTileSize to match level tile size
-      const halfTile = this.currentTileSize / 2;
-      const snappedX = Math.round((point.x - halfTile) / this.currentTileSize) * this.currentTileSize + halfTile;
-      const snappedZ = Math.round((point.z - halfTile) / this.currentTileSize) * this.currentTileSize + halfTile;
+      // Snap to grid using editorTileSize
+      const halfTile = this.editorTileSize / 2;
+      const snappedX = Math.round((point.x - halfTile) / this.editorTileSize) * this.editorTileSize + halfTile;
+      const snappedZ = Math.round((point.z - halfTile) / this.editorTileSize) * this.editorTileSize + halfTile;
       
       this.hoverIndicator.position.x = snappedX;
       this.hoverIndicator.position.z = snappedZ;
@@ -883,8 +887,8 @@ export class LevelBuilder extends EventEmitter {
    * Remove tile at a specific position
    */
   removeTileAt(x: number, z: number): void {
-    // Use half tile size as tolerance for position matching
-    const tolerance = this.currentTileSize / 2;
+    // Use half editor tile size as tolerance for position matching
+    const tolerance = this.editorTileSize / 2;
     const index = this.tileEntries.findIndex(entry => {
       const pos = entry.tile.getPosition();
       return Math.abs(pos.x - x) < tolerance && Math.abs(pos.z - z) < tolerance;
@@ -918,8 +922,8 @@ export class LevelBuilder extends EventEmitter {
       animated: false,
     };
     
-    // Use currentTileSize for manually placed tiles to match level tile size
-    const tile = createTile(this.container, customType, { x, z }, this.currentTileSize);
+    // Use editorTileSize for manually placed tiles
+    const tile = createTile(this.container, customType, { x, z }, this.editorTileSize);
     this.tiles.push(tile);
     this.tileEntries.push({ tile, type: 'PATH' }); // Treat custom tiles as PATH type
     return tile;

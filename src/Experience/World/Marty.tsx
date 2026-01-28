@@ -221,6 +221,8 @@ export default class Marty {
           this.model.position.y + this.robotPhysics.autoCalculatedOffset,
           this.model.position.z
         );
+        // Sync rotation from model to physics body
+        body.quaternion.setFromEuler(0, this.model.rotation.y, 0);
         body.velocity.set(0, 0, 0);
         body.angularVelocity.set(0, 0, 0);
       }
