@@ -51,20 +51,6 @@ export const TileTypes = {
     pulseSpeed: 2.5,
     pulseIntensity: 0.2,
   },
-  DANGER: {
-    name: 'Danger',
-    color: '#dc2626', // Dark red
-    animated: true,
-    pulseSpeed: 5,
-    pulseIntensity: 0.4,
-  },
-  WARNING: {
-    name: 'Warning',
-    color: '#eab308', // Yellow
-    animated: true,
-    pulseSpeed: 4,
-    pulseIntensity: 0.3,
-  },
 } as const satisfies Record<string, TileConfig>;
 
 export type TileTypeName = keyof typeof TileTypes;
@@ -83,7 +69,12 @@ export class Tile {
   private baseOpacity: number;
   private size: number;
 
-  constructor(parent: THREE.Object3D, config: TileConfig, position: { x: number; z: number }, size: number = TILE_SIZE) {
+  constructor(
+    parent: THREE.Object3D,
+    config: TileConfig,
+    position: { x: number; z: number },
+    size: number = TILE_SIZE,
+  ) {
     // Merge with defaults
     this.config = {
       name: config.name,
@@ -97,33 +88,36 @@ export class Tile {
     this.baseOpacity = this.config.opacity;
     this.size = size;
 
-    // Create material
+    // Create material with strong emissive for high visibility
     this.material = new THREE.MeshStandardMaterial({
       color: this.config.color,
-      roughness: 0.8,
-      transparent: this.config.animated || this.config.opacity < 1,
-      opacity: this.config.opacity,
+      emissive: this.config.color,
+      emissiveIntensity: 0.8,
+      roughness: 0.3,
+      metalness: 0.1,
+      transparent: true,
+      opacity: 0.95,
       polygonOffset: true,
-      polygonOffsetFactor: -1,
-      polygonOffsetUnits: -1,
-      depthWrite: false,
+      polygonOffsetFactor: -2,
+      polygonOffsetUnits: -2,
+      depthWrite: true,
     });
 
-    // Create mesh
+    // Create mesh - raised above floor for visibility
     const geometry = new THREE.PlaneGeometry(this.size, this.size);
     this.mesh = new THREE.Mesh(geometry, this.material);
     this.mesh.rotation.x = -Math.PI / 2;
-    this.mesh.position.set(position.x, 0.0002, position.z);
-    this.mesh.receiveShadow = true;
+    this.mesh.position.set(position.x, 0.001, position.z);
+    this.mesh.receiveShadow = false;
 
-    // Create border/grid lines
+    // Create border/grid lines with strong contrast
     const edges = new THREE.EdgesGeometry(geometry);
     this.border = new THREE.LineSegments(
       edges,
-      new THREE.LineBasicMaterial({ color: 0x333333, transparent: true, opacity: 0.5 })
+      new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 }),
     );
     this.border.rotation.x = -Math.PI / 2;
-    this.border.position.set(position.x, 0.0002, position.z);
+    this.border.position.set(position.x, 0.002, position.z);
 
     parent.add(this.mesh);
     parent.add(this.border);
@@ -136,7 +130,10 @@ export class Tile {
     if (!this.config.animated) return;
 
     this.animationTime += deltaSeconds;
-    const pulse = Math.sin(this.animationTime * this.config.pulseSpeed) * this.config.pulseIntensity + (1 - this.config.pulseIntensity);
+    const pulse =
+      Math.sin(this.animationTime * this.config.pulseSpeed) *
+        this.config.pulseIntensity +
+      (1 - this.config.pulseIntensity);
     this.material.opacity = this.baseOpacity * pulse;
   }
 
@@ -191,7 +188,7 @@ export function createTile(
   parent: THREE.Object3D,
   type: TileTypeName | TileConfig,
   position: { x: number; z: number },
-  size?: number
+  size?: number,
 ): Tile {
   const config = typeof type === 'string' ? TileTypes[type] : type;
   return new Tile(parent, config, position, size);

@@ -25,7 +25,10 @@ export default class Floor {
   };
   material?: THREE.MeshStandardMaterial;
   mesh?: THREE.Mesh;
+  
+  // Floor size in meters
   private readonly baseSize = 50;
+  // Texture repeat for visual grid pattern
   private readonly defaultRepeat = 100;
   private readonly defaultColor = '#777777';
   private initialPreset: Required<FloorAppearancePreset> = {

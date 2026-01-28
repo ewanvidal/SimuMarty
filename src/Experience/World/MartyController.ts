@@ -4,15 +4,48 @@
  */
 
 import type Marty from './Marty';
-import type { RobotCommand } from '../../services/WebSocketService';
+import {
+  webSocketService,
+  type RobotCommand,
+} from '../../services/WebSocketService';
 
 export class MartyController {
   private marty: Marty;
   private commandQueue: RobotCommand[] = [];
   private isProcessing = false;
+  private shouldStop = false;
 
   constructor(marty: Marty) {
     this.marty = marty;
+  }
+
+  /**
+   * Stop all current and pending commands
+   */
+  stopExecution(): void {
+    this.shouldStop = true;
+    this.commandQueue = [];
+    this.isProcessing = false;
+    
+    // Stop any current animation
+    if (this.marty.animation?.stop) {
+      this.marty.animation.stop();
+    }
+  }
+
+  /**
+   * Check if execution should stop
+   */
+  isStopped(): boolean {
+    return this.shouldStop;
+  }
+
+  /**
+   * Wait with stop check - returns true if stopped
+   */
+  private async waitWithStopCheck(duration: number): Promise<boolean> {
+    await this.marty.time.wait(duration);
+    return this.shouldStop;
   }
 
   /**
@@ -21,6 +54,11 @@ export class MartyController {
   async processCommand(
     command: RobotCommand,
   ): Promise<{ success: boolean; message?: string }> {
+    // Check if execution was stopped
+    if (this.shouldStop) {
+      return { success: false, message: 'Execution stopped' };
+    }
+    
     try {
       switch (command.action) {
         case 'walk':
@@ -95,12 +133,22 @@ export class MartyController {
       if (cycles > 0) {
         // Play full cycles
         for (let i = 0; i < cycles; i++) {
+          // Check if stopped
+          if (this.shouldStop) {
+            return { success: false, message: 'Execution stopped' };
+          }
+          
           const isLastCycle = i === cycles - 1;
           // Always auto-stop to trigger getReady if steps > 2
           this.marty.animation.play('walking', { autoStop: true });
           // Wait for animation to complete using actual duration
           await this.marty.time.wait(animationDuration);
-          
+
+          // Check if stopped after animation
+          if (this.shouldStop) {
+            return { success: false, message: 'Execution stopped' };
+          }
+
           // Add getReady between cycles if steps >= 2
           // The value 500ms is an additional buffer to ensure smooth transition
           if (steps >= 2 || isLastCycle) {
@@ -127,10 +175,14 @@ export class MartyController {
       const getReadyDuration = this.marty.getAnimationDuration('getReady');
 
       // Wait for animation to complete
-      await this.marty.time.wait(animationDuration);
-      
+      if (await this.waitWithStopCheck(animationDuration)) {
+        return { success: false, message: 'Execution stopped' };
+      }
+
       // Wait for getReady transition
-      await this.marty.time.wait(getReadyDuration);
+      if (await this.waitWithStopCheck(getReadyDuration)) {
+        return { success: false, message: 'Execution stopped' };
+      }
 
       return { success: true, message: 'Waving' };
     }
@@ -176,10 +228,14 @@ export class MartyController {
       const getReadyDuration = this.marty.getAnimationDuration('getReady');
 
       // Wait for animation to complete
-      await this.marty.time.wait(animationDuration);
-      
+      if (await this.waitWithStopCheck(animationDuration)) {
+        return { success: false, message: 'Execution stopped' };
+      }
+
       // Wait for getReady transition
-      await this.marty.time.wait(getReadyDuration);
+      if (await this.waitWithStopCheck(getReadyDuration)) {
+        return { success: false, message: 'Execution stopped' };
+      }
 
       return { success: true, message: 'Kicking' };
     }
@@ -199,10 +255,14 @@ export class MartyController {
       const getReadyDuration = this.marty.getAnimationDuration('getReady');
 
       // Wait for animation to complete
-      await this.marty.time.wait(animationDuration);
-      
+      if (await this.waitWithStopCheck(animationDuration)) {
+        return { success: false, message: 'Execution stopped' };
+      }
+
       // Wait for getReady transition
-      await this.marty.time.wait(getReadyDuration);
+      if (await this.waitWithStopCheck(getReadyDuration)) {
+        return { success: false, message: 'Execution stopped' };
+      }
 
       return { success: true, message: 'Dancing' };
     }
@@ -213,7 +273,10 @@ export class MartyController {
   /**
    * Handle slide left command
    */
-  private async handleSlideLeft(): Promise<{ success: boolean; message?: string }> {
+  private async handleSlideLeft(): Promise<{
+    success: boolean;
+    message?: string;
+  }> {
     if (this.marty.animation?.play && this.marty.animation.actions?.slideLeft) {
       this.marty.animation.play('slideLeft');
 
@@ -222,10 +285,14 @@ export class MartyController {
       const getReadyDuration = this.marty.getAnimationDuration('getReady');
 
       // Wait for animation to complete
-      await this.marty.time.wait(animationDuration);
-      
+      if (await this.waitWithStopCheck(animationDuration)) {
+        return { success: false, message: 'Execution stopped' };
+      }
+
       // Wait for getReady transition
-      await this.marty.time.wait(getReadyDuration);
+      if (await this.waitWithStopCheck(getReadyDuration)) {
+        return { success: false, message: 'Execution stopped' };
+      }
 
       return { success: true, message: 'Sliding left' };
     }
@@ -236,8 +303,14 @@ export class MartyController {
   /**
    * Handle slide right command
    */
-  private async handleSlideRight(): Promise<{ success: boolean; message?: string }> {
-    if (this.marty.animation?.play && this.marty.animation.actions?.slideRight) {
+  private async handleSlideRight(): Promise<{
+    success: boolean;
+    message?: string;
+  }> {
+    if (
+      this.marty.animation?.play &&
+      this.marty.animation.actions?.slideRight
+    ) {
       this.marty.animation.play('slideRight');
 
       // Get actual animation duration
@@ -245,10 +318,14 @@ export class MartyController {
       const getReadyDuration = this.marty.getAnimationDuration('getReady');
 
       // Wait for animation to complete
-      await this.marty.time.wait(animationDuration);
-      
+      if (await this.waitWithStopCheck(animationDuration)) {
+        return { success: false, message: 'Execution stopped' };
+      }
+
       // Wait for getReady transition
-      await this.marty.time.wait(getReadyDuration);
+      if (await this.waitWithStopCheck(getReadyDuration)) {
+        return { success: false, message: 'Execution stopped' };
+      }
 
       return { success: true, message: 'Sliding right' };
     }
@@ -265,15 +342,25 @@ export class MartyController {
     }
 
     const jointParam =
-      params.jointId ?? params.joint ?? params.id ?? params.name ?? params.target;
+      params.jointId ??
+      params.joint ??
+      params.id ??
+      params.name ??
+      params.target;
     if (jointParam === undefined || jointParam === null) {
       return { success: false, message: 'jointId parameter is required' };
     }
 
     const rawAngle =
-      params.angle ?? params.value ?? params.position ?? params.pos ?? params.deg;
+      params.angle ??
+      params.value ??
+      params.position ??
+      params.pos ??
+      params.deg;
     const angle =
-      typeof rawAngle === 'string' ? Number(rawAngle) : (rawAngle as number | undefined);
+      typeof rawAngle === 'string'
+        ? Number(rawAngle)
+        : (rawAngle as number | undefined);
 
     if (angle === undefined || Number.isNaN(angle)) {
       return { success: false, message: 'Angle parameter is required' };
@@ -403,13 +490,34 @@ export class MartyController {
     }
 
     this.isProcessing = true;
+    this.shouldStop = false;
 
-    while (this.commandQueue.length > 0) {
+    while (this.commandQueue.length > 0 && !this.shouldStop) {
       const command = this.commandQueue.shift();
-      if (command) {
-        await this.processCommand(command);
+      if (command && !this.shouldStop) {
+        const result = await this.processCommand(command);
+
+        // Check if we were stopped during command execution
+        if (this.shouldStop) break;
+
+        // Send acknowledgement back to server (needed for blocking calls in Python)
+        // Skip for sensor commands as they send their own data payloads
+        if (
+          !['getGroundColor', 'getObstacleDistance'].includes(command.action)
+        ) {
+          webSocketService.send({
+            type: 'commandAck',
+            payload: {
+              requestId: command.requestId,
+              status: result.success ? 'success' : 'error',
+              message: result.message,
+            },
+            timestamp: Date.now(),
+          } as any);
+        }
+
         // Small delay between commands to prevent overlap
-        if (this.commandQueue.length > 0) {
+        if (this.commandQueue.length > 0 && !this.shouldStop) {
           await new Promise((resolve) => setTimeout(resolve, 500));
         }
       }
@@ -417,24 +525,28 @@ export class MartyController {
 
     this.isProcessing = false;
   }
-  
+
   /**
    * Handle ground color sensor query
    */
-  private handleGetGroundColor(): { success: boolean; message?: string; data?: unknown } {
+  private handleGetGroundColor(): {
+    success: boolean;
+    message?: string;
+    data?: unknown;
+  } {
     const color = this.marty.getGroundColor();
-    
+
     if (!color) {
-      return { 
-        success: false, 
-        message: 'Ground color sensor not available' 
+      return {
+        success: false,
+        message: 'Ground color sensor not available',
       };
     }
-    
+
     // Log to browser console
     console.log('🎨 Ground Color:', color);
     console.log(`   RGB(${color.r}, ${color.g}, ${color.b})`);
-    
+
     // Detect specific colors
     if (color.r > 200 && color.g < 50 && color.b < 50) {
       console.log('   🔴 RED detected!');
@@ -443,7 +555,7 @@ export class MartyController {
     } else if (color.g > 200 && color.r < 50 && color.b < 50) {
       console.log('   🟢 GREEN detected!');
     }
-    
+
     // Send sensor data back via WebSocket
     import('../../services/WebSocketService').then(({ webSocketService }) => {
       webSocketService.send({
@@ -456,25 +568,41 @@ export class MartyController {
         timestamp: Date.now(),
       } as any);
     });
-    
-    return { 
-      success: true, 
+
+    return {
+      success: true,
       message: 'Ground color retrieved',
-      data: color
+      data: color,
     };
   }
-  
+
   /**
    * Handle obstacle distance sensor query
    */
-  private handleGetObstacleDistance(): { success: boolean; message?: string; data?: unknown } {
+  private handleGetObstacleDistance(): {
+    success: boolean;
+    message?: string;
+    data?: unknown;
+  } {
     const distance = this.marty.getObstacleDistance();
-    
+
     const obstacleData = {
       distance,
       detected: distance !== Infinity,
     };
-    
+
+    // Log to browser console
+    if (obstacleData.detected) {
+      console.log('📡 Obstacle Distance:', distance.toFixed(2), 'units');
+      if (distance < 2) {
+        console.log('   ⚠️ WARNING: Too close!');
+      } else if (distance > 2) {
+        console.log(`📡 Obstacle Distance: ${distance.toFixed(2)}`);
+      }
+    } else {
+      console.log('📡 Obstacle Distance: Clear (no obstacle detected)');
+    }
+
     // Send sensor data back via WebSocket
     import('../../services/WebSocketService').then(({ webSocketService }) => {
       webSocketService.send({
@@ -487,11 +615,11 @@ export class MartyController {
         timestamp: Date.now(),
       } as any);
     });
-    
-    return { 
-      success: true, 
+
+    return {
+      success: true,
       message: 'Obstacle distance retrieved',
-      data: obstacleData
+      data: obstacleData,
     };
   }
 }

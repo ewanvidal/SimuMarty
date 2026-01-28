@@ -178,7 +178,7 @@ export default class RobotPhysics {
       });
       const debugMesh = new THREE.Mesh(geometry, material);
       debugMesh.name = `bb_${partName}`;
-      debugMesh.visible = this.showDebugMeshes;
+      debugMesh.visible = this.showDebugMeshes; // Hidden by default
       this.scene.add(debugMesh);
 
       // Cannon shape

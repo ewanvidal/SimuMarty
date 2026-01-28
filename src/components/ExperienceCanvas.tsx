@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import Experience from '../Experience/Experience.tsx';
 import { useAppStore } from '../stores/appStore.ts';
+import { SCENE_PRESETS, DEFAULT_SCENE_PRESET_ID } from '../shared/constants/scenePresets.ts';
+import { LevelEditor } from './LevelEditor.tsx';
 import './ExperienceCanvas.css';
 
 /**
@@ -15,6 +17,35 @@ export function ExperienceCanvas() {
   const activeLessonId = useAppStore((state) => state.activeLessonId);
   const selectedEnvironment = useAppStore((state) => state.selectedEnvironment);
   const selectedLevel = useAppStore((state) => state.selectedLevel);
+
+  const handleReset = useCallback(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const experience = (window as any).experience;
+    if (!experience?.world) return;
+    
+    const { marty, levelBuilder } = experience.world;
+    
+    // Stop any running code/animations
+    if (marty?.controller) {
+      marty.controller.stopExecution();
+    }
+    
+    // Reset Marty to start position and rotation
+    if (marty && levelBuilder) {
+      const startPos = levelBuilder.getStartPosition();
+      const startRotation = levelBuilder.getStartRotation();
+      if (startPos) {
+        marty.setPosition(startPos.x, startPos.y ?? 0, startPos.z);
+      } else {
+        // Default position from current scene preset
+        const currentPresetId = scenePresetId || DEFAULT_SCENE_PRESET_ID;
+        const preset = SCENE_PRESETS[currentPresetId];
+        const defaultPos = preset?.marty.position || [0.05, 0, 0.05];
+        marty.setPosition(defaultPos[0], defaultPos[1], defaultPos[2]);
+      }
+      marty.setRotationY(startRotation);
+    }
+  }, [scenePresetId]);
 
   useEffect(() => {
     if (!canvasRef.current) {
@@ -65,6 +96,14 @@ export function ExperienceCanvas() {
   return (
     <div className='experience-container'>
       <canvas ref={canvasRef} className='experience-canvas' />
+      <button 
+        className='reset-button' 
+        onClick={handleReset}
+        title='Reset Marty to start position'
+      >
+        🔄 Reset
+      </button>
+      <LevelEditor />
     </div>
   );
 }

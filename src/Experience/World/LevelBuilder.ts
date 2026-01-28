@@ -49,6 +49,10 @@ export class LevelBuilder extends EventEmitter {
   private mapRows: number = 0;
   private mapCols: number = 0;
   
+  // Level offset (for aligning START tile with Marty spawn)
+  private levelOffsetX: number = 0;
+  private levelOffsetZ: number = 0;
+  
   // Goal detection
   private goalEntry: { tile: Tile; type: TileTypeName } | null = null;
   private timeOnGoal: number = 0;
@@ -72,13 +76,23 @@ export class LevelBuilder extends EventEmitter {
 
   // Store start position for Marty placement
   private startPosition: THREE.Vector3 | null = null;
+  private startRotationY: number = 0;
+
+  // Placement mode state
+  private placementModeEnabled: boolean = false;
+  private eraserModeEnabled: boolean = false;
+  private placementColor: THREE.Color = new THREE.Color(1, 1, 1);
+  private gridHelper: THREE.GridHelper | null = null;
+  private hoverIndicator: THREE.Mesh | null = null;
+  private raycaster: THREE.Raycaster = new THREE.Raycaster();
+  private placementPlane: THREE.Mesh | null = null;
 
   /**
    * Build level from a 2D map array
    * @param map - 2D array where: 0=void, 1=path, 3=goal, 9=start
-   * @param config - Optional configuration (e.g., obstacles, scale)
+   * @param config - Optional configuration (e.g., obstacles, scale, startAt)
    */
-  build(map: number[][], config?: { obstacles?: ObstacleConfig[]; tileSize?: number }): void {
+  build(map: number[][], config?: { obstacles?: ObstacleConfig[]; tileSize?: number; startAt?: { x: number; z: number } }): void {
     this.clear();
 
     const obstacles = config?.obstacles;
@@ -91,9 +105,34 @@ export class LevelBuilder extends EventEmitter {
     this.mapRows = rows;
     this.mapCols = cols;
     
-    // Center the level and align with floor grid
-    const offsetX = (cols * this.currentTileSize) / 2;
-    const offsetZ = (rows * this.currentTileSize) / 2;
+    // Find the START tile position in the map first (before applying offsets)
+    let startRow = 0;
+    let startCol = 0;
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        if (map[row][col] === MapCode.START) {
+          startRow = row;
+          startCol = col;
+          break;
+        }
+      }
+    }
+    
+    // Calculate base offset (centered level)
+    const baseOffsetX = (cols * this.currentTileSize) / 2;
+    const baseOffsetZ = (rows * this.currentTileSize) / 2;
+    
+    // Calculate where START would be with centered level
+    const startXCentered = startCol * this.currentTileSize - baseOffsetX;
+    const startZCentered = startRow * this.currentTileSize - baseOffsetZ;
+    
+    // If startAt is provided, calculate additional offset to move START to that position
+    let levelOffsetX = 0;
+    let levelOffsetZ = 0;
+    if (config?.startAt) {
+      levelOffsetX = config.startAt.x - startXCentered;
+      levelOffsetZ = config.startAt.z - startZCentered;
+    }
 
     const tilesToCreate: Array<{ type: TileTypeName; x: number; z: number; code: number }> = [];
 
@@ -103,8 +142,8 @@ export class LevelBuilder extends EventEmitter {
         if (code === MapCode.VOID) continue;
 
         // Position tiles so their centers align with floor texture grid
-        const x = col * this.currentTileSize - offsetX;
-        const z = row * this.currentTileSize - offsetZ;
+        const x = col * this.currentTileSize - baseOffsetX + levelOffsetX;
+        const z = row * this.currentTileSize - baseOffsetZ + levelOffsetZ;
 
         // Map code to tile type
         let tileType: TileTypeName = 'PATH';
@@ -118,6 +157,10 @@ export class LevelBuilder extends EventEmitter {
         }
       }
     }
+    
+    // Store level offset for obstacle building
+    this.levelOffsetX = levelOffsetX;
+    this.levelOffsetZ = levelOffsetZ;
 
     for (const tileDef of tilesToCreate) {
       const tile = createTile(this.container, TileTypes[tileDef.type], { x: tileDef.x, z: tileDef.z }, this.currentTileSize);
@@ -139,14 +182,14 @@ export class LevelBuilder extends EventEmitter {
    * Build obstacles from configuration
    */
   private buildObstacles(obstacles: ObstacleConfig[]): void {
-    const offsetX = (this.mapCols * this.currentTileSize) / 2;
-    const offsetZ = (this.mapRows * this.currentTileSize) / 2;
+    const offsetX = (this.mapCols * this.currentTileSize) / 2 - this.levelOffsetX;
+    const offsetZ = (this.mapRows * this.currentTileSize) / 2 - this.levelOffsetZ;
 
     const mazeWallGeometries: THREE.BufferGeometry[] = [];
     const mazeWallPhysicsShapes: { shape: CANNON.Box; offset: CANNON.Vec3 }[] = [];
     
     for (const obs of obstacles) {
-      // Base position from grid
+      // Base position from grid (with level offset applied)
       let x = obs.col * this.currentTileSize - offsetX;
       let z = obs.row * this.currentTileSize - offsetZ;
       
@@ -168,6 +211,7 @@ export class LevelBuilder extends EventEmitter {
           const geometry = new THREE.BoxGeometry(this.currentTileSize * 0.1, this.currentTileSize, this.currentTileSize);
           const material = new THREE.MeshStandardMaterial({ color: '#8B4513' }); // Brown wood color
           mesh = new THREE.Mesh(geometry, material);
+          mesh.name = 'obstacle_fence';
           bodyY = geometry.parameters.height / 2;
           mesh.position.set(x, bodyY, z);
           bodyHalfExtents = new CANNON.Vec3(this.currentTileSize * 0.05, this.currentTileSize / 2, this.currentTileSize / 2);
@@ -178,6 +222,7 @@ export class LevelBuilder extends EventEmitter {
           const geometry = new THREE.BoxGeometry(this.currentTileSize, this.currentTileSize * 2, this.currentTileSize * 0.15);
           const material = new THREE.MeshStandardMaterial({ color: '#696969' });
           mesh = new THREE.Mesh(geometry, material);
+          mesh.name = 'obstacle_wall';
           bodyY = this.currentTileSize;
           mesh.position.set(x, bodyY, z);
           bodyHalfExtents = new CANNON.Vec3(this.currentTileSize / 2, this.currentTileSize, this.currentTileSize * 0.075);
@@ -188,6 +233,7 @@ export class LevelBuilder extends EventEmitter {
           const geometry = new THREE.BoxGeometry(this.currentTileSize * 0.8, this.currentTileSize * 0.8, this.currentTileSize * 0.8);
           const material = new THREE.MeshStandardMaterial({ color: '#D2691E' });
           mesh = new THREE.Mesh(geometry, material);
+          mesh.name = 'obstacle_box';
           bodyY = this.currentTileSize * 0.4;
           mesh.position.set(x, bodyY, z);
           bodyHalfExtents = new CANNON.Vec3(this.currentTileSize * 0.4, this.currentTileSize * 0.4, this.currentTileSize * 0.4);
@@ -433,6 +479,20 @@ export class LevelBuilder extends EventEmitter {
   }
 
   /**
+   * Get start rotation for Marty (in degrees)
+   */
+  getStartRotation(): number {
+    return this.startRotationY;
+  }
+
+  /**
+   * Set start rotation for Marty (in degrees)
+   */
+  setStartRotation(rotationY: number): void {
+    this.startRotationY = rotationY;
+  }
+
+  /**
    * Add a tile of any type at position
    */
   addTile(type: TileTypeName, x: number, z: number): Tile {
@@ -590,11 +650,315 @@ export class LevelBuilder extends EventEmitter {
     return null;
   }
 
+  // ================== Placement Mode ==================
+
+  /**
+   * Enable placement mode with a specific color
+   */
+  enablePlacementMode(color: { r: number; g: number; b: number }): void {
+    this.placementModeEnabled = true;
+    this.placementColor.setRGB(color.r / 255, color.g / 255, color.b / 255);
+
+    // Ensure grid helper covers the whole map
+    if (this.gridHelper) {
+      this.scene.remove(this.gridHelper);
+      this.gridHelper.geometry.dispose();
+      (this.gridHelper.material as THREE.Material).dispose();
+      this.gridHelper = null;
+    }
+
+    const mapSize = Math.max(this.mapRows, this.mapCols, 10) * this.currentTileSize; // At least 10 tiles coverage
+    const gridSize = Math.max(2, mapSize); // At least 2 meters
+    const divisions = Math.round(gridSize / this.currentTileSize); // Use currentTileSize for grid divisions
+    
+    this.gridHelper = new THREE.GridHelper(gridSize, divisions, 0x444444, 0x222222);
+    this.gridHelper.position.y = 0.002; // Slightly above floor
+    // Offset grid by half tile in labyrinth mode so grid lines align with tile edges
+    if (this.currentTileSize > TILE_SIZE) {
+      const offset = this.currentTileSize / 2;
+      this.gridHelper.position.x = offset;
+      this.gridHelper.position.z = offset;
+    }
+    this.scene.add(this.gridHelper);
+    this.gridHelper.visible = true;
+
+    // Recreate hover indicator to match current tile size
+    if (this.hoverIndicator) {
+      this.scene.remove(this.hoverIndicator);
+      this.hoverIndicator.geometry.dispose();
+      (this.hoverIndicator.material as THREE.Material).dispose();
+      this.hoverIndicator = null;
+    }
+
+    // Use currentTileSize for hover indicator to match level tile size
+    const indicatorSize = this.currentTileSize * 0.98;
+    const geometry = new THREE.PlaneGeometry(indicatorSize, indicatorSize);
+    const material = new THREE.MeshBasicMaterial({
+      color: this.placementColor,
+      transparent: true,
+      opacity: 0.6,
+      side: THREE.DoubleSide,
+    });
+    this.hoverIndicator = new THREE.Mesh(geometry, material);
+    this.hoverIndicator.rotation.x = -Math.PI / 2;
+    this.hoverIndicator.position.y = 0.001;
+    this.hoverIndicator.visible = false;
+    this.scene.add(this.hoverIndicator);
+    
+    // Update color
+    (this.hoverIndicator.material as THREE.MeshBasicMaterial).color.copy(this.placementColor);
+
+
+    // Create invisible placement plane for raycasting
+    if (this.placementPlane) {
+      this.scene.remove(this.placementPlane);
+      this.placementPlane.geometry.dispose();
+      (this.placementPlane.material as THREE.Material).dispose();
+      this.placementPlane = null;
+    }
+
+    const planeSize = Math.max(gridSize, 20);
+    const planeGeometry = new THREE.PlaneGeometry(planeSize, planeSize);
+    const planeMaterial = new THREE.MeshBasicMaterial({ visible: false });
+    this.placementPlane = new THREE.Mesh(planeGeometry, planeMaterial);
+    this.placementPlane.rotation.x = -Math.PI / 2;
+    this.placementPlane.position.y = 0;
+    this.scene.add(this.placementPlane);
+  }
+
+  /**
+   * Disable placement mode
+   */
+  disablePlacementMode(): void {
+    this.placementModeEnabled = false;
+    this.eraserModeEnabled = false;
+    
+    if (this.gridHelper) {
+      this.gridHelper.visible = false;
+    }
+    if (this.hoverIndicator) {
+      this.hoverIndicator.visible = false;
+    }
+  }
+
+  /**
+   * Enable eraser mode to delete tiles on click
+   */
+  enableEraserMode(): void {
+    this.eraserModeEnabled = true;
+    this.placementModeEnabled = false;
+
+    // Show grid helper for alignment
+    if (this.gridHelper) {
+      this.scene.remove(this.gridHelper);
+      this.gridHelper.geometry.dispose();
+      (this.gridHelper.material as THREE.Material).dispose();
+      this.gridHelper = null;
+    }
+
+    const mapSize = Math.max(this.mapRows, this.mapCols, 10) * this.currentTileSize;
+    const gridSize = Math.max(2, mapSize);
+    const divisions = Math.round(gridSize / this.currentTileSize); // Use currentTileSize for grid divisions
+    
+    this.gridHelper = new THREE.GridHelper(gridSize, divisions, 0x444444, 0x222222);
+    this.gridHelper.position.y = 0.002;
+    // Offset grid by half tile in labyrinth mode so grid lines align with tile edges
+    if (this.currentTileSize > TILE_SIZE) {
+      const offset = this.currentTileSize / 2;
+      this.gridHelper.position.x = offset;
+      this.gridHelper.position.z = offset;
+    }
+    this.scene.add(this.gridHelper);
+    this.gridHelper.visible = true;
+
+    // Create eraser indicator (red) - use currentTileSize to match level tile size
+    if (this.hoverIndicator) {
+      this.scene.remove(this.hoverIndicator);
+      this.hoverIndicator.geometry.dispose();
+      (this.hoverIndicator.material as THREE.Material).dispose();
+      this.hoverIndicator = null;
+    }
+
+    const indicatorSize = this.currentTileSize * 0.98;
+    const geometry = new THREE.PlaneGeometry(indicatorSize, indicatorSize);
+    const material = new THREE.MeshBasicMaterial({
+      color: 0xff4444,
+      transparent: true,
+      opacity: 0.6,
+      side: THREE.DoubleSide,
+    });
+    this.hoverIndicator = new THREE.Mesh(geometry, material);
+    this.hoverIndicator.rotation.x = -Math.PI / 2;
+    this.hoverIndicator.position.y = 0.001;
+    this.hoverIndicator.visible = false;
+    this.scene.add(this.hoverIndicator);
+
+    // Create invisible placement plane for raycasting
+    if (this.placementPlane) {
+      this.scene.remove(this.placementPlane);
+      this.placementPlane.geometry.dispose();
+      (this.placementPlane.material as THREE.Material).dispose();
+      this.placementPlane = null;
+    }
+
+    const planeSize = Math.max(gridSize, 20);
+    const planeGeometry = new THREE.PlaneGeometry(planeSize, planeSize);
+    const planeMaterial = new THREE.MeshBasicMaterial({ visible: false });
+    this.placementPlane = new THREE.Mesh(planeGeometry, planeMaterial);
+    this.placementPlane.rotation.x = -Math.PI / 2;
+    this.placementPlane.position.y = 0;
+    this.scene.add(this.placementPlane);
+  }
+
+  /**
+   * Check if eraser mode is active
+   */
+  isEraserModeEnabled(): boolean {
+    return this.eraserModeEnabled;
+  }
+
+  /**
+   * Check if placement mode is active
+   */
+  isPlacementModeEnabled(): boolean {
+    return this.placementModeEnabled;
+  }
+
+  /**
+   * Update hover indicator position based on mouse
+   */
+  updatePlacementHover(normalizedMouse: { x: number; y: number }, camera: THREE.Camera): void {
+    if ((!this.placementModeEnabled && !this.eraserModeEnabled) || !this.hoverIndicator || !this.placementPlane) return;
+
+    this.raycaster.setFromCamera(new THREE.Vector2(normalizedMouse.x, normalizedMouse.y), camera);
+    const intersects = this.raycaster.intersectObject(this.placementPlane);
+
+    if (intersects.length > 0) {
+      const point = intersects[0].point;
+      // Snap to grid using currentTileSize to match level tile size
+      const halfTile = this.currentTileSize / 2;
+      const snappedX = Math.round((point.x - halfTile) / this.currentTileSize) * this.currentTileSize + halfTile;
+      const snappedZ = Math.round((point.z - halfTile) / this.currentTileSize) * this.currentTileSize + halfTile;
+      
+      this.hoverIndicator.position.x = snappedX;
+      this.hoverIndicator.position.z = snappedZ;
+      this.hoverIndicator.visible = true;
+    } else {
+      this.hoverIndicator.visible = false;
+    }
+  }
+
+  /**
+   * Place a tile at the hover position with the current color (or delete if eraser mode)
+   */
+  placeTileAtHover(): void {
+    if (!this.hoverIndicator || !this.hoverIndicator.visible) return;
+
+    const x = this.hoverIndicator.position.x;
+    const z = this.hoverIndicator.position.z;
+
+    // Eraser mode: just remove tile
+    if (this.eraserModeEnabled) {
+      this.removeTileAt(x, z);
+      return;
+    }
+
+    // Placement mode: replace or add tile
+    if (!this.placementModeEnabled) return;
+
+    // Check if there's already a tile at this position
+    const existingEntry = this.getTileEntryAtPosition({ x, z });
+    if (existingEntry) {
+      this.removeTileAt(x, z);
+    }
+
+    // Add new tile with custom color
+    this.addColoredTile(x, z, this.placementColor);
+    
+    // Emit event so UI can auto-deselect
+    this.trigger('tilePlaced');
+  }
+
+  /**
+   * Remove tile at a specific position
+   */
+  removeTileAt(x: number, z: number): void {
+    // Use half tile size as tolerance for position matching
+    const tolerance = this.currentTileSize / 2;
+    const index = this.tileEntries.findIndex(entry => {
+      const pos = entry.tile.getPosition();
+      return Math.abs(pos.x - x) < tolerance && Math.abs(pos.z - z) < tolerance;
+    });
+
+    if (index !== -1) {
+      const entry = this.tileEntries[index];
+      entry.tile.dispose();
+      this.tiles.splice(this.tiles.indexOf(entry.tile), 1);
+      this.tileEntries.splice(index, 1);
+
+      // Clear goal if it was the goal tile
+      if (this.goalEntry === entry) {
+        this.goalEntry = null;
+      }
+      // Clear start position if it was the start tile
+      if (entry.type === 'START') {
+        this.startPosition = null;
+      }
+    }
+  }
+
+  /**
+   * Add a colored tile at position
+   */
+  addColoredTile(x: number, z: number, color: THREE.Color): Tile {
+    // Create custom tile type for the color
+    const customType = {
+      name: 'Custom',
+      color: `#${color.getHexString()}`,
+      animated: false,
+    };
+    
+    // Use currentTileSize for manually placed tiles to match level tile size
+    const tile = createTile(this.container, customType, { x, z }, this.currentTileSize);
+    this.tiles.push(tile);
+    this.tileEntries.push({ tile, type: 'PATH' }); // Treat custom tiles as PATH type
+    return tile;
+  }
+
+  /**
+   * Clear all custom tiles (keep nothing)
+   */
+  clearAllTiles(): void {
+    this.clear();
+    // Reset map dimensions
+    this.mapRows = 0;
+    this.mapCols = 0;
+  }
+
   /**
    * Dispose all resources
    */
   dispose(): void {
     this.clear();
     this.scene.remove(this.container);
+
+    // Dispose placement mode objects
+    if (this.gridHelper) {
+      this.scene.remove(this.gridHelper);
+      this.gridHelper.dispose();
+      this.gridHelper = null;
+    }
+    if (this.hoverIndicator) {
+      this.scene.remove(this.hoverIndicator);
+      this.hoverIndicator.geometry.dispose();
+      (this.hoverIndicator.material as THREE.Material).dispose();
+      this.hoverIndicator = null;
+    }
+    if (this.placementPlane) {
+      this.scene.remove(this.placementPlane);
+      this.placementPlane.geometry.dispose();
+      (this.placementPlane.material as THREE.Material).dispose();
+      this.placementPlane = null;
+    }
   }
 }

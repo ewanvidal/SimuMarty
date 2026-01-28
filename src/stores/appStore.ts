@@ -45,10 +45,20 @@ interface AppState {
   enableShadows: boolean;
   showFPS: boolean;
   graphicsQuality: 'low' | 'medium' | 'high';
+  timeScale: number;
+  cameraFollow: boolean;
   setDebugGrid: (value: boolean) => void;
   setEnableShadows: (value: boolean) => void;
   setShowFPS: (value: boolean) => void;
   setGraphicsQuality: (quality: 'low' | 'medium' | 'high') => void;
+  setTimeScale: (value: number) => void;
+  setCameraFollow: (value: boolean) => void;
+
+  // Level Editor
+  levelEditorOpen: boolean;
+  selectedTileColor: string | null;
+  toggleLevelEditor: () => void;
+  setSelectedTileColor: (color: string | null) => void;
 
   // WebSocket
   wsConnected: boolean;
@@ -171,10 +181,36 @@ export const useAppStore = create<AppState>((set) => ({
   enableShadows: true,
   showFPS: false,
   graphicsQuality: 'high',
+  timeScale: 1.0,
+  cameraFollow: true,
   setDebugGrid: (value) => set({ debugGrid: value }),
   setEnableShadows: (value) => set({ enableShadows: value }),
   setShowFPS: (value) => set({ showFPS: value }),
   setGraphicsQuality: (quality) => set({ graphicsQuality: quality }),
+  setTimeScale: (value) => {
+    set({ timeScale: value });
+    // Update the experience time scale directly
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const experience = (window as any).experience;
+    if (experience?.time) {
+      experience.time.timeScale = value;
+    }
+  },
+  setCameraFollow: (value) => {
+    set({ cameraFollow: value });
+    // Update the camera follow state directly
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const experience = (window as any).experience;
+    if (experience?.camera) {
+      experience.camera.followTarget = value;
+    }
+  },
+
+  // Level Editor
+  levelEditorOpen: false,
+  selectedTileColor: null,
+  toggleLevelEditor: () => set((state) => ({ levelEditorOpen: !state.levelEditorOpen })),
+  setSelectedTileColor: (color) => set({ selectedTileColor: color }),
 
   // WebSocket
   wsConnected: false,
