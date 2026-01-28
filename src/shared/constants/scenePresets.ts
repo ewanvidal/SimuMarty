@@ -128,7 +128,7 @@ export const SCENE_PRESETS: Record<string, ScenePreset> = {
     }, 
     marty: {
       position: [0.05, 0, 0.05],
-      rotationY: 0,
+      rotationY: 90,
     },
   },
   'tutorial-obstacle-course': {
@@ -147,7 +147,7 @@ export const SCENE_PRESETS: Record<string, ScenePreset> = {
     },
     marty: {
       position: [0.05, 0, 0.05],
-      rotationY: 0,
+      rotationY: 90,
     },
   },
 };
