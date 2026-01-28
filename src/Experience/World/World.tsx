@@ -8,9 +8,10 @@ import SceneDirector from './SceneDirector.ts';
 import { TutorialManager } from './tutorial/TutorialManager.ts';
 import { TUTORIAL_LESSONS } from '../../shared/constants/tutorialLessons.ts';
 import { LevelBuilder } from './LevelBuilder.ts';
-import { lesson1Map, lesson1MartyConfig } from '../../shared/constants/lessons/lesson1.ts';
-import { lesson2Map, lesson2MartyConfig } from '../../shared/constants/lessons/lesson2.ts';
-import { lesson3Map, lesson3MartyConfig, lesson3Obstacles } from '../../shared/constants/lessons/lesson3.ts';
+import { lesson1Map } from '../../shared/constants/lessons/lesson1.ts';
+import { lesson2Map } from '../../shared/constants/lessons/lesson2.ts';
+import { lesson3Map, lesson3Obstacles } from '../../shared/constants/lessons/lesson3.ts';
+import { SCENE_PRESETS, DEFAULT_SCENE_PRESET_ID } from '../../shared/constants/scenePresets.ts';
 
 /**
  * World
@@ -61,7 +62,7 @@ export default class World {
         this.levelBuilder.setPhysics(this.marty.physics);
       }
       
-      this.sceneDirector.applyScenePreset(this.pendingScenePresetId);
+      this.sceneDirector.applyScenePreset(this.pendingScenePresetId || DEFAULT_SCENE_PRESET_ID);
       
       // Load pending tutorial if any
       if (this.pendingLessonId) {
@@ -71,6 +72,12 @@ export default class World {
       // Load pending level selection if any
       if (this.pendingLevelSelection) {
         this.loadLevel(this.pendingLevelSelection.envId, this.pendingLevelSelection.levelId);
+      }
+      
+      // If no pending selections, load the default level (tutorial level1)
+      if (!this.pendingLessonId && !this.pendingLevelSelection) {
+        // Import the default from the store to load tutorial level1
+        this.loadTutorialLesson('movement-basics');
       }
     });
   }
@@ -101,7 +108,7 @@ export default class World {
   }
 
   applyScenePreset(presetId?: string | null) {
-    this.pendingScenePresetId = presetId ?? null;
+    this.pendingScenePresetId = presetId ?? DEFAULT_SCENE_PRESET_ID;
     if (this.sceneDirector) {
       this.sceneDirector.applyScenePreset(this.pendingScenePresetId);
     }
@@ -113,6 +120,11 @@ export default class World {
   loadLevel(environmentId: string, levelId: string): void {
     if (!this.levelBuilder) {
       this.pendingLevelSelection = { envId: environmentId, levelId };
+      return;
+    }
+
+    // Tutorial environment is handled by loadTutorialLesson, skip here
+    if (environmentId === 'tutorial') {
       return;
     }
 
@@ -147,11 +159,17 @@ export default class World {
         this.marty.setPosition(startPos.x, 0, startPos.z);
         this.marty.setRotationY(0);
       }
-    } else if (environmentId !== 'tutorial') {
-      // Reset Marty to center for non-level-based environments (except tutorial which handles its own)
+    } else {
+      // Reset Marty to center of a tile for non-level-based environments
+      // Use values from the current (or default) scene preset
       if (this.marty) {
-        this.marty.setPosition(0, 0, 0);
-        this.marty.setRotationY(0);
+        const presetId = this.pendingScenePresetId || DEFAULT_SCENE_PRESET_ID;
+        const preset = SCENE_PRESETS[presetId];
+        const defaultPos = preset?.marty?.position || [0.05, 0, 0.05];
+        const defaultRot = preset?.marty?.rotationY ?? 0;
+        
+        this.marty.setPosition(defaultPos[0], defaultPos[1], defaultPos[2]);
+        this.marty.setRotationY(defaultRot);
       }
     }
   }
@@ -180,15 +198,22 @@ export default class World {
     // 1. Load the basic tutorial configuration (text, state)
     this.tutorialManager.loadLessonById(lessonId, TUTORIAL_LESSONS);
 
-    // 2. If this lesson has a specific Level Map, build it
+    // Get Marty spawn position from preset
+    const presetId = this.pendingScenePresetId || DEFAULT_SCENE_PRESET_ID;
+    const preset = SCENE_PRESETS[presetId];
+    const martyPos = preset?.marty?.position ?? [0.05, 0, 0.05];
+    const martyRotY = preset?.marty?.rotationY ?? 0;
+    const startAt = { x: martyPos[0], z: martyPos[2] };
+
+    // 2. If this lesson has a specific Level Map, build it with startAt so START tile aligns with Marty
     if (lessonId === 'movement-basics') {
-      this.levelBuilder.build(lesson1Map);
+      this.levelBuilder.build(lesson1Map, { startAt });
+      this.levelBuilder.setStartRotation(martyRotY);
       
-      // Place Marty at start position and apply rotation
-      const startPos = this.levelBuilder.getStartPosition();
-      if (startPos && this.marty) {
-        this.marty.setPosition(startPos.x, startPos.y, startPos.z);
-        this.marty.setRotationY(lesson1MartyConfig.rotationY);
+      // Place Marty using scene preset values
+      if (this.marty) {
+        this.marty.setPosition(martyPos[0], martyPos[1], martyPos[2]);
+        this.marty.setRotationY(martyRotY);
       }
       
       // Listen for goal reached event
@@ -197,13 +222,13 @@ export default class World {
         // Could trigger UI notification, next lesson, etc.
       });
     } else if (lessonId === 'turning-and-orientation') {
-      this.levelBuilder.build(lesson2Map);
+      this.levelBuilder.build(lesson2Map, { startAt });
+      this.levelBuilder.setStartRotation(martyRotY);
       
-      // Place Marty at start position and apply rotation
-      const startPos = this.levelBuilder.getStartPosition();
-      if (startPos && this.marty) {
-        this.marty.setPosition(startPos.x, startPos.y, startPos.z);
-        this.marty.setRotationY(lesson2MartyConfig.rotationY);
+      // Place Marty using scene preset values
+      if (this.marty) {
+        this.marty.setPosition(martyPos[0], martyPos[1], martyPos[2]);
+        this.marty.setRotationY(martyRotY);
       }
       
       // Listen for goal reached event
@@ -212,13 +237,13 @@ export default class World {
         // Could trigger UI notification, next lesson, etc.
       });
     } else if (lessonId === 'sensors-and-obstacles') {
-      this.levelBuilder.build(lesson3Map, { obstacles: lesson3Obstacles });
+      this.levelBuilder.build(lesson3Map, { obstacles: lesson3Obstacles, startAt });
+      this.levelBuilder.setStartRotation(martyRotY);
       
-      // Place Marty at start position and apply rotation
-      const startPos = this.levelBuilder.getStartPosition();
-      if (startPos && this.marty) {
-        this.marty.setPosition(startPos.x, startPos.y, startPos.z);
-        this.marty.setRotationY(lesson3MartyConfig.rotationY);
+      // Place Marty using scene preset values
+      if (this.marty) {
+        this.marty.setPosition(martyPos[0], martyPos[1], martyPos[2]);
+        this.marty.setRotationY(martyRotY);
       }
       
       // Listen for goal reached event

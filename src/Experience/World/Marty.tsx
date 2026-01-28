@@ -334,14 +334,16 @@ export default class Marty {
     }
 
     // 2. Obstacle Detection Sensor
+    // Positioned at foot level looking forward
     this.sensors.obstacleSensor = new ObstacleSensor(
       this.model,
       this.scene,
       {
-        maxRange: 5.0,           // Range in meters
-        sensorHeight: 0.15,      // 15cm from robot base (torso level)
+        maxRange: 4.0,           // 4 meters max range
+        sensorHeight: 0.02,      // 2cm from ground (foot level)
         forwardOffset: 0.05,     // 5cm in front of robot center
-        minDistance: 0.01,       // Reduced to detect close obstacles
+        minDistance: 0,          // No blind zone
+        debug: false,            // Debug visualization disabled
       }
     );
 
@@ -630,6 +632,11 @@ export default class Marty {
     // Update sensors
     if (this.sensors.footLight) {
       this.sensors.footLight.update();
+    }
+    
+    // Update obstacle sensor debug visualization
+    if (this.sensors.obstacleSensor) {
+      this.sensors.obstacleSensor.updateDebugVisualization();
     }
   }
 

@@ -34,10 +34,14 @@ export function ControlBar() {
     enableShadows,
     showFPS,
     graphicsQuality,
+    timeScale,
+    cameraFollow,
     setDebugGrid,
     setEnableShadows,
     setShowFPS,
     setGraphicsQuality,
+    setTimeScale,
+    setCameraFollow,
     openTutorialModal,
   } = useAppStore();
   
@@ -86,7 +90,7 @@ export function ControlBar() {
       link.download = `marty-code-${Date.now()}.json`;
       link.click();
       URL.revokeObjectURL(url);
-    } catch (error) {
+    } catch {
       window.alert('Unable to save the code as JSON.');
     }
   };
@@ -116,7 +120,7 @@ export function ControlBar() {
       if (data.editorMode) {
         setEditorMode(data.editorMode);
       }
-    } catch (error) {
+    } catch {
       window.alert('Failed to import JSON file. Please ensure it was exported from this editor.');
     } finally {
       event.target.value = '';
@@ -280,6 +284,16 @@ export function ControlBar() {
               </label>
             </div>
             <div className='setting-item'>
+              <label>
+                <input
+                  type='checkbox'
+                  checked={cameraFollow}
+                  onChange={(e) => setCameraFollow(e.target.checked)}
+                />
+                Camera Follow Marty
+              </label>
+            </div>
+            <div className='setting-item'>
               <label>Graphics Quality:</label>
               <select
                 className='control-select'
@@ -290,6 +304,18 @@ export function ControlBar() {
                 <option value='medium'>Medium</option>
                 <option value='high'>High</option>
               </select>
+            </div>
+            <div className='setting-item'>
+              <label>Time Scale: {timeScale.toFixed(1)}x</label>
+              <input
+                type='range'
+                min='0.1'
+                max='15'
+                step='0.1'
+                value={timeScale}
+                onChange={(e) => setTimeScale(parseFloat(e.target.value))}
+                className='setting-slider'
+              />
             </div>
           </div>
         </div>

@@ -1,0 +1,287 @@
+.level-editor {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+}
+
+.level-editor-toggle {
+  background: rgba(30, 30, 30, 0.9);
+  border: 1px solid #444;
+  border-left: none;
+  border-radius: 0 8px 8px 0;
+  color: white;
+  padding: 12px 8px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transition: all 0.2s ease;
+}
+
+.level-editor-toggle:hover {
+  background: rgba(50, 50, 50, 0.95);
+  padding-right: 12px;
+}
+
+.level-editor.open .level-editor-toggle {
+  border-radius: 0;
+}
+
+.level-editor-content {
+  background: rgba(30, 30, 30, 0.95);
+  border: 1px solid #444;
+  border-left: none;
+  border-radius: 0 12px 12px 0;
+  padding: 16px;
+  width: 280px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.level-editor-content h3 {
+  color: #fff;
+  font-size: 16px;
+  margin: 0 0 16px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #444;
+}
+
+.tile-section {
+  margin-bottom: 16px;
+}
+
+.tile-section h4 {
+  color: #aaa;
+  font-size: 12px;
+  margin: 0 0 8px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tile-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.tile-button {
+  width: 100%;
+  aspect-ratio: 1;
+  border: 3px solid rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 11px;
+  color: white;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8), 0 0 2px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  box-shadow: inset 0 -2px 4px rgba(0, 0, 0, 0.2), 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.tile-button .tile-icon {
+  font-size: 14px;
+}
+
+.tile-button .tile-label {
+  font-weight: 600;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.tile-button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.tile-button.selected {
+  border-color: #fff;
+  box-shadow: 0 0 0 3px #0e639c, 0 4px 12px rgba(14, 99, 156, 0.5);
+  transform: scale(1.05);
+}
+
+/* Tool buttons (eraser, etc.) */
+.tool-button {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid #555;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.eraser-btn {
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+  color: white;
+}
+
+.eraser-btn:hover {
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+}
+
+.eraser-btn.selected {
+  border-color: #f87171;
+  box-shadow: 0 0 0 2px #ef4444, 0 4px 12px rgba(239, 68, 68, 0.4);
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.custom-color-picker {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.color-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.color-inputs label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #ccc;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.color-inputs input[type="range"] {
+  flex: 1;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: #444;
+  border-radius: 2px;
+  outline: none;
+}
+
+.color-inputs input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.color-inputs span {
+  width: 28px;
+  text-align: right;
+  font-size: 11px;
+  color: #888;
+}
+
+.color-preview-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.color-preview {
+  flex: 1;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid #555;
+}
+
+.add-color-btn {
+  background: #0e639c;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.add-color-btn:hover {
+  background: #1177bb;
+}
+
+.custom-tiles {
+  margin-top: 12px;
+}
+
+.action-btn {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 8px;
+}
+
+.clear-btn {
+  background: #dc2626;
+  color: white;
+}
+
+.clear-btn:hover {
+  background: #b91c1c;
+}
+
+.deselect-btn {
+  background: #525252;
+  color: white;
+}
+
+.deselect-btn:hover {
+  background: #404040;
+}
+
+.editor-hint {
+  background: rgba(14, 99, 156, 0.2);
+  border: 1px solid rgba(14, 99, 156, 0.4);
+  border-radius: 6px;
+  padding: 10px;
+  margin-top: 8px;
+}
+
+.editor-hint p {
+  color: #7dd3fc;
+  font-size: 12px;
+  margin: 0;
+  text-align: center;
+}
+
+/* Scrollbar styling */
+.level-editor-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.level-editor-content::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.level-editor-content::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 3px;
+}
+
+.level-editor-content::-webkit-scrollbar-thumb:hover {
+  background: #666;
+}

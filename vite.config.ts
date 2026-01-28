@@ -7,4 +7,7 @@ export default defineConfig({
   build: {
     sourcemap: true,
   },
+  server: {
+    open: true, // Auto-open browser on npm run dev
+  },
 });

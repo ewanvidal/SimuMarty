@@ -2,19 +2,26 @@ import * as THREE from 'three';
 
 /**
  * Obstacle Detection Sensor
- * Casts a horizontal ray from the robot's torso to detect walls and obstacles
+ * Casts a horizontal ray from the robot's feet to detect walls and obstacles.
+ * Used by the robot's navigation system to avoid collisions.
  */
 export class ObstacleSensor {
   private raycaster: THREE.Raycaster;
   private parent: THREE.Object3D;
   private scene: THREE.Scene;
   
+  // Sensor configuration
   private maxRange: number;
   private sensorHeight: number;
   private forwardOffset: number;
   private minDistance: number;
   
+  // Objects to ignore during raycasting (floor, robot parts, etc.)
   private ignoredObjects: Set<THREE.Object3D> = new Set();
+  
+  // Debug visualization
+  private debugLine: THREE.Line | null = null;
+  private debugEnabled: boolean = false;
 
   constructor(
     parent: THREE.Object3D,
@@ -24,15 +31,17 @@ export class ObstacleSensor {
       sensorHeight?: number;
       forwardOffset?: number;
       minDistance?: number;
+      debug?: boolean;
     }
   ) {
     this.parent = parent;
     this.scene = scene;
     
     this.maxRange = options?.maxRange ?? 5.0;
-    this.sensorHeight = options?.sensorHeight ?? 0.25;
+    this.sensorHeight = options?.sensorHeight ?? 0.02; // Default: 2cm from ground (foot level)
     this.forwardOffset = options?.forwardOffset ?? 0.3;
-    this.minDistance = options?.minDistance ?? 0.3;
+    this.minDistance = options?.minDistance ?? 0.1;
+    this.debugEnabled = options?.debug ?? false;
     
     this.raycaster = new THREE.Raycaster();
     this.raycaster.far = this.maxRange;
@@ -40,10 +49,73 @@ export class ObstacleSensor {
 
     // Auto-find and ignore ground objects
     this.findAndIgnoreGround();
+    
+    // Create debug visualization if enabled
+    if (this.debugEnabled) {
+      this.createDebugVisualization();
+    }
+  }
+  
+  /**
+   * Create debug visualization objects
+   */
+  private createDebugVisualization(): void {
+    // Simple ray line (green when clear, red when obstacle)
+    const lineMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00, linewidth: 2 });
+    const lineGeometry = new THREE.BufferGeometry();
+    lineGeometry.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, 0, 0, 1], 3));
+    this.debugLine = new THREE.Line(lineGeometry, lineMaterial);
+    this.debugLine.name = 'debug_ray';
+    this.scene.add(this.debugLine);
+    
+    // Add to ignored list so raycaster doesn't detect it
+    this.ignoredObjects.add(this.debugLine);
+  }
+  
+  /**
+   * Update debug visualization
+   */
+  updateDebugVisualization(): void {
+    if (!this.debugEnabled || !this.debugLine) return;
+    
+    const origin = this.getSensorOrigin();
+    const direction = this.getSensorDirection();
+    const hit = this.cast();
+    
+    // Calculate end point
+    const endPoint = origin.clone();
+    if (hit) {
+      endPoint.copy(hit.point);
+      // Red line for obstacle
+      (this.debugLine.material as THREE.LineBasicMaterial).color.setHex(0xff0000);
+    } else {
+      endPoint.add(direction.clone().multiplyScalar(this.maxRange));
+      // Green line for clear
+      (this.debugLine.material as THREE.LineBasicMaterial).color.setHex(0x00ff00);
+    }
+    
+    // Update line geometry
+    const positions = this.debugLine.geometry.attributes.position as THREE.BufferAttribute;
+    positions.setXYZ(0, origin.x, origin.y, origin.z);
+    positions.setXYZ(1, endPoint.x, endPoint.y, endPoint.z);
+    positions.needsUpdate = true;
+  }
+  
+  /**
+   * Enable/disable debug visualization
+   */
+  setDebugEnabled(enabled: boolean): void {
+    this.debugEnabled = enabled;
+    
+    if (enabled && !this.debugLine) {
+      this.createDebugVisualization();
+    }
+    
+    if (this.debugLine) this.debugLine.visible = enabled;
   }
 
   /**
-   * Find ground plane(s) and large horizontal surfaces to ignore
+   * Find ground plane(s) and horizontal surfaces to ignore
    */
   private findAndIgnoreGround(): void {
     this.scene.traverse((obj) => {
@@ -59,19 +131,24 @@ export class ObstacleSensor {
         return;
       }
       
-      // 2. Ignore large flat meshes (likely ground)
-      if (obj instanceof THREE.Mesh) {
+      // 2. Ignore flat meshes (planes, tiles, ground)
+      if (obj instanceof THREE.Mesh && obj.geometry) {
         const geometry = obj.geometry;
+        
+        // Check if it's a PlaneGeometry (tiles are planes)
+        if (geometry.type === 'PlaneGeometry') {
+          this.ignoredObjects.add(obj);
+          return;
+        }
+        
         geometry.computeBoundingBox();
         const box = geometry.boundingBox;
         
         if (box) {
-          const sizeX = box.max.x - box.min.x;
           const sizeY = box.max.y - box.min.y;
-          const sizeZ = box.max.z - box.min.z;
           
-          // Very flat AND large = ground
-          if (sizeY < 0.2 && (sizeX > 5 || sizeZ > 5)) {
+          // Very flat geometry = ground/tile (height < 5cm)
+          if (sizeY < 0.05) {
             this.ignoredObjects.add(obj);
           }
         }
@@ -87,18 +164,11 @@ export class ObstacleSensor {
   }
 
   /**
-   * Check if object or any of its parents should be ignored
+   * Check if object is part of the robot (should be ignored)
    */
-  private shouldIgnore(obj: THREE.Object3D): boolean {
+  private isPartOfRobot(obj: THREE.Object3D): boolean {
     let current: THREE.Object3D | null = obj;
-    
     while (current) {
-      // Check ignored set
-      if (this.ignoredObjects.has(current)) {
-        return true;
-      }
-      
-      // Check if it's the robot
       if (current === this.parent) {
         return true;
       }
@@ -108,6 +178,42 @@ export class ObstacleSensor {
         return true;
       }
       
+      current = current.parent;
+    }
+    return false;
+  }
+
+  /**
+   * Check if object or any of its parents should be ignored
+   */
+  private shouldIgnore(obj: THREE.Object3D): boolean {
+    // Check if it's part of the robot model
+    if (this.isPartOfRobot(obj)) {
+      return true;
+    }
+    
+    // Ignore LineSegments (edge/wireframe visualizations)
+    if (obj.type === 'LineSegments' || obj.type === 'Line') {
+      return true;
+    }
+    
+    // Ignore EdgesGeometry (wireframes)
+    const mesh = obj as THREE.Mesh;
+    if (mesh.geometry && mesh.geometry.type === 'EdgesGeometry') {
+      return true;
+    }
+    
+    // Check ignored set
+    if (this.ignoredObjects.has(obj)) {
+      return true;
+    }
+    
+    // Check parents in ignored set
+    let current: THREE.Object3D | null = obj.parent;
+    while (current) {
+      if (this.ignoredObjects.has(current)) {
+        return true;
+      }
       current = current.parent;
     }
 
@@ -124,10 +230,13 @@ export class ObstacleSensor {
     const origin = new THREE.Vector3();
     this.parent.getWorldPosition(origin);
 
-    // 2. Get robot's forward direction (horizontal only)
+    // 2. Get robot's forward direction using WORLD quaternion (not local)
+    const worldQuaternion = new THREE.Quaternion();
+    this.parent.getWorldQuaternion(worldQuaternion);
+    
     const forward = new THREE.Vector3(0, 0, 1)
-      .applyQuaternion(this.parent.quaternion);
-    forward.y = 0;
+      .applyQuaternion(worldQuaternion);
+    forward.y = 0; // Keep horizontal
     forward.normalize();
 
     // 3. Position sensor origin
@@ -147,14 +256,9 @@ export class ObstacleSensor {
 
     // 5. Find first valid hit
     for (const hit of intersects) {
-      if (this.shouldIgnore(hit.object)) continue;
-      
-      // Ignore lines (e.g. tile borders, helpers)
-      if (hit.object instanceof THREE.Line || hit.object instanceof THREE.LineSegments) continue;
-
-      // The hit must be at least minDistance away from the sensor origin
-      if (hit.distance < this.minDistance) continue;
-      return hit;
+      if (!this.shouldIgnore(hit.object) && hit.distance >= this.minDistance) {
+        return hit;
+      }
     }
 
     return null;
@@ -196,8 +300,11 @@ export class ObstacleSensor {
     const origin = new THREE.Vector3();
     this.parent.getWorldPosition(origin);
     
+    const worldQuaternion = new THREE.Quaternion();
+    this.parent.getWorldQuaternion(worldQuaternion);
+    
     const forward = new THREE.Vector3(0, 0, 1)
-      .applyQuaternion(this.parent.quaternion);
+      .applyQuaternion(worldQuaternion);
     forward.y = 0;
     forward.normalize();
     
@@ -217,8 +324,11 @@ export class ObstacleSensor {
   getSensorDirection(): THREE.Vector3 {
     if (!this.parent) return new THREE.Vector3(0, 0, 1);
     
+    const worldQuaternion = new THREE.Quaternion();
+    this.parent.getWorldQuaternion(worldQuaternion);
+    
     const forward = new THREE.Vector3(0, 0, 1)
-      .applyQuaternion(this.parent.quaternion);
+      .applyQuaternion(worldQuaternion);
     forward.y = 0;
     forward.normalize();
     
@@ -234,5 +344,12 @@ export class ObstacleSensor {
 
   dispose(): void {
     this.ignoredObjects.clear();
+    
+    // Clean up debug line
+    if (this.debugLine) {
+      this.scene.remove(this.debugLine);
+      this.debugLine.geometry.dispose();
+      (this.debugLine.material as THREE.Material).dispose();
+    }
   }
 }

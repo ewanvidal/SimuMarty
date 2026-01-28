@@ -7,6 +7,9 @@ Based on the AsyncAPI specification in docs/api-websocket.yaml
 import asyncio
 import json
 import logging
+import threading
+import queue
+import time
 from datetime import datetime
 from typing import Dict, Set, Any, Optional
 import websockets
@@ -57,10 +60,14 @@ class MartyWebSocketServer:
             "obstacle": {"distance": float('inf'), "detected": False},
             "groundColor": {"r": 0, "g": 0, "b": 0}
         }
+        self.loop = None
+        self.current_execution_queue = None
+        self.active_websocket = None
         
     async def register_client(self, websocket: WebSocketServerProtocol):
         """Register a new client connection"""
         self.clients.add(websocket)
+        self.active_websocket = websocket
         logger.info(f"Client connected. Total clients: {len(self.clients)}")
         
         # Send connection acknowledgment
@@ -77,6 +84,8 @@ class MartyWebSocketServer:
     async def unregister_client(self, websocket: WebSocketServerProtocol):
         """Unregister a client connection"""
         self.clients.discard(websocket)
+        if self.active_websocket == websocket:
+            self.active_websocket = None
         logger.info(f"Client disconnected. Total clients: {len(self.clients)}")
         
     async def send_message(self, websocket: WebSocketServerProtocol, message: Dict[str, Any]):
@@ -162,80 +171,142 @@ class MartyWebSocketServer:
     async def execute_python_code(self, code: str) -> Dict[str, Any]:
         """
         Execute Python code and return result
-        Executes the code in a controlled environment and captures marty commands
+        Executes the code in a separate thread to allow blocking operations (sensors)
         """
         logger.info(f"Executing Python code:\n{code}")
         
+        # We need a queue to communicate between the thread and the async loop
+        self.current_execution_queue = queue.Queue()
         # Create a command queue to capture marty commands
         commands = []
         server_instance = self
         
-        # Create a mock marty object that captures commands instead of executing them
-        class MockMarty:
+        # Capture 'self' (the server) in closure
+        server = self
+        
+        # Counter for unique request IDs
+        request_id_counter = [0]
+        
+        class LiveMockMarty:
             def __init__(self):
                 pass
+            
+            def _send_and_wait(self, action, params=None):
+                if params is None:
+                    params = {}
+                
+                # Generate unique request ID
+                request_id_counter[0] += 1
+                request_id = f"req_{request_id_counter[0]}_{int(time.time()*1000)}"
+                    
+                cmd_payload = {"action": action, "params": params, "requestId": request_id}
+                
+                if server.active_websocket and server.loop:
+                    asyncio.run_coroutine_threadsafe(
+                        server.send_message(server.active_websocket, {
+                            "type": "command",
+                            "payload": cmd_payload,
+                            "timestamp": int(time.time() * 1000)
+                        }),
+                        server.loop
+                    )
+                else:
+                    logger.warning("No active websocket or loop")
+                    return None
+                
+                try:
+                    # Wait for the correct response (matching requestId)
+                    timeout_time = time.time() + 30.0
+                    while time.time() < timeout_time:
+                        try:
+                            response = server.current_execution_queue.get(timeout=0.1)
+                            
+                            # Check if this response matches our request
+                            response_id = response.get("payload", {}).get("requestId")
+                            
+                            if response.get("type") == "sensorData":
+                                # Sensor data doesn't have requestId, handle immediately
+                                data = response.get("payload", {}).get("data", {})
+                                if action == "getObstacleDistance":
+                                    val = data.get("distance")
+                                    logger.info(f"  ← Received obstacle distance: {val}")
+                                    return val if val is not None else float('inf')
+                                elif action == "getGroundColor":
+                                    return data
+                                return data
+                            elif response.get("type") == "commandAck":
+                                # For movement commands, wait for commandAck with matching ID
+                                if response_id == request_id:
+                                    logger.info(f"  ← Command {action} completed (requestId: {request_id})")
+                                    return True
+                                else:
+                                    # Not our response, put it back? No, just log and continue
+                                    logger.debug(f"  ← Ignoring commandAck for different request: {response_id}")
+                            
+                        except queue.Empty:
+                            continue
+                    
+                    logger.warning(f"Timeout waiting for response to {action} (requestId: {request_id})")
+                    return float('inf') if action == "getObstacleDistance" else None
+                    
+                except Exception as e:
+                    logger.error(f"Error in _send_and_wait: {e}")
+                    return float('inf') if action == "getObstacleDistance" else None
 
-            def walk(self, steps):
-                logger.info(f"  → Captured: walk({steps})")
-                commands.append({"action": "walk", "params": {"steps": steps}})
+            def walk(self, steps=1):
+                logger.info(f"  → Live: walk({steps})")
+                self._send_and_wait("walk", {"steps": steps})
 
             def turn(self, angle):
                 direction = 'turn' if angle >= 0 else 'turnLeft'
                 magnitude = abs(angle)
-                logger.info(f"  → Captured: turn({angle}) → {direction}({magnitude})")
-                commands.append({"action": direction, "params": {"angle": magnitude}})
+                logger.info(f"  → Live: turn({angle})")
+                self._send_and_wait(direction, {"angle": magnitude})
 
             def turnRight(self, angle):
-                logger.info(f"  → Captured: turnRight({angle})")
-                commands.append({"action": "turn", "params": {"angle": angle}})
+                logger.info(f"  → Live: turnRight({angle})")
+                self._send_and_wait("turn", {"angle": angle})
 
             def turnLeft(self, angle):
-                logger.info(f"  → Captured: turnLeft({angle})")
-                commands.append({"action": "turnLeft", "params": {"angle": angle}})
+                logger.info(f"  → Live: turnLeft({angle})")
+                self._send_and_wait("turnLeft", {"angle": angle})
 
             def wave(self):
-                logger.info(f"  → Captured: wave()")
-                commands.append({"action": "wave", "params": {}})
+                logger.info("  → Live: wave()")
+                self._send_and_wait("wave")
 
             def kick(self):
-                logger.info(f"  → Captured: kick()")
-                commands.append({"action": "kick", "params": {}})
+                logger.info("  → Live: kick()")
+                self._send_and_wait("kick")
 
             def dance(self):
-                logger.info(f"  → Captured: dance()")
-                commands.append({"action": "dance", "params": {}})
+                logger.info("  → Live: dance()")
+                self._send_and_wait("dance")
 
             def slideLeft(self):
-                logger.info(f"  → Captured: slideLeft()")
-                commands.append({"action": "slideLeft", "params": {}})
+                logger.info("  → Live: slideLeft()")
+                self._send_and_wait("slideLeft")
 
             def slideRight(self):
-                logger.info(f"  → Captured: slideRight()")
-                commands.append({"action": "slideRight", "params": {}})
+                logger.info("  → Live: slideRight()")
+                self._send_and_wait("slideRight")
 
             def stop(self):
-                logger.info(f"  → Captured: stop()")
-                commands.append({"action": "stop", "params": {}})
+                logger.info("  → Live: stop()")
+                self._send_and_wait("stop")
 
             # --- Joint helpers -------------------------------------------------
             def set_joint(self, joint, angle, move_time=None):
                 joint_id = self._normalize_joint_identifier(joint)
                 if joint_id is None:
-                    logger.warning(f"  → Ignoring set_joint for unknown joint: {joint}")
                     return
 
-                params: Dict[str, Any] = {"jointId": joint_id, "angle": angle}
+                params = {"jointId": joint_id, "angle": angle}
                 if move_time is not None:
                     params["moveTime"] = move_time
 
-                logger.info(
-                    "  → Captured: set_joint(joint=%s, angle=%s, move_time=%s) → jointId=%s",
-                    joint,
-                    angle,
-                    move_time,
-                    joint_id,
-                )
-                commands.append({"action": "joint", "params": params})
+                logger.info(f"  → Live: set_joint({joint}, {angle})")
+                self._send_and_wait("joint", params)
 
             def move_joint(self, joint, angle, move_time=None):
                 self.set_joint(joint, angle, move_time)
@@ -245,6 +316,7 @@ class MartyWebSocketServer:
 
             # --- Sensor helpers -------------------------------------------------
             def getGroundColor(self):
+<<<<<<< Updated upstream
                 logger.info("  → Captured: getGroundColor()")
                 commands.append({"action": "getGroundColor", "params": {}})
                 return server_instance.last_sensor_data.get("groundColor")
@@ -260,90 +332,50 @@ class MartyWebSocketServer:
 
             def get_distance_sensor(self):
                 return self.getObstacleDistance()
+=======
+                logger.info("  → Live: getGroundColor()")
+                return self._send_and_wait("getGroundColor")
+            
+            def getObstacleDistance(self):
+                logger.info("  → Live: getObstacleDistance()")
+                val = self._send_and_wait("getObstacleDistance")
+                return val if val is not None else float('inf')
+>>>>>>> Stashed changes
 
             def _normalize_joint_identifier(self, joint) -> Optional[int]:
                 if isinstance(joint, (int, float)):
-                    logger.warning(
-                        "Joint identifiers must use string names like 'left_arm', numeric IDs are not allowed: %s",
-                        joint,
-                    )
                     return None
-
                 if isinstance(joint, str):
                     key = joint.strip().lower()
-                    if key.startswith('jointid.'):
-                        logger.warning(
-                            "Joint identifiers must use string names like 'left_arm', not JointID constants: %s",
-                            joint,
-                        )
+                    if key.startswith('jointid.') or key.isdigit() or ' ' in key or '-' in key:
                         return None
-                    if key.isdigit():
-                        logger.warning(
-                            "Joint identifiers must use string names like 'left_arm', digits are not allowed: %s",
-                            joint,
-                        )
-                        return None
-
-                    if ' ' in key:
-                        logger.warning("Joint names must use underscores instead of spaces: %s", joint)
-                        return None
-
-                    if '-' in key:
-                        logger.warning("Joint names must use underscores instead of hyphens: %s", joint)
-                        return None
-
                     normalized = key.strip('_')
                     if normalized in JOINT_ALIAS_MAP:
                         return JOINT_ALIAS_MAP[normalized]
-
-                logger.warning("Unknown joint identifier (expected values like 'left_arm'): %s", joint)
                 return None
         
-        # Create execution environment with the mock marty object
-        exec_globals = {
-            'marty': MockMarty(),
-            '__builtins__': {
-                'range': range,
-                'len': len,
-                'print': print,
-                'int': int,
-                'float': float,
-                'str': str,
-                'bool': bool,
-                'True': True,
-                'False': False,
+        def run_script():
+            exec_globals = {
+                'marty': LiveMockMarty(),
+                '__builtins__': {
+                    'range': range, 'len': len, 'print': print,
+                    'int': int, 'float': float, 'str': str, 'bool': bool,
+                    'True': True, 'False': False,
+                }
             }
+            try:
+                exec(code, exec_globals)
+                logger.info("Script execution completed successfully")
+            except Exception as e:
+                logger.error(f"Error in threaded execution: {e}")
+                
+        # Start execution in a thread
+        threading.Thread(target=run_script, daemon=True).start()
+
+        return {
+            "success": True,
+            "message": "Started execution in background thread"
         }
-        
-        try:
-            # Execute the Python code
-            exec(code, exec_globals)
-            
-            # Broadcast all captured commands to simulation
-            if commands:
-                for cmd in commands:
-                    await self.broadcast({
-                        "type": "command",
-                        "payload": cmd,
-                        "timestamp": int(datetime.now().timestamp() * 1000)
-                    })
-                    await asyncio.sleep(0.5)  # Small delay between commands
-                    
-                return {
-                    "success": True,
-                    "message": f"Executed {len(commands)} command(s)"
-                }
-            else:
-                return {
-                    "success": True,
-                    "message": "No Marty commands found in code"
-                }
-        except Exception as e:
-            logger.error(f"Error executing Python code: {e}")
-            return {
-                "success": False,
-                "message": f"Execution error: {str(e)}"
-            }
             
     async def handle_client(self, websocket: WebSocketServerProtocol):
         """Handle a client connection"""
@@ -359,12 +391,18 @@ class MartyWebSocketServer:
                     
                     if msg_type == "command":
                         await self.handle_command(websocket, data.get("payload", {}))
+<<<<<<< Updated upstream
                     elif msg_type == "sensorData":
                         payload = data.get("payload", {})
                         sensor_type = payload.get("sensorType")
                         if sensor_type in self.last_sensor_data:
                             self.last_sensor_data[sensor_type] = payload.get("data")
                             logger.debug(f"Updated sensor {sensor_type}: {self.last_sensor_data[sensor_type]}")
+=======
+                    elif msg_type in ["sensorData", "commandAck"]:
+                        if self.current_execution_queue:
+                            self.current_execution_queue.put(data)
+>>>>>>> Stashed changes
                     elif msg_type == "ping":
                         # Respond to heartbeat
                         await self.send_message(websocket, {
@@ -410,6 +448,7 @@ class MartyWebSocketServer:
     async def start(self):
         """Start the WebSocket server"""
         logger.info(f"Starting WebSocket server on {self.host}:{self.port}")
+        self.loop = asyncio.get_running_loop()
         
         # Start telemetry task
         self.telemetry_task = asyncio.create_task(self.start_telemetry())
