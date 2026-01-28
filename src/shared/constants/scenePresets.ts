@@ -125,7 +125,7 @@ export const SCENE_PRESETS: Record<string, ScenePreset> = {
       size: 40,
       color: '#f5f7fb',
       textureRepeat: 80,
-    },
+    }, 
     marty: {
       position: [0.05, 0, 0.05],
       rotationY: 0,
