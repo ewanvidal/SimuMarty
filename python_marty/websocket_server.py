@@ -316,31 +316,19 @@ class MartyWebSocketServer:
 
             # --- Sensor helpers -------------------------------------------------
             def getGroundColor(self):
-<<<<<<< Updated upstream
-                logger.info("  → Captured: getGroundColor()")
-                commands.append({"action": "getGroundColor", "params": {}})
-                return server_instance.last_sensor_data.get("groundColor")
+                logger.info("  → Live: getGroundColor()")
+                return self._send_and_wait("getGroundColor")
             
             def get_ground_color(self):
                 return self.getGroundColor()
             
             def getObstacleDistance(self):
-                logger.info("  → Captured: getObstacleDistance()")
-                commands.append({"action": "getObstacleDistance", "params": {}})
-                # Returns distance in meters as per the simulation
-                return server_instance.last_sensor_data.get("obstacle", {}).get("distance", float('inf'))
-
-            def get_distance_sensor(self):
-                return self.getObstacleDistance()
-=======
-                logger.info("  → Live: getGroundColor()")
-                return self._send_and_wait("getGroundColor")
-            
-            def getObstacleDistance(self):
                 logger.info("  → Live: getObstacleDistance()")
                 val = self._send_and_wait("getObstacleDistance")
                 return val if val is not None else float('inf')
->>>>>>> Stashed changes
+
+            def get_distance_sensor(self):
+                return self.getObstacleDistance()
 
             def _normalize_joint_identifier(self, joint) -> Optional[int]:
                 if isinstance(joint, (int, float)):
@@ -391,18 +379,9 @@ class MartyWebSocketServer:
                     
                     if msg_type == "command":
                         await self.handle_command(websocket, data.get("payload", {}))
-<<<<<<< Updated upstream
-                    elif msg_type == "sensorData":
-                        payload = data.get("payload", {})
-                        sensor_type = payload.get("sensorType")
-                        if sensor_type in self.last_sensor_data:
-                            self.last_sensor_data[sensor_type] = payload.get("data")
-                            logger.debug(f"Updated sensor {sensor_type}: {self.last_sensor_data[sensor_type]}")
-=======
                     elif msg_type in ["sensorData", "commandAck"]:
                         if self.current_execution_queue:
                             self.current_execution_queue.put(data)
->>>>>>> Stashed changes
                     elif msg_type == "ping":
                         # Respond to heartbeat
                         await self.send_message(websocket, {
