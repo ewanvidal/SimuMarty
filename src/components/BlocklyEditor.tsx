@@ -167,6 +167,36 @@ const defineMartyBlocks = () => {
   pythonGenerator.forBlock['marty_stop'] = function () {
     return 'marty.stop()\n';
   };
+
+  // Bloc pour marty.getObstacleDistance() - retourne une valeur
+  Blockly.Blocks['marty_get_obstacle_distance'] = {
+    init: function () {
+      this.appendDummyInput().appendField('marty.getObstacleDistance()');
+      this.setOutput(true, 'Number');
+      this.setColour(290);
+      this.setTooltip('Get distance to nearest obstacle (returns Infinity if no obstacle)');
+      this.setHelpUrl('');
+    },
+  };
+
+  pythonGenerator.forBlock['marty_get_obstacle_distance'] = function () {
+    return ['marty.getObstacleDistance()', 0];
+  };
+
+  // Bloc pour marty.getGroundColor() - retourne un dictionnaire {r, g, b}
+  Blockly.Blocks['marty_get_ground_color'] = {
+    init: function () {
+      this.appendDummyInput().appendField('marty.getGroundColor()');
+      this.setOutput(true, null);
+      this.setColour(290);
+      this.setTooltip('Get ground color under Marty (returns {r, g, b} with values 0-255)');
+      this.setHelpUrl('');
+    },
+  };
+
+  pythonGenerator.forBlock['marty_get_ground_color'] = function () {
+    return ['marty.getGroundColor()', 0];
+  };
 };
 
 export const BlocklyEditor = ({
@@ -257,6 +287,21 @@ export const BlocklyEditor = ({
             {
               kind: 'block',
               type: 'marty_stop',
+            },
+          ],
+        },
+        {
+          kind: 'category',
+          name: 'Sensors',
+          colour: 290,
+          contents: [
+            {
+              kind: 'block',
+              type: 'marty_get_obstacle_distance',
+            },
+            {
+              kind: 'block',
+              type: 'marty_get_ground_color',
             },
           ],
         },
