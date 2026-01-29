@@ -1,8 +1,10 @@
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAppStore } from '../stores/appStore';
 import './DebugConsole.css';
 
 export function DebugConsole() {
+  const { t } = useTranslation();
   const { consoleLogs, debugConsoleOpen, setDebugConsoleOpen, clearConsoleLogs } = useAppStore();
   const logsEndRef = useRef<HTMLDivElement>(null);
 
@@ -18,10 +20,10 @@ export function DebugConsole() {
   return (
     <div className="debug-console">
       <div className="debug-console-header">
-        <h3>Debug Console</h3>
+        <h3>{t('debugConsole.title')}</h3>
         <div className="debug-console-actions">
           <button onClick={clearConsoleLogs} className="console-action-btn">
-            Clear
+            {t('debugConsole.clear')}
           </button>
           <button onClick={() => setDebugConsoleOpen(false)} className="console-close-btn">
             ✕
@@ -30,7 +32,7 @@ export function DebugConsole() {
       </div>
       <div className="debug-console-body">
         {consoleLogs.length === 0 ? (
-          <div className="console-empty">No logs yet...</div>
+          <div className="console-empty">{t('debugConsole.noLogs')}</div>
         ) : (
           consoleLogs.map((log) => (
             <div key={log.id} className={`console-log log-${log.type}`}>

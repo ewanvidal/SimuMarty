@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAppStore } from '../stores/appStore.ts';
 import './LevelEditor.css';
 
@@ -19,6 +20,7 @@ const PRESET_TILES = [
 ];
 
 export function LevelEditor() {
+  const { t } = useTranslation();
   const {
     selectedEnvironment,
     levelEditorOpen,
@@ -152,17 +154,17 @@ export function LevelEditor() {
       <button 
         className="level-editor-toggle"
         onClick={toggleLevelEditor}
-        title={levelEditorOpen ? 'Close Level Editor' : 'Open Level Editor'}
+        title={levelEditorOpen ? t('levelEditor.toggleClose') : t('levelEditor.toggleOpen')}
       >
-        {levelEditorOpen ? '◀' : '▶'} Level Editor
+        {levelEditorOpen ? '◀' : '▶'} {t('levelEditor.title')}
       </button>
 
       {levelEditorOpen && (
         <div className="level-editor-content">
-          <h3>Tile Palette</h3>
+          <h3>{t('levelEditor.tilePalette')}</h3>
           
           <div className="tile-section">
-            <h4>Preset Tiles</h4>
+            <h4>{t('levelEditor.presetTiles')}</h4>
             <div className="tile-grid">
               {PRESET_TILES.map((tile) => (
                 <button
@@ -179,18 +181,18 @@ export function LevelEditor() {
           </div>
 
           <div className="tile-section">
-            <h4>Tools</h4>
+            <h4>{t('levelEditor.tools')}</h4>
             <button
               className={`tool-button eraser-btn ${selectedTileColor === ERASER_MODE ? 'selected' : ''}`}
               onClick={handleEraserClick}
-              title="Eraser - Click to delete tiles"
+              title={t('levelEditor.eraserTooltip')}
             >
-              Eraser
+              {t('levelEditor.eraser')}
             </button>
           </div>
 
           <div className="tile-section">
-            <h4>Custom Tiles</h4>
+            <h4>{t('levelEditor.customTiles')}</h4>
             <div className="custom-color-picker">
               <div className="color-inputs">
                 <label>
@@ -233,7 +235,7 @@ export function LevelEditor() {
                   style={{ backgroundColor: `rgb(${customColor.r}, ${customColor.g}, ${customColor.b})` }}
                 />
                 <button className="add-color-btn" onClick={handleCustomColorAdd}>
-                  + Add
+                  + {t('levelEditor.add')}
                 </button>
               </div>
             </div>
@@ -246,9 +248,9 @@ export function LevelEditor() {
                     className={`tile-button ${selectedTileColor === tile.color ? 'selected' : ''}`}
                     style={{ backgroundColor: tile.color }}
                     onClick={() => handleCustomTileClick(tile.color)}
-                    title="Custom color"
+                    title={t('levelEditor.custom')}
                   >
-                    <span className="tile-label">Custom</span>
+                    <span className="tile-label">{t('levelEditor.custom')}</span>
                   </button>
                 ))}
               </div>
@@ -256,9 +258,9 @@ export function LevelEditor() {
           </div>
 
           <div className="tile-section">
-            <h4>Actions</h4>
+            <h4>{t('levelEditor.actions')}</h4>
             <button className="action-btn clear-btn" onClick={handleClearLevel}>
-              Clear Level
+              {t('levelEditor.clearLevel')}
             </button>
             {selectedTileColor && (
               <button 
@@ -268,18 +270,18 @@ export function LevelEditor() {
                   disableGridMode();
                 }}
               >
-                Deselect
+                {t('levelEditor.deselect')}
               </button>
             )}
           </div>
 
           <div className="editor-hint">
             {selectedTileColor === ERASER_MODE ? (
-              <p>Click on tiles to delete them</p>
+              <p>{t('levelEditor.hintEraser')}</p>
             ) : selectedTileColor ? (
-              <p>Click on the grid to place tile</p>
+              <p>{t('levelEditor.hintPlace')}</p>
             ) : (
-              <p>Select a tile color above</p>
+              <p>{t('levelEditor.hintSelect')}</p>
             )}
           </div>
         </div>

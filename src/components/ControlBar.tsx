@@ -1,5 +1,6 @@
 import { useRef, useEffect } from 'react';
 import type { ChangeEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAppStore } from '../stores/appStore.ts';
 import { webSocketService } from '../services/WebSocketService.ts';
 import {
@@ -10,6 +11,7 @@ import {
 import './ControlBar.css';
 
 export function ControlBar() {
+  const { t, i18n } = useTranslation();
   const {
     selectedEnvironment,
     selectedLevel,
@@ -161,7 +163,7 @@ export function ControlBar() {
       <div className='control-bar'>
         <div className='control-bar-section'>
           <div className='control-group'>
-            <label htmlFor='environment-picker'>Environment:</label>
+            <label htmlFor='environment-picker'>{t('controlBar.environment')}</label>
             <select
               id='environment-picker'
               value={selectedEnvironment}
@@ -170,14 +172,14 @@ export function ControlBar() {
             >
               {environmentOptions.map((environment) => (
                 <option key={environment.id} value={environment.id}>
-                  {environment.label}
+                  {t(`environments.${environment.id}.label`, environment.label)}
                 </option>
               ))}
             </select>
           </div>
 
           <div className='control-group'>
-            <label htmlFor='level-picker'>Level:</label>
+            <label htmlFor='level-picker'>{t('controlBar.level')}</label>
             <select
               id='level-picker'
               value={levelSelectValue}
@@ -185,14 +187,14 @@ export function ControlBar() {
               className='control-select'
               disabled={levelOptions.length === 0}
             >
-              {levelOptions.length === 0 && <option value='none'>No levels</option>}
+              {levelOptions.length === 0 && <option value='none'>{t('controlBar.noLevels')}</option>}
               {levelOptions.map((level) => {
-                const label = level.description
-                  ? `${level.label} · ${level.description}`
-                  : level.label;
+                const label = t(`environments.${selectedEnvironment}.levels.${level.id}.label`, level.label);
+                const description = level.description;
+                const fullLabel = description ? `${label} · ${description}` : label;
                 return (
                   <option key={level.id} value={level.id}>
-                    {label}
+                    {fullLabel}
                   </option>
                 );
               })}
@@ -203,10 +205,10 @@ export function ControlBar() {
             <button
               className="control-button"
               onClick={handleGenerateMaze}
-              title="Generate New Random Maze"
+              title={t('controlBar.generateMaze')}
               style={{ marginLeft: '10px' }}
             >
-              <span className="icon">Generate Random Maze</span>
+              <span className="icon">{t('controlBar.generateMaze')}</span>
             </button>
           )}
         </div>
@@ -215,7 +217,7 @@ export function ControlBar() {
           <button
             onClick={toggleExperienceExpanded}
             className='control-button'
-            title={experienceExpanded ? 'Reset to 50/50' : 'Expand 3D View to 75%'}
+            title={experienceExpanded ? t('controlBar.resetLayout') : t('controlBar.expandLayout')}
           >
             <img src='/layout.png' alt='Layout' style={{ width: '20px', height: '20px' }} />
           </button>
@@ -223,11 +225,11 @@ export function ControlBar() {
 
         <div className='control-bar-section'>
           <button onClick={handleSaveJson} className='control-button'>
-            Save JSON
+             {t('controlBar.saveJson')}
           </button>
 
           <button onClick={triggerImport} className='control-button'>
-            Import JSON
+             {t('controlBar.importJson')}
           </button>
 
           <input
@@ -239,20 +241,20 @@ export function ControlBar() {
           />
 
           <button onClick={handleRunCode} className='control-button button-primary'>
-            Run Code
+            {t('controlBar.runCode')}
           </button>
 
           <button onClick={toggleEditorMode} className='control-button button-secondary'>
-            {editorMode === 'monaco' ? 'Switch to Blockly' : 'Switch to Code'}
+            {editorMode === 'monaco' ? t('controlBar.switchToBlockly') : t('controlBar.switchToCode')}
           </button>
 
-          <button onClick={toggleSettings} className='control-button' title='Settings'>
-            Settings
+          <button onClick={toggleSettings} className='control-button' title={t('controlBar.settings')}>
+            {t('controlBar.settings')}
           </button>
 
           {isTutorialEnvironment && hasTutorialLesson && (
-            <button onClick={openTutorialModal} className='control-button' title='View lesson brief'>
-              Lesson Briefing
+            <button onClick={openTutorialModal} className='control-button' title={t('controlBar.viewLessonBrief')}>
+              {t('controlBar.lessonBriefing')}
             </button>
           )}
         </div>
@@ -261,14 +263,26 @@ export function ControlBar() {
       {showSettings && (
         <div className='settings-panel'>
           <div className='settings-header'>
-            <h3>Experience Settings</h3>
+            <h3>{t('settings.title')}</h3>
             <button onClick={toggleSettings} className='close-button'>
               ✕
             </button>
           </div>
           <div className='settings-content'>
             <div className='setting-item'>
-              <label>Time Scale: {timeScale.toFixed(1)}x</label>
+              <label>{t('settings.language')}</label>
+              <select
+                value={i18n.resolvedLanguage || i18n.language}
+                onChange={(e) => i18n.changeLanguage(e.target.value)}
+                className='control-select'
+                style={{ width: '100%', marginBottom: '10px' }}
+              >
+                <option value="en">English</option>
+                <option value="fr">Français</option>
+              </select>
+            </div>
+            <div className='setting-item'>
+              <label>{t('settings.timeScale')}: {timeScale.toFixed(1)}x</label>
               <input
                 type='range'
                 min='0.1'
@@ -286,7 +300,7 @@ export function ControlBar() {
                   checked={enableShadows}
                   onChange={(e) => setEnableShadows(e.target.checked)}
                 />
-                Enable Shadows
+                {t('settings.enableShadows')}
               </label>
             </div>
             <div className='setting-item'>
@@ -296,7 +310,7 @@ export function ControlBar() {
                   checked={cameraFollow}
                   onChange={(e) => setCameraFollow(e.target.checked)}
                 />
-                Camera Follow Marty
+                {t('settings.cameraFollow')}
               </label>
             </div>
             <div className='setting-item'>
@@ -306,7 +320,7 @@ export function ControlBar() {
                   checked={debugConsoleOpen}
                   onChange={(e) => setDebugConsoleOpen(e.target.checked)}
                 />
-                Show Debug Console
+                {t('settings.showDebugConsole')}
               </label>
             </div>
           </div>
