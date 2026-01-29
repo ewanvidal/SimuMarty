@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import Experience from '../Experience/Experience.tsx';
 import { useAppStore } from '../stores/appStore.ts';
 import { SCENE_PRESETS, DEFAULT_SCENE_PRESET_ID } from '../shared/constants/scenePresets.ts';
@@ -10,6 +11,7 @@ import './ExperienceCanvas.css';
  * React component that wraps the Three.js Experience
  */
 export function ExperienceCanvas() {
+  const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const experienceRef = useRef<Experience | null>(null);
   const [experienceReady, setExperienceReady] = useState(false);
@@ -99,9 +101,9 @@ export function ExperienceCanvas() {
       <button 
         className='reset-button' 
         onClick={handleReset}
-        title='Reset Marty to start position'
+        title={t('experienceCanvas.resetTooltip')}
       >
-        🔄 Reset
+        🔄 {t('experienceCanvas.reset')}
       </button>
       <LevelEditor />
     </div>

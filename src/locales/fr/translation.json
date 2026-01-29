@@ -1,0 +1,168 @@
+{
+  "controlBar": {
+    "environment": "Environnement :",
+    "level": "Niveau :",
+    "noLevels": "Aucun niveau",
+    "generateMaze": "Générer un labyrinthe",
+    "resetLayout": "Réinitialiser la vue",
+    "expandLayout": "Agrandir la vue 3D",
+    "saveJson": "Sauvegarder JSON",
+    "importJson": "Importer JSON",
+    "runCode": "Exécuter",
+    "switchToBlockly": "Mode Bloc",
+    "switchToCode": "Mode Code",
+    "settings": "Paramètres",
+    "lessonBriefing": "Instructions",
+    "viewLessonBrief": "Voir les instructions"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "timeScale": "Échelle de temps",
+    "enableShadows": "Activer les ombres",
+    "cameraFollow": "Caméra suit Marty",
+    "showDebugConsole": "Afficher la console",
+    "language": "Langue"
+  },
+  "debugConsole": {
+    "title": "Console de débogage",
+    "clear": "Effacer",
+    "noLogs": "Aucun journal..."
+  },
+  "experienceCanvas": {
+    "reset": "Réinit.",
+    "resetTooltip": "Réinitialiser la position de Marty"
+  },
+  "levelEditor": {
+    "toggleOpen": "Ouvrir l'éditeur",
+    "toggleClose": "Fermer l'éditeur",
+    "title": "Éditeur de niveau",
+    "tilePalette": "Palette de tuiles",
+    "presetTiles": "Tuiles prédéfinies",
+    "tools": "Outils",
+    "eraser": "Gomme",
+    "eraserTooltip": "Gomme - Cliquez pour effacer des tuiles",
+    "customTiles": "Tuiles personnalisées",
+    "add": "Ajouter",
+    "custom": "Perso",
+    "actions": "Actions",
+    "clearLevel": "Effacer le niveau",
+    "deselect": "Désélectionner",
+    "hintEraser": "Cliquez sur les tuiles pour les effacer",
+    "hintPlace": "Cliquez sur la grille pour placer une tuile",
+    "hintSelect": "Sélectionnez une couleur ci-dessus"
+  },
+  "tutorial": {
+    "goal": "Objectif",
+    "objectives": "Objectifs",
+    "steps": "Étapes",
+    "tips": "Conseils"
+  },
+  "environments": {
+    "labyrinth": {
+      "label": "Labyrinthe",
+      "levels": {
+        "custom": { "label": "Disposition personnalisée" },
+        "level1": { "label": "Niveau 1 · Facile" },
+        "level2": { "label": "Niveau 2 · Moyen" },
+        "level3": { "label": "Niveau 3 · Difficile" },
+        "level4": { "label": "Niveau 4 · Expert" }
+      }
+    },
+    "playground": {
+      "label": "Terrain de jeu",
+      "levels": {
+        "level1": { "label": "Jeu libre" },
+        "level2": { "label": "Course aux points de contrôle" },
+        "custom": { "label": "Personnalisé" }
+      }
+    },
+    "classroom": {
+      "label": "Salle de classe",
+      "levels": {
+        "demo": { "label": "Démo en direct" },
+        "group-work": { "label": "Travail de groupe" }
+      }
+    },
+    "outdoor": {
+      "label": "Extérieur",
+      "levels": {
+        "sunny-day": { "label": "Journée ensoleillée" },
+        "long-track": { "label": "Piste longue" }
+      }
+    },
+    "tutorial": {
+      "label": "Tutoriel",
+      "levels": {
+        "movement-basics": { "label": "Leçon 1 · Mouvement" },
+        "turning-and-orientation": { "label": "Leçon 2 · Rotation" },
+        "sensors-and-obstacles": { "label": "Leçon 3 · Capteurs" }
+      }
+    }
+  },
+  "lessons": {
+    "movement-basics": {
+      "title": "Leçon 1 · Bases du mouvement",
+      "summary": "Découvrez comment les commandes de marche et de rotation déplacent Marty pour atteindre une tuile colorée.",
+      "goal": "Avancez de trois carrés et arrêtez-vous sur la tuile en surbrillance.",
+      "estimatedTime": "5 min",
+      "objectives": [
+        "Utilisez la commande `walk` avec un nombre de pas personnalisé",
+        "Enchaînez deux commandes dans le bon ordre",
+        "Regardez la grille de débogage pour comprendre la foulée de Marty"
+      ],
+      "steps": [
+        "Écrivez `marty.walk(x)` dans l'éditeur de code ou utilisez l'équivalent Bloc.",
+        "Exécutez le code et observez le mouvement et l'équilibre de Marty."
+      ],
+      "tips": [
+        "Des valeurs de pas plus courtes peuvent aider à la précision lors de l'alignement sur les marqueurs."
+      ],
+      "media": {
+        "caption": "Démo de la commande de marche."
+      }
+    },
+    "turning-and-orientation": {
+      "title": "Leçon 2 · Rotation & Orientation",
+      "summary": "Apprenez à faire pivoter Marty avec précision en utilisant des tours basés sur les degrés.",
+      "goal": "Faites pivoter Marty pour faire face au cône et marchez vers lui sans quitter la grille.",
+      "estimatedTime": "7 min",
+      "objectives": [
+        "Utilisez `turnLeft` et `turnRight` avec des paramètres de degré",
+        "Combinez la rotation et la marche pour atteindre la cible"
+      ],
+      "steps": [
+        "Combinez `marty.turnRight/Left(x)` et `marty.walk(x)` pour faire face et s'approcher de la tuile verte.",
+        "Expérimentez avec des angles plus petits pour comprendre les rotations partielles."
+      ],
+      "tips": [
+        "N'oubliez pas que les tours de 360° ramènent Marty à l'orientation initiale."
+      ],
+      "media": {
+        "caption": "Aperçu de l'objectif du cône cible."
+      }
+    },
+    "sensors-and-obstacles": {
+      "title": "Leçon 3 · Capteurs & Obstacles",
+      "summary": "Utilisez le capteur d'obstacles pour vous arrêter devant les barrières et planifier un détour.",
+      "goal": "Approchez de la clôture, détectez-la et déclenchez un virage sûr pour éviter une collision.",
+      "estimatedTime": "10 min",
+      "objectives": [
+        "Lire les données de distance avec `marty.getObstacleDistance()`",
+        "Logique de branchement utilisant des conditionnelles Python",
+        "Validez le résultat en regardant les visualiseurs à l'écran"
+      ],
+      "steps": [
+        "Commencez par une boucle qui fait avancer Marty jusqu'à ce qu'une clôture soit détectée.",
+        "Enregistrez la valeur de distance et arrêtez lorsque la valeur est inférieure à 1.5.",
+        "Ajoutez un virage et une commande de marche supplémentaire pour contourner la barrière."
+      ],
+      "tips": [
+        "Utilisez `print()` pour suivre les valeurs dans la console pour un débogage rapide.",
+        "Combinez les capteurs de couleur et de distance pour des missions plus complexes."
+      ],
+      "media": {
+        "caption": "Arrêt basé sur un capteur avant l'obstacle."
+      }
+    }
+  }
+}

@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { TUTORIAL_LESSONS } from '../shared/constants/tutorialLessons.ts';
 import { useAppStore } from '../stores/appStore.ts';
 import './TutorialModal.css';
@@ -19,14 +20,35 @@ const formatTutorialText = (text: string) => {
 };
 
 export function TutorialModal() {
+  const { t } = useTranslation();
   const tutorialModalVisible = useAppStore((state) => state.tutorialModalVisible);
   const activeLessonId = useAppStore((state) => state.activeLessonId);
   const closeTutorialModal = useAppStore((state) => state.closeTutorialModal);
 
   const lesson = useMemo(() => {
     if (!activeLessonId) return undefined;
-    return TUTORIAL_LESSONS[activeLessonId];
-  }, [activeLessonId]);
+    const baseLesson = TUTORIAL_LESSONS[activeLessonId];
+    if (!baseLesson) return undefined;
+
+    const media = baseLesson.media ? {
+        ...baseLesson.media,
+        caption: baseLesson.media.caption ? t(`lessons.${activeLessonId}.media.caption`, baseLesson.media.caption) : undefined
+    } : undefined;
+
+    return {
+      ...baseLesson,
+      title: t(`lessons.${activeLessonId}.title`, baseLesson.title),
+      summary: t(`lessons.${activeLessonId}.summary`, baseLesson.summary),
+      goal: t(`lessons.${activeLessonId}.goal`, baseLesson.goal),
+      estimatedTime: t(`lessons.${activeLessonId}.estimatedTime`, baseLesson.estimatedTime),
+      media,
+      objectives: t(`lessons.${activeLessonId}.objectives`, { returnObjects: true, defaultValue: baseLesson.objectives }) as string[],
+      steps: t(`lessons.${activeLessonId}.steps`, { returnObjects: true, defaultValue: baseLesson.steps }) as string[],
+      tips: baseLesson.tips 
+        ? (t(`lessons.${activeLessonId}.tips`, { returnObjects: true, defaultValue: baseLesson.tips }) as string[]) 
+        : undefined,
+    };
+  }, [activeLessonId, t]);
 
   if (!tutorialModalVisible || !lesson) {
     return null;
@@ -77,12 +99,12 @@ export function TutorialModal() {
         )}
 
         <section className='tutorial-section'>
-          <h3>Goal</h3>
+          <h3>{t('tutorial.goal')}</h3>
           <p>{lesson.goal}</p>
         </section>
 
         <section className='tutorial-section'>
-          <h3>Objectives</h3>
+          <h3>{t('tutorial.objectives')}</h3>
           <ul>
             {lesson.objectives.map((objective, index) => (
               <li key={index}>{formatTutorialText(objective)}</li>
@@ -91,7 +113,7 @@ export function TutorialModal() {
         </section>
 
         <section className='tutorial-section'>
-          <h3>Steps</h3>
+          <h3>{t('tutorial.steps')}</h3>
           <ol>
             {lesson.steps.map((step, index) => (
               <li key={index}>{formatTutorialText(step)}</li>
@@ -101,7 +123,7 @@ export function TutorialModal() {
 
         {lesson.tips && lesson.tips.length > 0 && (
           <section className='tutorial-section'>
-            <h3>Tips</h3>
+            <h3>{t('tutorial.tips')}</h3>
             <ul>
               {lesson.tips.map((tip, index) => (
                 <li key={index}>{tip}</li>

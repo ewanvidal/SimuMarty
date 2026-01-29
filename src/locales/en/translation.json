@@ -1,0 +1,168 @@
+{
+  "controlBar": {
+    "environment": "Environment:",
+    "level": "Level:",
+    "noLevels": "No levels",
+    "generateMaze": "Generate Random Maze",
+    "resetLayout": "Reset to 50/50",
+    "expandLayout": "Expand 3D View to 75%",
+    "saveJson": "Save JSON",
+    "importJson": "Import JSON",
+    "runCode": "Run Code",
+    "switchToBlockly": "Switch to Blockly",
+    "switchToCode": "Switch to Code",
+    "settings": "Settings",
+    "lessonBriefing": "Lesson Briefing",
+    "viewLessonBrief": "View lesson brief"
+  },
+  "settings": {
+    "title": "Experience Settings",
+    "timeScale": "Time Scale",
+    "enableShadows": "Enable Shadows",
+    "cameraFollow": "Camera Follow Marty",
+    "showDebugConsole": "Show Debug Console",
+    "language": "Language"
+  },
+  "debugConsole": {
+    "title": "Debug Console",
+    "clear": "Clear",
+    "noLogs": "No logs yet..."
+  },
+  "experienceCanvas": {
+    "reset": "Reset",
+    "resetTooltip": "Reset Marty to start position"
+  },
+  "levelEditor": {
+    "toggleOpen": "Open Level Editor",
+    "toggleClose": "Close Level Editor",
+    "title": "Level Editor",
+    "tilePalette": "Tile Palette",
+    "presetTiles": "Preset Tiles",
+    "tools": "Tools",
+    "eraser": "Eraser",
+    "eraserTooltip": "Eraser - Click to delete tiles",
+    "customTiles": "Custom Tiles",
+    "add": "Add",
+    "custom": "Custom",
+    "actions": "Actions",
+    "clearLevel": "Clear Level",
+    "deselect": "Deselect",
+    "hintEraser": "Click on tiles to delete them",
+    "hintPlace": "Click on the grid to place tile",
+    "hintSelect": "Select a tile color above"
+  },
+  "tutorial": {
+    "goal": "Goal",
+    "objectives": "Objectives",
+    "steps": "Steps",
+    "tips": "Tips"
+  },
+  "environments": {
+    "labyrinth": {
+      "label": "Labyrinth",
+      "levels": {
+        "custom": { "label": "Custom Layout" },
+        "level1": { "label": "Level 1 · Easy" },
+        "level2": { "label": "Level 2 · Medium" },
+        "level3": { "label": "Level 3 · Hard" },
+        "level4": { "label": "Level 4 · Expert" }
+      }
+    },
+    "playground": {
+      "label": "Playground",
+      "levels": {
+        "level1": { "label": "Free Play" },
+        "level2": { "label": "Checkpoint Run" },
+        "custom": { "label": "Custom" }
+      }
+    },
+    "classroom": {
+      "label": "Classroom",
+      "levels": {
+        "demo": { "label": "Live Demo" },
+        "group-work": { "label": "Group Work" }
+      }
+    },
+    "outdoor": {
+      "label": "Outdoor",
+      "levels": {
+        "sunny-day": { "label": "Sunny Day" },
+        "long-track": { "label": "Long Track" }
+      }
+    },
+    "tutorial": {
+      "label": "Tutorial",
+      "levels": {
+        "movement-basics": { "label": "Lesson 1 · Movement" },
+        "turning-and-orientation": { "label": "Lesson 2 · Turning" },
+        "sensors-and-obstacles": { "label": "Lesson 3 · Sensors" }
+      }
+    }
+  },
+  "lessons": {
+    "movement-basics": {
+      "title": "Lesson 1 · Movement Basics",
+      "summary": "Discover how the walk and turn commands move Marty to reach a colored tile.",
+      "goal": "Walk forward three squares and stop on the highlighted tile.",
+      "estimatedTime": "5 min",
+      "objectives": [
+        "Use the `walk` command with a custom step count",
+        "Chain two commands in the right order",
+        "Watch the debug grid to understand Marty's stride"
+      ],
+      "steps": [
+        "Write `marty.walk(x)` in the code editor or use the Blockly equivalent.",
+        "Run the code and observe Marty's movement and balance."
+      ],
+      "tips": [
+        "Shorter step values can help with precision when aligning to markers."
+      ],
+      "media": {
+        "caption": "Walk command demo."
+      }
+    },
+    "turning-and-orientation": {
+      "title": "Lesson 2 · Turning & Orientation",
+      "summary": "Learn how to rotate Marty precisely using degree-based turns.",
+      "goal": "Rotate Marty to face the cone and walk to it without leaving the grid.",
+      "estimatedTime": "7 min",
+      "objectives": [
+        "Use `turnLeft` and `turnRight` with degree parameters",
+        "Combine rotation and walking to reach the target"
+      ],
+      "steps": [
+        "Combine `marty.turnRight/Left(x)` and `marty.walk(x)` to face and approach the green tile.",
+        "Experiment with smaller angles to understand partial rotations."
+      ],
+      "tips": [
+        "Remember that 360° turns bring Marty back to the initial orientation."
+      ],
+      "media": {
+        "caption": "Target cone objective preview."
+      }
+    },
+    "sensors-and-obstacles": {
+      "title": "Lesson 3 · Sensors & Obstacles",
+      "summary": "Use the obstacle sensor to stop before barriers and plan a detour.",
+      "goal": "Approach the fence, detect it, and trigger a safe turn to avoid a collision.",
+      "estimatedTime": "10 min",
+      "objectives": [
+        "Read distance data with `marty.getObstacleDistance()`",
+        "Branch logic using Python conditionals",
+        "Validate the result by watching the on-screen visualizers"
+      ],
+      "steps": [
+        "Start with a loop that moves Marty forward until a fence is detected.",
+        "Log the distance value and break when the value is under 1.5.",
+        "Add a turn and an extra walk command to go around the barrier."
+      ],
+      "tips": [
+        "Use `print()` to track values inside the console for quick debugging.",
+        "Combine color and distance sensors for more complex missions."
+      ],
+      "media": {
+        "caption": "Sensor-based stop before obstacle."
+      }
+    }
+  }
+}
