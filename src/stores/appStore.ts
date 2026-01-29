@@ -10,6 +10,13 @@ import {
 
 type EditorMode = 'monaco' | 'blockly';
 
+export interface LogEntry {
+  id: string;
+  timestamp: string;
+  type: 'log' | 'warn' | 'error' | 'info';
+  message: string;
+}
+
 interface AppState {
   // Environment and Level
   selectedEnvironment: EnvironmentId;
@@ -41,18 +48,19 @@ interface AppState {
   // Settings
   showSettings: boolean;
   toggleSettings: () => void;
-  debugGrid: boolean;
   enableShadows: boolean;
-  showFPS: boolean;
-  graphicsQuality: 'low' | 'medium' | 'high';
   timeScale: number;
   cameraFollow: boolean;
-  setDebugGrid: (value: boolean) => void;
+  debugConsoleOpen: boolean;
   setEnableShadows: (value: boolean) => void;
-  setShowFPS: (value: boolean) => void;
-  setGraphicsQuality: (quality: 'low' | 'medium' | 'high') => void;
   setTimeScale: (value: number) => void;
   setCameraFollow: (value: boolean) => void;
+  setDebugConsoleOpen: (value: boolean) => void;
+
+  // Console
+  consoleLogs: LogEntry[];
+  addConsoleLog: (type: LogEntry['type'], message: string) => void;
+  clearConsoleLogs: () => void;
 
   // Level Editor
   levelEditorOpen: boolean;
@@ -177,16 +185,11 @@ export const useAppStore = create<AppState>((set) => ({
   // Settings
   showSettings: false,
   toggleSettings: () => set((state) => ({ showSettings: !state.showSettings })),
-  debugGrid: true,
   enableShadows: true,
-  showFPS: false,
-  graphicsQuality: 'high',
   timeScale: 1.0,
   cameraFollow: true,
-  setDebugGrid: (value) => set({ debugGrid: value }),
+  debugConsoleOpen: false,
   setEnableShadows: (value) => set({ enableShadows: value }),
-  setShowFPS: (value) => set({ showFPS: value }),
-  setGraphicsQuality: (quality) => set({ graphicsQuality: quality }),
   setTimeScale: (value) => {
     set({ timeScale: value });
     // Update the experience time scale directly
@@ -198,13 +201,30 @@ export const useAppStore = create<AppState>((set) => ({
   },
   setCameraFollow: (value) => {
     set({ cameraFollow: value });
-    // Update the camera follow state directly
+    // Update the experience camera follow directly
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const experience = (window as any).experience;
     if (experience?.camera) {
       experience.camera.followTarget = value;
     }
   },
+  setDebugConsoleOpen: (value) => set({ debugConsoleOpen: value }),
+
+  // Console
+  consoleLogs: [],
+  addConsoleLog: (type, message) =>
+    set((state) => ({
+      consoleLogs: [
+        ...state.consoleLogs,
+        {
+          id: Math.random().toString(36).substr(2, 9),
+          timestamp: new Date().toLocaleTimeString(),
+          type,
+          message,
+        },
+      ].slice(-100), // Keep last 100 logs
+    })),
+  clearConsoleLogs: () => set({ consoleLogs: [] }),
 
   // Level Editor
   levelEditorOpen: false,

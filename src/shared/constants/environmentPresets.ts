@@ -128,7 +128,7 @@ export const ENVIRONMENT_PRESETS: Record<EnvironmentId, EnvironmentPreset> = {
       {
         id: 'movement-basics',
         label: 'Lesson 1 · Movement',
-        description: 'Walk safely on the teaching grid.',
+        description: '',
         difficulty: 'easy',
         scenePresetId: 'tutorial-grid-basic',
         lessonId: 'movement-basics',
@@ -136,7 +136,7 @@ export const ENVIRONMENT_PRESETS: Record<EnvironmentId, EnvironmentPreset> = {
       {
         id: 'turning-and-orientation',
         label: 'Lesson 2 · Turning',
-        description: 'Learn how to rotate accurately.',
+        description: '',
         difficulty: 'medium',
         scenePresetId: 'tutorial-grid-basic',
         lessonId: 'turning-and-orientation',
@@ -144,7 +144,7 @@ export const ENVIRONMENT_PRESETS: Record<EnvironmentId, EnvironmentPreset> = {
       {
         id: 'sensors-and-obstacles',
         label: 'Lesson 3 · Sensors',
-        description: 'Avoid fences using distance sensors.',
+        description: '',
         difficulty: 'hard',
         scenePresetId: 'tutorial-obstacle-course',
         lessonId: 'sensors-and-obstacles',

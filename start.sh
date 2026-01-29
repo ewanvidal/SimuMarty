@@ -24,7 +24,7 @@ echo ""
 # Install Python dependencies
 echo "📦 Installing Python dependencies..."
 cd python_marty
-pip install -q -r requirements.txt
+python -m pip install -q -r requirements.txt
 if [ $? -eq 0 ]; then
     echo "✅ Python dependencies installed"
 else

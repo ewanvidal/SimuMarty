@@ -5,14 +5,50 @@ import { ControlBar } from './components/ControlBar.tsx';
 import { webSocketService } from './services/WebSocketService.ts';
 import { useAppStore } from './stores/appStore.ts';
 import { TutorialModal } from './components/TutorialModal.tsx';
+import { DebugConsole } from './components/DebugConsole.tsx';
 import './App.css';
 
 function App() {
-  const { setWsConnected, experienceExpanded } = useAppStore();
+  const { setWsConnected, experienceExpanded, addConsoleLog } = useAppStore();
 
   // Calculate panel widths based on layout
   const experienceWidth = experienceExpanded ? '75%' : '50%';
   const codeWidth = experienceExpanded ? '25%' : '50%';
+
+  useEffect(() => {
+    // Intercept console logs
+    const originalLog = console.log;
+    const originalWarn = console.warn;
+    const originalError = console.error;
+    const originalInfo = console.info;
+
+    console.log = (...args) => {
+      originalLog(...args);
+      addConsoleLog('log', args.map(String).join(' '));
+    };
+
+    console.warn = (...args) => {
+      originalWarn(...args);
+      addConsoleLog('warn', args.map(String).join(' '));
+    };
+
+    console.error = (...args) => {
+      originalError(...args);
+      addConsoleLog('error', args.map(String).join(' '));
+    };
+
+    console.info = (...args) => {
+      originalInfo(...args);
+      addConsoleLog('info', args.map(String).join(' '));
+    };
+
+    return () => {
+      console.log = originalLog;
+      console.warn = originalWarn;
+      console.error = originalError;
+      console.info = originalInfo;
+    };
+  }, [addConsoleLog]);
 
   useEffect(() => {
     // Subscribe to connection events
@@ -24,7 +60,7 @@ function App() {
       setWsConnected(false);
     });
 
-    const unsubscribeError = webSocketService.on('error', (error) => {
+    const unsubscribeError = webSocketService.on('error', () => {
       // Silently ignore connection errors
     });
 
@@ -36,7 +72,7 @@ function App() {
     });
 
     // Attempt to connect
-    webSocketService.connect().catch((err) => {
+    webSocketService.connect().catch(() => {
       // Silently ignore connection errors
     });
 
@@ -68,6 +104,7 @@ function App() {
       </div>
 
       <TutorialModal />
+      <DebugConsole />
     </div>
   );
 }

@@ -21,7 +21,6 @@ export { default as Time } from './Utils/Time.tsx';
 export { default as World } from './World/World.tsx';
 export { default as Environment } from './World/Environment.tsx';
 export { default as Floor } from './World/Floor.tsx';
-export { default as Labyrinth } from './World/Labyrinth.tsx';
 export { default as Marty } from './World/Marty.tsx';
 
 // Types and constants

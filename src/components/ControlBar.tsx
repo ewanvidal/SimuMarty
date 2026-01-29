@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import type { ChangeEvent } from 'react';
 import { useAppStore } from '../stores/appStore.ts';
 import { webSocketService } from '../services/WebSocketService.ts';
@@ -30,19 +30,15 @@ export function ControlBar() {
     wsConnected,
     showSettings,
     toggleSettings,
-    debugGrid,
     enableShadows,
-    showFPS,
-    graphicsQuality,
-    timeScale,
-    cameraFollow,
-    setDebugGrid,
     setEnableShadows,
-    setShowFPS,
-    setGraphicsQuality,
+    timeScale,
     setTimeScale,
-    setCameraFollow,
     openTutorialModal,
+    debugConsoleOpen,
+    setDebugConsoleOpen,
+    cameraFollow,
+    setCameraFollow,
   } = useAppStore();
   
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -141,6 +137,24 @@ export function ControlBar() {
       }
     }
   };
+
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const experience = (window as any).experience;
+    if (experience) {
+      if (experience.renderer) {
+        experience.renderer.setShadows(enableShadows);
+      }
+      // Note: timeScale is handled directly in the setter in appStore
+      // but we can also sync it here just in case
+      if (experience.time) {
+        experience.time.timeScale = timeScale;
+      }
+      if (experience.camera) {
+        experience.camera.followTarget = cameraFollow;
+      }
+    }
+  }, [enableShadows, timeScale, cameraFollow]);
 
   return (
     <>
@@ -254,14 +268,16 @@ export function ControlBar() {
           </div>
           <div className='settings-content'>
             <div className='setting-item'>
-              <label>
-                <input
-                  type='checkbox'
-                  checked={debugGrid}
-                  onChange={(e) => setDebugGrid(e.target.checked)}
-                />
-                Show Debug Grid
-              </label>
+              <label>Time Scale: {timeScale.toFixed(1)}x</label>
+              <input
+                type='range'
+                min='0.1'
+                max='20'
+                step='0.1'
+                value={timeScale}
+                onChange={(e) => setTimeScale(parseFloat(e.target.value))}
+                className='setting-slider'
+              />
             </div>
             <div className='setting-item'>
               <label>
@@ -277,16 +293,6 @@ export function ControlBar() {
               <label>
                 <input
                   type='checkbox'
-                  checked={showFPS}
-                  onChange={(e) => setShowFPS(e.target.checked)}
-                />
-                Show FPS Counter
-              </label>
-            </div>
-            <div className='setting-item'>
-              <label>
-                <input
-                  type='checkbox'
                   checked={cameraFollow}
                   onChange={(e) => setCameraFollow(e.target.checked)}
                 />
@@ -294,28 +300,14 @@ export function ControlBar() {
               </label>
             </div>
             <div className='setting-item'>
-              <label>Graphics Quality:</label>
-              <select
-                className='control-select'
-                value={graphicsQuality}
-                onChange={(e) => setGraphicsQuality(e.target.value as 'low' | 'medium' | 'high')}
-              >
-                <option value='low'>Low</option>
-                <option value='medium'>Medium</option>
-                <option value='high'>High</option>
-              </select>
-            </div>
-            <div className='setting-item'>
-              <label>Time Scale: {timeScale.toFixed(1)}x</label>
-              <input
-                type='range'
-                min='0.1'
-                max='15'
-                step='0.1'
-                value={timeScale}
-                onChange={(e) => setTimeScale(parseFloat(e.target.value))}
-                className='setting-slider'
-              />
+              <label>
+                <input
+                  type='checkbox'
+                  checked={debugConsoleOpen}
+                  onChange={(e) => setDebugConsoleOpen(e.target.checked)}
+                />
+                Show Debug Console
+              </label>
             </div>
           </div>
         </div>

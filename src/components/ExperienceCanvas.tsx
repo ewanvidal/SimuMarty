@@ -40,7 +40,7 @@ export function ExperienceCanvas() {
         // Default position from current scene preset
         const currentPresetId = scenePresetId || DEFAULT_SCENE_PRESET_ID;
         const preset = SCENE_PRESETS[currentPresetId];
-        const defaultPos = preset?.marty.position || [0.05, 0, 0.05];
+        const defaultPos = preset?.marty?.position || [0.05, 0, 0.05];
         marty.setPosition(defaultPos[0], defaultPos[1], defaultPos[2]);
       }
       marty.setRotationY(startRotation);

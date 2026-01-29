@@ -39,6 +39,21 @@ export default class Renderer {
     this.instance.shadowMap.type = THREE.PCFSoftShadowMap;
   }
 
+  setShadows(enabled: boolean) {
+    if (this.instance) {
+      this.instance.shadowMap.enabled = enabled;
+      this.scene.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+          if (Array.isArray(child.material)) {
+            child.material.forEach((m) => (m.needsUpdate = true));
+          } else {
+            child.material.needsUpdate = true;
+          }
+        }
+      });
+    }
+  }
+
   resize() {
     if (!this.instance) return;
 
