@@ -61,9 +61,11 @@ export type TileTypeName = keyof typeof TileTypes;
  * Can be any predefined type or custom configuration.
  */
 export class Tile {
-  private mesh: THREE.Mesh;
+  private mesh: THREE.Mesh;           // Visual mesh (transparent, layer 0)
+  private sensorMesh: THREE.Mesh;     // Sensor mesh (opaque, layer 2 only)
   private border: THREE.LineSegments;
   private material: THREE.MeshStandardMaterial;
+  private sensorMaterial: THREE.MeshBasicMaterial;
   private config: Required<TileConfig>;
   private animationTime = 0;
   private baseOpacity: number;
@@ -88,7 +90,9 @@ export class Tile {
     this.baseOpacity = this.config.opacity;
     this.size = size;
 
-    // Create material with strong emissive for high visibility
+    const geometry = new THREE.PlaneGeometry(this.size, this.size);
+
+    // === VISUAL MESH (transparent, seen by main camera on layer 0) ===
     this.material = new THREE.MeshStandardMaterial({
       color: this.config.color,
       emissive: this.config.color,
@@ -100,15 +104,29 @@ export class Tile {
       polygonOffset: true,
       polygonOffsetFactor: -2,
       polygonOffsetUnits: -2,
-      depthWrite: true,
+      depthWrite: false,
     });
 
-    // Create mesh - raised above floor for visibility
-    const geometry = new THREE.PlaneGeometry(this.size, this.size);
     this.mesh = new THREE.Mesh(geometry, this.material);
     this.mesh.rotation.x = -Math.PI / 2;
     this.mesh.position.set(position.x, 0.001, position.z);
     this.mesh.receiveShadow = false;
+    // Visual mesh only on layer 0 (main camera)
+    this.mesh.layers.set(0);
+
+    // === SENSOR MESH (opaque, seen only by sensor camera on layer 2) ===
+    this.sensorMaterial = new THREE.MeshBasicMaterial({
+      color: this.config.color,
+      transparent: false,
+      depthWrite: true,
+      depthTest: true,
+    });
+
+    this.sensorMesh = new THREE.Mesh(geometry, this.sensorMaterial);
+    this.sensorMesh.rotation.x = -Math.PI / 2;
+    this.sensorMesh.position.set(position.x, 0.002, position.z);
+    // Sensor mesh only on layer 2 (sensor camera)
+    this.sensorMesh.layers.set(2);
 
     // Create border/grid lines with strong contrast
     const edges = new THREE.EdgesGeometry(geometry);
@@ -117,9 +135,10 @@ export class Tile {
       new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 }),
     );
     this.border.rotation.x = -Math.PI / 2;
-    this.border.position.set(position.x, 0.002, position.z);
+    this.border.position.set(position.x, 0.0015, position.z);
 
     parent.add(this.mesh);
+    parent.add(this.sensorMesh);
     parent.add(this.border);
   }
 
@@ -159,6 +178,8 @@ export class Tile {
    */
   setColor(color: string): void {
     this.material.color.set(color);
+    this.material.emissive.set(color);
+    this.sensorMaterial.color.set(color);
   }
 
   /**
@@ -166,6 +187,7 @@ export class Tile {
    */
   setVisible(visible: boolean): void {
     this.mesh.visible = visible;
+    this.sensorMesh.visible = visible;
   }
 
   /**
@@ -175,6 +197,8 @@ export class Tile {
     this.mesh.geometry.dispose();
     this.material.dispose();
     this.mesh.parent?.remove(this.mesh);
+    this.sensorMesh.parent?.remove(this.sensorMesh);
+    this.sensorMaterial.dispose();
     this.border.geometry.dispose();
     (this.border.material as THREE.Material).dispose();
     this.border.parent?.remove(this.border);
