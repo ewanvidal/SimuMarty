@@ -269,9 +269,6 @@ export class ObstacleSensor {
    */
   getDistance(): number {
     const hit = this.cast();
-    if (hit) {
-      console.log('🎯 ObstacleSensor hit:', hit.object.name || 'unnamed', 'at', hit.distance.toFixed(3), 'parent:', hit.object.parent?.name);
-    }
     return hit ? hit.distance : Infinity;
   }
 

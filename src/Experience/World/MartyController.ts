@@ -544,17 +544,7 @@ export class MartyController {
     }
 
     // Log to browser console
-    console.log('🎨 Ground Color:', color);
-    console.log(`   RGB(${color.r}, ${color.g}, ${color.b})`);
-
-    // Detect specific colors
-    if (color.r > 200 && color.g < 50 && color.b < 50) {
-      console.log('   🔴 RED detected!');
-    } else if (color.b > 200 && color.r < 50 && color.g < 50) {
-      console.log('   🔵 BLUE detected!');
-    } else if (color.g > 200 && color.r < 50 && color.b < 50) {
-      console.log('   🟢 GREEN detected!');
-    }
+    console.log(`RGB(${color.r}, ${color.g}, ${color.b})`);
 
     // Send sensor data back via WebSocket
     import('../../services/WebSocketService').then(({ webSocketService }) => {
@@ -593,14 +583,9 @@ export class MartyController {
 
     // Log to browser console
     if (obstacleData.detected) {
-      console.log('📡 Obstacle Distance:', distance.toFixed(2), 'units');
-      if (distance < 2) {
-        console.log('   ⚠️ WARNING: Too close!');
-      } else if (distance > 2) {
-        console.log(`📡 Obstacle Distance: ${distance.toFixed(2)}`);
-      }
+      console.log(distance.toFixed(2));
     } else {
-      console.log('📡 Obstacle Distance: Clear (no obstacle detected)');
+      console.log('Obstacle Distance: Clear (no obstacle detected)');
     }
 
     // Send sensor data back via WebSocket
