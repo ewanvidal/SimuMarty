@@ -2,7 +2,10 @@ import Floor from './Floor.tsx';
 import Environment from './Environment.tsx';
 import Marty from './Marty.tsx';
 import type Camera from '../Camera.tsx';
-import { SCENE_PRESETS, type ScenePreset } from '../../shared/constants/scenePresets.ts';
+import {
+  SCENE_PRESETS,
+  type ScenePreset,
+} from '../../shared/constants/scenePresets.ts';
 
 interface SceneDirectorDeps {
   floor?: Floor;
@@ -43,7 +46,7 @@ export default class SceneDirector {
     this.floor?.applyPreset(preset?.floor ?? null);
     this.environment?.applyPreset(preset?.lighting ?? null);
     this.marty?.applyTransformPreset(preset?.marty);
-    
+
     // Update camera target to follow Marty's new position
     const martyPos = preset?.marty?.position ?? [0, 0, 0];
     this.camera?.setTarget(martyPos[0], martyPos[1], martyPos[2]);

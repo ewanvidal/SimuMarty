@@ -2,7 +2,7 @@
 // Simple path from Start (red) to Goal (green)
 
 export const lesson1Map: number[][] = [
-  [9, 1, 1, 1, 3],  // Start → Path → Goal
+  [9, 1, 1, 1, 3], // Start → Path → Goal
 ];
 
 /** Marty's initial transform for this lesson */

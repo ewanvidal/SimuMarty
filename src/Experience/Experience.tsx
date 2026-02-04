@@ -24,7 +24,7 @@ export default class Experience {
   camera!: Camera;
   renderer!: Renderer;
   world!: World;
-  
+
   // Mouse event handlers for placement mode
   private onMouseMoveBound: ((e: MouseEvent) => void) | null = null;
   private onMouseClickBound: ((e: MouseEvent) => void) | null = null;
@@ -73,19 +73,19 @@ export default class Experience {
     this.time.on('tick', () => {
       this.update();
     });
-    
+
     // Setup mouse events for placement mode
     this.setupPlacementModeEvents();
   }
-  
+
   private setupPlacementModeEvents(): void {
     this.onMouseMoveBound = (e: MouseEvent) => this.onMouseMove(e);
     this.onMouseClickBound = (e: MouseEvent) => this.onMouseClick(e);
-    
+
     this.canvas.addEventListener('mousemove', this.onMouseMoveBound);
     this.canvas.addEventListener('click', this.onMouseClickBound);
   }
-  
+
   private getNormalizedMouse(e: MouseEvent): { x: number; y: number } {
     const rect = this.canvas.getBoundingClientRect();
     return {
@@ -93,27 +93,29 @@ export default class Experience {
       y: -((e.clientY - rect.top) / rect.height) * 2 + 1,
     };
   }
-  
+
   private onMouseMove(e: MouseEvent): void {
     const lb = this.world?.levelBuilder;
-    if (!lb || (!lb.isPlacementModeEnabled() && !lb.isEraserModeEnabled())) return;
+    if (!lb || (!lb.isPlacementModeEnabled() && !lb.isEraserModeEnabled()))
+      return;
     if (!this.camera.instance) return;
-    
+
     const normalizedMouse = this.getNormalizedMouse(e);
     lb.updatePlacementHover(normalizedMouse, this.camera.instance);
   }
-  
+
   private onMouseClick(e: MouseEvent): void {
     const lb = this.world?.levelBuilder;
-    if (!lb || (!lb.isPlacementModeEnabled() && !lb.isEraserModeEnabled())) return;
-    
+    if (!lb || (!lb.isPlacementModeEnabled() && !lb.isEraserModeEnabled()))
+      return;
+
     // Only handle left click
     if (e.button !== 0) return;
-    
+
     // Prevent click if it's on a UI element
     const target = e.target as HTMLElement;
     if (target !== this.canvas) return;
-    
+
     lb.placeTileAtHover();
   }
 
@@ -160,7 +162,7 @@ export default class Experience {
     if (this.onMouseClickBound) {
       this.canvas.removeEventListener('click', this.onMouseClickBound);
     }
-    
+
     this.sizes.dispose();
     this.time.dispose();
     this.resources.dispose();

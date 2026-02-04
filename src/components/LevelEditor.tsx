@@ -30,16 +30,18 @@ export function LevelEditor() {
   } = useAppStore();
 
   const [customColor, setCustomColor] = useState({ r: 128, g: 128, b: 128 });
-  const [customTiles, setCustomTiles] = useState<Array<{ id: string; color: string }>>([]);
+  const [customTiles, setCustomTiles] = useState<
+    Array<{ id: string; color: string }>
+  >([]);
 
   // Auto-deselect after placing a tile
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const experience = (window as any).experience;
     const levelBuilder = experience?.world?.levelBuilder;
-    
+
     if (!levelBuilder) return;
-    
+
     const handleTilePlaced = () => {
       // Only auto-deselect in placement mode, not eraser mode
       if (selectedTileColor && selectedTileColor !== ERASER_MODE) {
@@ -47,9 +49,9 @@ export function LevelEditor() {
         levelBuilder.disablePlacementMode();
       }
     };
-    
+
     levelBuilder.on('tilePlaced', handleTilePlaced);
-    
+
     return () => {
       levelBuilder.off('tilePlaced', handleTilePlaced);
     };
@@ -99,8 +101,10 @@ export function LevelEditor() {
 
   const enableGridMode = (color: string) => {
     // Parse color to RGB
-    let r = 255, g = 255, b = 255;
-    
+    let r = 255,
+      g = 255,
+      b = 255;
+
     if (color.startsWith('#')) {
       // Hex color
       const hex = color.slice(1);
@@ -116,7 +120,7 @@ export function LevelEditor() {
         b = parseInt(match[3]);
       }
     }
-    
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const experience = (window as any).experience;
     if (experience?.world?.levelBuilder) {
@@ -151,21 +155,25 @@ export function LevelEditor() {
 
   return (
     <div className={`level-editor ${levelEditorOpen ? 'open' : ''}`}>
-      <button 
-        className="level-editor-toggle"
+      <button
+        className='level-editor-toggle'
         onClick={toggleLevelEditor}
-        title={levelEditorOpen ? t('levelEditor.toggleClose') : t('levelEditor.toggleOpen')}
+        title={
+          levelEditorOpen
+            ? t('levelEditor.toggleClose')
+            : t('levelEditor.toggleOpen')
+        }
       >
         {levelEditorOpen ? '◀' : '▶'} {t('levelEditor.title')}
       </button>
 
       {levelEditorOpen && (
-        <div className="level-editor-content">
+        <div className='level-editor-content'>
           <h3>{t('levelEditor.tilePalette')}</h3>
-          
-          <div className="tile-section">
+
+          <div className='tile-section'>
             <h4>{t('levelEditor.presetTiles')}</h4>
-            <div className="tile-grid">
+            <div className='tile-grid'>
               {PRESET_TILES.map((tile) => (
                 <button
                   key={tile.id}
@@ -174,13 +182,13 @@ export function LevelEditor() {
                   onClick={() => handlePresetClick(tile.color)}
                   title={tile.name}
                 >
-                  <span className="tile-label">{tile.name}</span>
+                  <span className='tile-label'>{tile.name}</span>
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="tile-section">
+          <div className='tile-section'>
             <h4>{t('levelEditor.tools')}</h4>
             <button
               className={`tool-button eraser-btn ${selectedTileColor === ERASER_MODE ? 'selected' : ''}`}
@@ -191,57 +199,77 @@ export function LevelEditor() {
             </button>
           </div>
 
-          <div className="tile-section">
+          <div className='tile-section'>
             <h4>{t('levelEditor.customTiles')}</h4>
-            <div className="custom-color-picker">
-              <div className="color-inputs">
+            <div className='custom-color-picker'>
+              <div className='color-inputs'>
                 <label>
                   R
                   <input
-                    type="range"
-                    min="0"
-                    max="255"
+                    type='range'
+                    min='0'
+                    max='255'
                     value={customColor.r}
-                    onChange={(e) => setCustomColor({ ...customColor, r: parseInt(e.target.value) })}
+                    onChange={(e) =>
+                      setCustomColor({
+                        ...customColor,
+                        r: parseInt(e.target.value),
+                      })
+                    }
                   />
                   <span>{customColor.r}</span>
                 </label>
                 <label>
                   G
                   <input
-                    type="range"
-                    min="0"
-                    max="255"
+                    type='range'
+                    min='0'
+                    max='255'
                     value={customColor.g}
-                    onChange={(e) => setCustomColor({ ...customColor, g: parseInt(e.target.value) })}
+                    onChange={(e) =>
+                      setCustomColor({
+                        ...customColor,
+                        g: parseInt(e.target.value),
+                      })
+                    }
                   />
                   <span>{customColor.g}</span>
                 </label>
                 <label>
                   B
                   <input
-                    type="range"
-                    min="0"
-                    max="255"
+                    type='range'
+                    min='0'
+                    max='255'
                     value={customColor.b}
-                    onChange={(e) => setCustomColor({ ...customColor, b: parseInt(e.target.value) })}
+                    onChange={(e) =>
+                      setCustomColor({
+                        ...customColor,
+                        b: parseInt(e.target.value),
+                      })
+                    }
                   />
                   <span>{customColor.b}</span>
                 </label>
               </div>
-              <div className="color-preview-row">
+              <div className='color-preview-row'>
                 <div
-                  className="color-preview"
-                  style={{ backgroundColor: `rgb(${customColor.r}, ${customColor.g}, ${customColor.b})` }}
+                  className='color-preview'
+                  style={{
+                    backgroundColor: `rgb(${customColor.r}, ${customColor.g}, ${customColor.b})`,
+                  }}
                 />
-                <button className="add-color-btn" onClick={handleCustomColorAdd}>
+                <button
+                  className='add-color-btn'
+                  onClick={handleCustomColorAdd}
+                >
                   + {t('levelEditor.add')}
                 </button>
               </div>
             </div>
 
             {customTiles.length > 0 && (
-              <div className="tile-grid custom-tiles">
+              <div className='tile-grid custom-tiles'>
                 {customTiles.map((tile) => (
                   <button
                     key={tile.id}
@@ -250,21 +278,23 @@ export function LevelEditor() {
                     onClick={() => handleCustomTileClick(tile.color)}
                     title={t('levelEditor.custom')}
                   >
-                    <span className="tile-label">{t('levelEditor.custom')}</span>
+                    <span className='tile-label'>
+                      {t('levelEditor.custom')}
+                    </span>
                   </button>
                 ))}
               </div>
             )}
           </div>
 
-          <div className="tile-section">
+          <div className='tile-section'>
             <h4>{t('levelEditor.actions')}</h4>
-            <button className="action-btn clear-btn" onClick={handleClearLevel}>
+            <button className='action-btn clear-btn' onClick={handleClearLevel}>
               {t('levelEditor.clearLevel')}
             </button>
             {selectedTileColor && (
-              <button 
-                className="action-btn deselect-btn" 
+              <button
+                className='action-btn deselect-btn'
                 onClick={() => {
                   setSelectedTileColor(null);
                   disableGridMode();
@@ -275,7 +305,7 @@ export function LevelEditor() {
             )}
           </div>
 
-          <div className="editor-hint">
+          <div className='editor-hint'>
             {selectedTileColor === ERASER_MODE ? (
               <p>{t('levelEditor.hintEraser')}</p>
             ) : selectedTileColor ? (

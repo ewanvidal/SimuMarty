@@ -10,8 +10,14 @@ import { TUTORIAL_LESSONS } from '../../shared/constants/tutorialLessons.ts';
 import { LevelBuilder } from './LevelBuilder.ts';
 import { lesson1Map } from '../../shared/constants/lessons/lesson1.ts';
 import { lesson2Map } from '../../shared/constants/lessons/lesson2.ts';
-import { lesson3Map, lesson3Obstacles } from '../../shared/constants/lessons/lesson3.ts';
-import { SCENE_PRESETS, DEFAULT_SCENE_PRESET_ID } from '../../shared/constants/scenePresets.ts';
+import {
+  lesson3Map,
+  lesson3Obstacles,
+} from '../../shared/constants/lessons/lesson3.ts';
+import {
+  SCENE_PRESETS,
+  DEFAULT_SCENE_PRESET_ID,
+} from '../../shared/constants/scenePresets.ts';
 
 /**
  * World
@@ -31,7 +37,6 @@ export default class World {
   pendingLessonId: string | null = null;
   pendingLevelSelection: { envId: string; levelId: string } | null = null;
 
-
   constructor() {
     this.experience = (
       window as unknown as { experience: Experience }
@@ -43,7 +48,7 @@ export default class World {
     this.resources.on('ready', () => {
       // Setup world objects
       this.floor = new Floor();
-      this.marty = new Marty();      
+      this.marty = new Marty();
       this.environment = new Environment();
       this.sceneDirector = new SceneDirector({
         floor: this.floor,
@@ -58,9 +63,11 @@ export default class World {
       if (this.marty?.physics) {
         this.levelBuilder.setPhysics(this.marty.physics);
       }
-      
-      this.sceneDirector.applyScenePreset(this.pendingScenePresetId || DEFAULT_SCENE_PRESET_ID);
-      
+
+      this.sceneDirector.applyScenePreset(
+        this.pendingScenePresetId || DEFAULT_SCENE_PRESET_ID,
+      );
+
       // Load pending tutorial if any
       if (this.pendingLessonId) {
         this.loadTutorialLesson(this.pendingLessonId);
@@ -68,9 +75,12 @@ export default class World {
 
       // Load pending level selection if any
       if (this.pendingLevelSelection) {
-        this.loadLevel(this.pendingLevelSelection.envId, this.pendingLevelSelection.levelId);
+        this.loadLevel(
+          this.pendingLevelSelection.envId,
+          this.pendingLevelSelection.levelId,
+        );
       }
-      
+
       // If no pending selections, load the default level (tutorial level1)
       if (!this.pendingLessonId && !this.pendingLevelSelection) {
         // Import the default from the store to load tutorial level1
@@ -148,7 +158,7 @@ export default class World {
         // Default or "custom" random maze
         this.levelBuilder.generateMaze(21, 21);
       }
-      
+
       // After building the maze, teleport Marty to start
       const startPos = this.levelBuilder.getStartPosition();
       if (startPos && this.marty) {
@@ -163,7 +173,7 @@ export default class World {
         const preset = SCENE_PRESETS[presetId];
         const defaultPos = preset?.marty?.position || [0.05, 0, 0.05];
         const defaultRot = preset?.marty?.rotationY ?? 0;
-        
+
         this.marty.setPosition(defaultPos[0], defaultPos[1], defaultPos[2]);
         this.marty.setRotationY(defaultRot);
       }
@@ -176,9 +186,9 @@ export default class World {
    */
   loadTutorialLesson(lessonId: string | null): void {
     this.pendingLessonId = lessonId;
-    
+
     if (!this.tutorialManager || !this.levelBuilder) return;
-    
+
     // Only handle tutorial clearing/loading if we have an active lesson
     // or if we are explicitly clearing a lesson while in the tutorial environment.
     // If lessonId is null and we aren't in tutorial mode, we should NOT clear the level builder
@@ -190,7 +200,7 @@ export default class World {
 
     // Clear previous level construction
     this.levelBuilder.clear();
-    
+
     // 1. Load the basic tutorial configuration (text, state)
     this.tutorialManager.loadLessonById(lessonId, TUTORIAL_LESSONS);
 
@@ -205,13 +215,13 @@ export default class World {
     if (lessonId === 'movement-basics') {
       this.levelBuilder.build(lesson1Map, { startAt });
       this.levelBuilder.setStartRotation(martyRotY);
-      
+
       // Place Marty using scene preset values
       if (this.marty) {
         this.marty.setPosition(martyPos[0], martyPos[1], martyPos[2]);
         this.marty.setRotationY(martyRotY);
       }
-      
+
       // Listen for goal reached event
       this.levelBuilder.on('goalReached', () => {
         console.log('🎉 Goal reached! Marty completed the level!');
@@ -220,28 +230,31 @@ export default class World {
     } else if (lessonId === 'turning-and-orientation') {
       this.levelBuilder.build(lesson2Map, { startAt });
       this.levelBuilder.setStartRotation(martyRotY);
-      
+
       // Place Marty using scene preset values
       if (this.marty) {
         this.marty.setPosition(martyPos[0], martyPos[1], martyPos[2]);
         this.marty.setRotationY(martyRotY);
       }
-      
+
       // Listen for goal reached event
       this.levelBuilder.on('goalReached', () => {
         console.log('🎉 Goal reached! Marty completed the level!');
         // Could trigger UI notification, next lesson, etc.
       });
     } else if (lessonId === 'sensors-and-obstacles') {
-      this.levelBuilder.build(lesson3Map, { obstacles: lesson3Obstacles, startAt });
+      this.levelBuilder.build(lesson3Map, {
+        obstacles: lesson3Obstacles,
+        startAt,
+      });
       this.levelBuilder.setStartRotation(martyRotY);
-      
+
       // Place Marty using scene preset values
       if (this.marty) {
         this.marty.setPosition(martyPos[0], martyPos[1], martyPos[2]);
         this.marty.setRotationY(martyRotY);
       }
-      
+
       // Listen for goal reached event
       this.levelBuilder.on('goalReached', () => {
         console.log('🎉 Goal reached! Marty completed the level!');

@@ -25,7 +25,7 @@ export default class Floor {
   };
   material?: THREE.MeshStandardMaterial;
   mesh?: THREE.Mesh;
-  
+
   // Floor size in meters
   private readonly baseSize = 50;
   // Texture repeat for visual grid pattern
@@ -148,10 +148,12 @@ export default class Floor {
 
   private updateTextureRepeat(repeat: number) {
     if (!this.textures || repeat === undefined || repeat === null) return;
-    [this.textures.diffuse, this.textures.normal, this.textures.arm].forEach((texture) => {
-      texture.repeat.set(repeat, repeat);
-      texture.needsUpdate = true;
-    });
+    [this.textures.diffuse, this.textures.normal, this.textures.arm].forEach(
+      (texture) => {
+        texture.repeat.set(repeat, repeat);
+        texture.needsUpdate = true;
+      },
+    );
   }
 
   dispose() {

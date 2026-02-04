@@ -32,7 +32,7 @@ export interface PivotRotationState {
 
 /**
  * Get the bone configuration for a pivot rotation based on which leg is supporting.
- * 
+ *
  * @param supportingLeg - Which leg is planted on the ground ('left' or 'right')
  * @returns Object containing:
  *   - excludedBoneNames: Bones that should NOT rotate with the model (ankle + foot of supporting leg)
@@ -80,13 +80,13 @@ export function capturePivotRotationState(
 ): PivotRotationState {
   const pivotWorldPos = new THREE.Vector3();
   pivotBone.object.getWorldPosition(pivotWorldPos);
-  
+
   // Capture initial local quaternions for excluded bones
   const excludedBoneLocalQuats = new Map<string, THREE.Quaternion>();
   excludedBones.forEach((bone) => {
     excludedBoneLocalQuats.set(bone.name, bone.object.quaternion.clone());
   });
-  
+
   return {
     initialModelPos: modelRoot.position.clone(),
     initialModelQuat: modelRoot.quaternion.clone(),
@@ -109,7 +109,7 @@ export function applyPivotRotationY(
   // Reset model to initial state first
   modelRoot.position.copy(state.initialModelPos);
   modelRoot.quaternion.copy(state.initialModelQuat);
-  
+
   // Reset excluded bones to their initial local rotations
   excludedBones.forEach((bone) => {
     const initialQuat = state.excludedBoneLocalQuats.get(bone.name);
@@ -117,62 +117,65 @@ export function applyPivotRotationY(
       bone.object.quaternion.copy(initialQuat);
     }
   });
-  
+
   modelRoot.updateMatrixWorld(true);
-  
+
   // Get current pivot position (after reset)
   const currentPivotPos = new THREE.Vector3();
   pivotBone.object.getWorldPosition(currentPivotPos);
-  
+
   // Create rotation around Y axis
   const rotQuat = new THREE.Quaternion().setFromAxisAngle(
     new THREE.Vector3(0, 1, 0),
     angleRad,
   );
-  
+
   // Calculate model's offset from pivot
   const modelOffset = state.initialModelPos.clone().sub(currentPivotPos);
-  
+
   // Rotate the offset
   const rotatedOffset = modelOffset.clone().applyQuaternion(rotQuat);
-  
+
   // Apply new position to model (pivot point stays at same world position)
   modelRoot.position.copy(currentPivotPos).add(rotatedOffset);
-  
+
   // Apply rotation to model
   modelRoot.quaternion.premultiply(rotQuat);
   modelRoot.updateMatrixWorld(true);
-  
+
   // Counter-rotate ONLY the root bone of the excluded chain (ankle)
   // The children (foot) will inherit the correct orientation through the hierarchy
   // We apply the inverse rotation in local space
   const inverseRotQuat = rotQuat.clone().invert();
-  
+
   // Find the root bone (the one that's not a child of another excluded bone)
   const rootExcludedBone = excludedBones.find((bone) => {
     // Check if this bone's parent is also in the excluded list
     const parentName = bone.object.parent?.name;
     return !excludedBones.some((b) => b.name === parentName);
   });
-  
+
   if (rootExcludedBone) {
     const initialQuat = state.excludedBoneLocalQuats.get(rootExcludedBone.name);
     if (initialQuat && rootExcludedBone.object.parent) {
       // Get parent's world quaternion
       const parentWorldQuat = new THREE.Quaternion();
       rootExcludedBone.object.parent.getWorldQuaternion(parentWorldQuat);
-      
+
       // Transform the inverse rotation from world space to local space
       const parentInverseQuat = parentWorldQuat.clone().invert();
-      const localInverseRot = parentInverseQuat.clone()
+      const localInverseRot = parentInverseQuat
+        .clone()
         .multiply(inverseRotQuat)
         .multiply(parentWorldQuat);
-      
+
       // Apply to the bone's initial local rotation
-      rootExcludedBone.object.quaternion.copy(initialQuat).premultiply(localInverseRot);
+      rootExcludedBone.object.quaternion
+        .copy(initialQuat)
+        .premultiply(localInverseRot);
     }
   }
-  
+
   modelRoot.updateMatrixWorld(true);
 }
 
@@ -293,21 +296,30 @@ function createBoneDebugControls({
 
   // Add pivot rotation controls for both legs
   const createPivotRotationControl = (supportingLeg: SupportingLeg) => {
-    const { excludedBoneNames, pivotBoneName } = getExcludedBonesForLeg(supportingLeg);
+    const { excludedBoneNames, pivotBoneName } =
+      getExcludedBonesForLeg(supportingLeg);
     const pivotBone = boneNodes.find((b) => b.name === pivotBoneName);
-    const excludedBones = boneNodes.filter((b) => excludedBoneNames.includes(b.name));
-    
+    const excludedBones = boneNodes.filter((b) =>
+      excludedBoneNames.includes(b.name),
+    );
+
     if (!pivotBone || excludedBones.length === 0) return;
-    
+
     const modelRoot = findModelRoot(pivotBone.object);
-    const state = capturePivotRotationState(modelRoot, pivotBone, excludedBones);
-    
+    const state = capturePivotRotationState(
+      modelRoot,
+      pivotBone,
+      excludedBones,
+    );
+
     const legLabel = supportingLeg === 'right' ? 'Right' : 'Left';
-    const groupRotationFolder = folder.addFolder(`Pivot Rotation (${legLabel} Leg)`);
+    const groupRotationFolder = folder.addFolder(
+      `Pivot Rotation (${legLabel} Leg)`,
+    );
     groupRotationFolder.close();
-    
+
     const groupRotation = { y: 0 };
-    
+
     groupRotationFolder
       .add(groupRotation, 'y', -Math.PI, Math.PI, 0.01)
       .name(`Rotate Y (around ${pivotBoneName})`)
@@ -315,7 +327,7 @@ function createBoneDebugControls({
         applyPivotRotationY(value, modelRoot, pivotBone, excludedBones, state);
       });
   };
-  
+
   // Create controls for both legs
   createPivotRotationControl('right');
   createPivotRotationControl('left');
@@ -337,10 +349,7 @@ function createBoneDebugControls({
   ];
 
   const assigned = new Set<string>();
-  const addBoneRotationControls = (
-    groupFolder: GuiFolder,
-    bone: BoneNode,
-  ) => {
+  const addBoneRotationControls = (groupFolder: GuiFolder, bone: BoneNode) => {
     const rotationProxy = {
       x: bone.object.rotation.x,
       y: bone.object.rotation.y,
@@ -392,7 +401,9 @@ function createBoneDebugControls({
   if (unassignedBones.length > 0) {
     const miscFolder = folder.addFolder('Other');
     miscFolder.close();
-    unassignedBones.forEach((bone) => addBoneRotationControls(miscFolder, bone));
+    unassignedBones.forEach((bone) =>
+      addBoneRotationControls(miscFolder, bone),
+    );
   }
 
   return folder;

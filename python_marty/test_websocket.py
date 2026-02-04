@@ -42,14 +42,14 @@ async def test_connection():
             print(f"   Status: {data['payload']['status']}")
             print(f"   Message: {data['payload']['message']}")
             
-            # Send Python code
+            # Send Python code (using real martypy API)
             print("\n📤 Sending Python code...")
             code_command = {
                 "type": "command",
                 "payload": {
                     "action": "execute_python",
                     "params": {
-                        "code": "marty.walk(2)\nmarty.wave()\nmarty.turn(90)"
+                        "code": "marty.walk(num_steps=2)\nmarty.kick(side='right')\nmarty.dance()"
                     },
                     "requestId": "test_002"
                 },

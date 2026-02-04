@@ -9,33 +9,36 @@ export interface Source {
   path: string | string[];
 }
 
+// Use dynamic base URL for Electron compatibility
+const base = import.meta.env.BASE_URL;
+
 export const sources: Source[] = [
   // Marty 3D model
   {
     name: 'martyModel',
     type: 'gltfModel',
-    path: '/blender/models/marty.glb',
+    path: `${base}models/marty.glb`,
   },
   // Floor textures
   {
     name: 'floorDiffuseTexture',
     type: 'texture',
-    path: '/textures/floor/granite_tile_diff_1k.jpg',
+    path: `${base}textures/floor/granite_tile_diff_1k.jpg`,
   },
   {
     name: 'floorNormalTexture',
     type: 'texture',
-    path: '/textures/floor/granite_tile_nor_gl_1k.jpg',
+    path: `${base}textures/floor/granite_tile_nor_gl_1k.jpg`,
   },
   {
     name: 'floorArmTexture',
     type: 'texture',
-    path: '/textures/floor/granite_tile_arm_1k.jpg',
+    path: `${base}textures/floor/granite_tile_arm_1k.jpg`,
   },
   {
     name: 'floorAlphaTexture',
     type: 'texture',
-    path: '/textures/floor/Frame 10.jpg',
+    path: `${base}textures/floor/Frame 10.jpg`,
   },
   // Example cube texture for environment
   // {

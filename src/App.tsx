@@ -94,11 +94,23 @@ function App() {
       <ControlBar />
 
       <div style={{ width: '100%', flex: 1, display: 'flex' }}>
-        <div style={{ width: experienceWidth, height: '100%', transition: 'width 0.3s ease' }}>
+        <div
+          style={{
+            width: experienceWidth,
+            height: '100%',
+            transition: 'width 0.3s ease',
+          }}
+        >
           <ExperienceCanvas />
         </div>
 
-        <div style={{ width: codeWidth, height: '100%', transition: 'width 0.3s ease' }}>
+        <div
+          style={{
+            width: codeWidth,
+            height: '100%',
+            transition: 'width 0.3s ease',
+          }}
+        >
           <CodeEditor />
         </div>
       </div>

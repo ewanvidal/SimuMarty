@@ -29,12 +29,12 @@ export default class Time extends EventEmitter {
     const currentTime = Date.now();
     // Calculate raw delta time in ms
     const rawDelta = currentTime - this.current;
-    
+
     this.current = currentTime;
-    
+
     // Apply timeScale to delta
     this.delta = rawDelta * this.timeScale;
-    
+
     // Accumulate elapsed time using the scaled delta
     // Note: this means 'elapsed' is "simulated time" not wall-clock time
     this.elapsed += this.delta;
@@ -51,9 +51,9 @@ export default class Time extends EventEmitter {
   wait(duration: number): Promise<void> {
     return new Promise((resolve) => {
       let remaining = duration;
-      
+
       const handler = () => {
-        // Determine the delta to subtract. 
+        // Determine the delta to subtract.
         // We use this.delta which is the scaled delta of the current frame.
         remaining -= this.delta;
 

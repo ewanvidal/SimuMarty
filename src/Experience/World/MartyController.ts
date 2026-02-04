@@ -7,6 +7,7 @@ import type Marty from './Marty';
 import {
   webSocketService,
   type RobotCommand,
+  type WebSocketMessage,
 } from '../../services/WebSocketService';
 
 export class MartyController {
@@ -26,7 +27,7 @@ export class MartyController {
     this.shouldStop = true;
     this.commandQueue = [];
     this.isProcessing = false;
-    
+
     // Stop any current animation
     if (this.marty.animation?.stop) {
       this.marty.animation.stop();
@@ -58,7 +59,7 @@ export class MartyController {
     if (this.shouldStop) {
       return { success: false, message: 'Execution stopped' };
     }
-    
+
     try {
       switch (command.action) {
         case 'walk':
@@ -137,7 +138,7 @@ export class MartyController {
           if (this.shouldStop) {
             return { success: false, message: 'Execution stopped' };
           }
-          
+
           const isLastCycle = i === cycles - 1;
           // Always auto-stop to trigger getReady if steps > 2
           this.marty.animation.play('walking', { autoStop: true });
@@ -513,7 +514,7 @@ export class MartyController {
               message: result.message,
             },
             timestamp: Date.now(),
-          } as any);
+          } as WebSocketMessage<unknown>);
         }
 
         // Small delay between commands to prevent overlap
@@ -547,17 +548,15 @@ export class MartyController {
     console.log(`RGB(${color.r}, ${color.g}, ${color.b})`);
 
     // Send sensor data back via WebSocket
-    import('../../services/WebSocketService').then(({ webSocketService }) => {
-      webSocketService.send({
-        type: 'sensorData',
-        payload: {
-          sensorType: 'groundColor',
-          data: color,
-          timestamp: Date.now(),
-        },
+    webSocketService.send({
+      type: 'sensorData',
+      payload: {
+        sensorType: 'groundColor',
+        data: color,
         timestamp: Date.now(),
-      } as any);
-    });
+      },
+      timestamp: Date.now(),
+    } as WebSocketMessage<unknown>);
 
     return {
       success: true,
@@ -589,17 +588,15 @@ export class MartyController {
     }
 
     // Send sensor data back via WebSocket
-    import('../../services/WebSocketService').then(({ webSocketService }) => {
-      webSocketService.send({
-        type: 'sensorData',
-        payload: {
-          sensorType: 'obstacle',
-          data: obstacleData,
-          timestamp: Date.now(),
-        },
+    webSocketService.send({
+      type: 'sensorData',
+      payload: {
+        sensorType: 'obstacle',
+        data: obstacleData,
         timestamp: Date.now(),
-      } as any);
-    });
+      },
+      timestamp: Date.now(),
+    } as WebSocketMessage<unknown>);
 
     return {
       success: true,

@@ -61,8 +61,8 @@ export type TileTypeName = keyof typeof TileTypes;
  * Can be any predefined type or custom configuration.
  */
 export class Tile {
-  private mesh: THREE.Mesh;           // Visual mesh (transparent, layer 0)
-  private sensorMesh: THREE.Mesh;     // Sensor mesh (opaque, layer 2 only)
+  private mesh: THREE.Mesh; // Visual mesh (transparent, layer 0)
+  private sensorMesh: THREE.Mesh; // Sensor mesh (opaque, layer 2 only)
   private border: THREE.LineSegments;
   private material: THREE.MeshStandardMaterial;
   private sensorMaterial: THREE.MeshBasicMaterial;

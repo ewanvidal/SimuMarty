@@ -96,7 +96,10 @@ class WebSocketService {
   private isConnecting = false;
   private suppressConnectionErrors: boolean;
 
-  constructor(url: string = 'ws://localhost:8765', suppressConnectionErrors: boolean = true) {
+  constructor(
+    url: string = 'ws://localhost:8765',
+    suppressConnectionErrors: boolean = true,
+  ) {
     this.url = url;
     this.suppressConnectionErrors = suppressConnectionErrors;
     this.initializeListeners();
@@ -431,7 +434,7 @@ class WebSocketService {
   getGroundColor(): Promise<GroundColorData | null> {
     return new Promise((resolve) => {
       const requestId = `sensor_ground_${Date.now()}`;
-      
+
       // Set up one-time listener for sensor data
       const handler = (data: unknown) => {
         const sensorData = data as SensorDataPayload;
@@ -440,15 +443,15 @@ class WebSocketService {
           resolve(sensorData.data as GroundColorData);
         }
       };
-      
+
       this.on('sensorData', handler);
-      
+
       // Send request
       this.sendCommand({
         action: 'getGroundColor',
         requestId,
       });
-      
+
       // Timeout after 5 seconds
       setTimeout(() => {
         this.off('sensorData', handler);
@@ -460,7 +463,7 @@ class WebSocketService {
   getObstacleDistance(): Promise<ObstacleData | null> {
     return new Promise((resolve) => {
       const requestId = `sensor_obstacle_${Date.now()}`;
-      
+
       // Set up one-time listener for sensor data
       const handler = (data: unknown) => {
         const sensorData = data as SensorDataPayload;
@@ -469,15 +472,15 @@ class WebSocketService {
           resolve(sensorData.data as ObstacleData);
         }
       };
-      
+
       this.on('sensorData', handler);
-      
+
       // Send request
       this.sendCommand({
         action: 'getObstacleDistance',
         requestId,
       });
-      
+
       // Timeout after 5 seconds
       setTimeout(() => {
         this.off('sensorData', handler);

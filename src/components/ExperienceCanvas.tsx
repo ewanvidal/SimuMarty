@@ -2,7 +2,10 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import Experience from '../Experience/Experience.tsx';
 import { useAppStore } from '../stores/appStore.ts';
-import { SCENE_PRESETS, DEFAULT_SCENE_PRESET_ID } from '../shared/constants/scenePresets.ts';
+import {
+  SCENE_PRESETS,
+  DEFAULT_SCENE_PRESET_ID,
+} from '../shared/constants/scenePresets.ts';
 import { LevelEditor } from './LevelEditor.tsx';
 import './ExperienceCanvas.css';
 
@@ -24,14 +27,14 @@ export function ExperienceCanvas() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const experience = (window as any).experience;
     if (!experience?.world) return;
-    
+
     const { marty, levelBuilder } = experience.world;
-    
+
     // Stop any running code/animations
     if (marty?.controller) {
       marty.controller.stopExecution();
     }
-    
+
     // Reset Marty to start position and rotation
     if (marty && levelBuilder) {
       const startPos = levelBuilder.getStartPosition();
@@ -98,8 +101,8 @@ export function ExperienceCanvas() {
   return (
     <div className='experience-container'>
       <canvas ref={canvasRef} className='experience-canvas' />
-      <button 
-        className='reset-button' 
+      <button
+        className='reset-button'
         onClick={handleReset}
         title={t('experienceCanvas.resetTooltip')}
       >

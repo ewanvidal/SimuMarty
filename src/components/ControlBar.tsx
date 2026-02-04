@@ -42,7 +42,7 @@ export function ControlBar() {
     cameraFollow,
     setCameraFollow,
   } = useAppStore();
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const environmentOptions = Object.values(ENVIRONMENT_PRESETS);
   const levelOptions: LevelOption[] =
@@ -50,7 +50,7 @@ export function ControlBar() {
   const levelIds = new Set(levelOptions.map((level) => level.id));
   const levelSelectValue = levelIds.has(selectedLevel)
     ? selectedLevel
-    : levelOptions[0]?.id ?? 'none';
+    : (levelOptions[0]?.id ?? 'none');
   const isTutorialEnvironment = selectedEnvironment === 'tutorial';
   const hasTutorialLesson = Boolean(activeLessonId);
 
@@ -108,7 +108,10 @@ export function ControlBar() {
       const content = await file.text();
       const data = JSON.parse(content);
 
-      if (typeof data.code !== 'string' || typeof data.blocklyXml !== 'string') {
+      if (
+        typeof data.code !== 'string' ||
+        typeof data.blocklyXml !== 'string'
+      ) {
         throw new Error('Invalid JSON structure');
       }
 
@@ -119,7 +122,9 @@ export function ControlBar() {
         setEditorMode(data.editorMode);
       }
     } catch {
-      window.alert('Failed to import JSON file. Please ensure it was exported from this editor.');
+      window.alert(
+        'Failed to import JSON file. Please ensure it was exported from this editor.',
+      );
     } finally {
       event.target.value = '';
     }
@@ -132,7 +137,7 @@ export function ControlBar() {
     if (experience?.world?.levelBuilder && experience?.world?.marty) {
       // Force a re-load of the current level selection (or custom)
       experience.loadLevel(selectedEnvironment, 'custom');
-      
+
       // Update store to match
       if (selectedLevel !== 'custom') {
         setLevel('custom');
@@ -163,7 +168,9 @@ export function ControlBar() {
       <div className='control-bar'>
         <div className='control-bar-section'>
           <div className='control-group'>
-            <label htmlFor='environment-picker'>{t('controlBar.environment')}</label>
+            <label htmlFor='environment-picker'>
+              {t('controlBar.environment')}
+            </label>
             <select
               id='environment-picker'
               value={selectedEnvironment}
@@ -187,11 +194,18 @@ export function ControlBar() {
               className='control-select'
               disabled={levelOptions.length === 0}
             >
-              {levelOptions.length === 0 && <option value='none'>{t('controlBar.noLevels')}</option>}
+              {levelOptions.length === 0 && (
+                <option value='none'>{t('controlBar.noLevels')}</option>
+              )}
               {levelOptions.map((level) => {
-                const label = t(`environments.${selectedEnvironment}.levels.${level.id}.label`, level.label);
+                const label = t(
+                  `environments.${selectedEnvironment}.levels.${level.id}.label`,
+                  level.label,
+                );
                 const description = level.description;
-                const fullLabel = description ? `${label} · ${description}` : label;
+                const fullLabel = description
+                  ? `${label} · ${description}`
+                  : label;
                 return (
                   <option key={level.id} value={level.id}>
                     {fullLabel}
@@ -200,15 +214,15 @@ export function ControlBar() {
               })}
             </select>
           </div>
-          
+
           {selectedEnvironment === 'labyrinth' && (
             <button
-              className="control-button"
+              className='control-button'
               onClick={handleGenerateMaze}
               title={t('controlBar.generateMaze')}
               style={{ marginLeft: '10px' }}
             >
-              <span className="icon">{t('controlBar.generateMaze')}</span>
+              <span className='icon'>{t('controlBar.generateMaze')}</span>
             </button>
           )}
         </div>
@@ -217,19 +231,27 @@ export function ControlBar() {
           <button
             onClick={toggleExperienceExpanded}
             className='control-button'
-            title={experienceExpanded ? t('controlBar.resetLayout') : t('controlBar.expandLayout')}
+            title={
+              experienceExpanded
+                ? t('controlBar.resetLayout')
+                : t('controlBar.expandLayout')
+            }
           >
-            <img src='/layout.png' alt='Layout' style={{ width: '20px', height: '20px' }} />
+            <img
+              src={`${import.meta.env.BASE_URL}layout.png`}
+              alt='Layout'
+              style={{ width: '20px', height: '20px' }}
+            />
           </button>
         </div>
 
         <div className='control-bar-section'>
           <button onClick={handleSaveJson} className='control-button'>
-             {t('controlBar.saveJson')}
+            {t('controlBar.saveJson')}
           </button>
 
           <button onClick={triggerImport} className='control-button'>
-             {t('controlBar.importJson')}
+            {t('controlBar.importJson')}
           </button>
 
           <input
@@ -240,20 +262,36 @@ export function ControlBar() {
             onChange={handleImportJson}
           />
 
-          <button onClick={handleRunCode} className='control-button button-primary'>
+          <button
+            onClick={handleRunCode}
+            className='control-button button-primary'
+          >
             {t('controlBar.runCode')}
           </button>
 
-          <button onClick={toggleEditorMode} className='control-button button-secondary'>
-            {editorMode === 'monaco' ? t('controlBar.switchToBlockly') : t('controlBar.switchToCode')}
+          <button
+            onClick={toggleEditorMode}
+            className='control-button button-secondary'
+          >
+            {editorMode === 'monaco'
+              ? t('controlBar.switchToBlockly')
+              : t('controlBar.switchToCode')}
           </button>
 
-          <button onClick={toggleSettings} className='control-button' title={t('controlBar.settings')}>
+          <button
+            onClick={toggleSettings}
+            className='control-button'
+            title={t('controlBar.settings')}
+          >
             {t('controlBar.settings')}
           </button>
 
           {isTutorialEnvironment && hasTutorialLesson && (
-            <button onClick={openTutorialModal} className='control-button' title={t('controlBar.viewLessonBrief')}>
+            <button
+              onClick={openTutorialModal}
+              className='control-button'
+              title={t('controlBar.viewLessonBrief')}
+            >
               {t('controlBar.lessonBriefing')}
             </button>
           )}
@@ -277,12 +315,14 @@ export function ControlBar() {
                 className='control-select'
                 style={{ width: '100%', marginBottom: '10px' }}
               >
-                <option value="en">English</option>
-                <option value="fr">Français</option>
+                <option value='en'>English</option>
+                <option value='fr'>Français</option>
               </select>
             </div>
             <div className='setting-item'>
-              <label>{t('settings.timeScale')}: {timeScale.toFixed(1)}x</label>
+              <label>
+                {t('settings.timeScale')}: {timeScale.toFixed(1)}x
+              </label>
               <input
                 type='range'
                 min='0.1'
@@ -322,6 +362,173 @@ export function ControlBar() {
                 />
                 {t('settings.showDebugConsole')}
               </label>
+            </div>
+
+            {/* API Documentation Section */}
+            <div className='setting-item api-documentation'>
+              <h4
+                style={{
+                  marginTop: '20px',
+                  marginBottom: '10px',
+                  borderTop: '1px solid #444',
+                  paddingTop: '15px',
+                }}
+              >
+                {t('settings.apiDocumentation', 'API Documentation')}
+              </h4>
+              <p
+                style={{
+                  fontSize: '12px',
+                  color: '#aaa',
+                  marginBottom: '10px',
+                }}
+              >
+                {t(
+                  'settings.apiDescription',
+                  'Functions compatible with the real Marty robot (martypy):',
+                )}
+              </p>
+
+              {/* Movement Functions */}
+              <details style={{ marginBottom: '8px' }}>
+                <summary
+                  style={{
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    color: '#4fc3f7',
+                  }}
+                >
+                  {t('settings.movementFunctions', 'Movement')}
+                </summary>
+                <ul
+                  style={{
+                    fontSize: '11px',
+                    marginLeft: '15px',
+                    marginTop: '5px',
+                  }}
+                >
+                  <li>
+                    <code>marty.walk(num_steps, start_foot, turn, step_length, move_time)</code>
+                    <br />
+                    <span style={{ color: '#888', marginLeft: '10px' }}>
+                      Make Marty walk. Default: num_steps=2, turn=0
+                    </span>
+                  </li>
+                  <li>
+                    <code>marty.kick(side, twist, move_time)</code>
+                    <br />
+                    <span style={{ color: '#888', marginLeft: '10px' }}>
+                      Kick with foot. side: 'left' or 'right' (default: 'right')
+                    </span>
+                  </li>
+                  <li>
+                    <code>marty.dance(side, move_time)</code>
+                    <br />
+                    <span style={{ color: '#888', marginLeft: '10px' }}>
+                      Boogie! side: 'left' or 'right' (default: 'right')
+                    </span>
+                  </li>
+                  <li>
+                    <code>marty.wave(side)</code>
+                    <br />
+                    <span style={{ color: '#888', marginLeft: '10px' }}>
+                      Wave gesture. side: 'left' or 'right' (default: 'right')
+                    </span>
+                  </li>
+                  <li>
+                    <code>marty.sidestep(side, steps, step_length, move_time)</code>
+                    <br />
+                    <span style={{ color: '#888', marginLeft: '10px' }}>
+                      Take sidesteps. side: 'left' or 'right'
+                    </span>
+                  </li>
+                  <li>
+                    <code>marty.stop()</code>
+                    <br />
+                    <span style={{ color: '#888', marginLeft: '10px' }}>
+                      Stop all movements
+                    </span>
+                  </li>
+                </ul>
+              </details>
+
+              {/* Sensor Functions */}
+              <details style={{ marginBottom: '8px' }}>
+                <summary
+                  style={{
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    color: '#f48fb1',
+                  }}
+                >
+                  {t('settings.sensorFunctions', 'Sensors')}
+                </summary>
+                <ul
+                  style={{
+                    fontSize: '11px',
+                    marginLeft: '15px',
+                    marginTop: '5px',
+                  }}
+                >
+                  <li>
+                    <code>marty.get_distance_sensor()</code>
+                    <br />
+                    <span style={{ color: '#888', marginLeft: '10px' }}>
+                      Returns distance in mm from obstacle sensor
+                    </span>
+                  </li>
+                  <li>
+                    <code>marty.get_ground_sensor_reading('left')</code>
+                    <br />
+                    <span style={{ color: '#888', marginLeft: '10px' }}>
+                      Returns RGB color {'{'} r, g, b {'}'} from ground color sensor
+                    </span>
+                  </li>
+                </ul>
+              </details>
+
+              {/* Joint Control */}
+              <details style={{ marginBottom: '8px' }}>
+                <summary
+                  style={{
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    color: '#90a4ae',
+                  }}
+                >
+                  {t('settings.jointControl', 'Joint Control')}
+                </summary>
+                <ul
+                  style={{
+                    fontSize: '11px',
+                    marginLeft: '15px',
+                    marginTop: '5px',
+                  }}
+                >
+                  <li>
+                    <code>marty.move_joint(joint_name_or_num, position, move_time)</code>
+                    <br />
+                    <span style={{ color: '#888', marginLeft: '10px' }}>
+                      Move specific joint to angle (degrees)
+                    </span>
+                  </li>
+                  <li style={{ marginTop: '8px', fontWeight: 'bold' }}>
+                    Joint names/IDs:
+                  </li>
+                  <li>
+                    <code>'left_hip'</code> (0) | <code>'left_twist'</code> (1)
+                    | <code>'left_knee'</code> (2)
+                  </li>
+                  <li>
+                    <code>'right_hip'</code> (3) | <code>'right_twist'</code>{' '}
+                    (4) | <code>'right_knee'</code> (5)
+                  </li>
+                  <li>
+                    <code>'left_arm'</code> (6) | <code>'right_arm'</code> (7) |{' '}
+                    <code>'eyes'</code> (8)
+                  </li>
+                </ul>
+              </details>
             </div>
           </div>
         </div>

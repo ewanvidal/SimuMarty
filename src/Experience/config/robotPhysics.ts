@@ -29,7 +29,7 @@ export interface PhysicsPartConfig {
 /**
  * Robot parts physics configuration
  * Each key maps to a specific body part with its physics properties
- * 
+ *
  * Dimensions from Blender (X, Y, Z):
  * - Feet: 0.821 x 1.24 x 0.175
  * - Tibias: 0.484 x 0.718 x 0.774
@@ -39,16 +39,16 @@ export interface PhysicsPartConfig {
  * - Torso: 1.82 x 1.24 x 1.21
  * - Arm torso connector: 0.73 x 0.789 x 0.492
  * - Arms: 0.273 x 0.291 x 1.23
- * 
+ *
  * NOTE: BBs are now AUTO-CENTERED at half the bone length.
  * localPosition is an ADDITIONAL offset from the auto-centered position.
  * Set to [0,0,0] for automatic centering, or add offsets as needed.
- * 
+ *
  * Dimensions are [X, Y, Z] in THREE.js world space:
  * - X = left/right (width)
- * - Y = up/down (height)  
+ * - Y = up/down (height)
  * - Z = front/back (depth)
- * 
+ *
  * For parts marked as "keepHorizontal" (feet, torso), the BB will stay
  * axis-aligned in world space instead of rotating with the bone.
  */
@@ -133,7 +133,7 @@ export const ROBOT_PARTS: Record<string, PhysicsPartConfig> = {
 
   foot_right: {
     dimensions: [0.821, 0.175, 1.24], // width, height (thin), depth (long forward)
-    localPosition: [0, - 0.25, 0.0], // Move down along bone (+Y) and forward (Z)
+    localPosition: [0, -0.25, 0.0], // Move down along bone (+Y) and forward (Z)
     localRotation: [1.5708, 0, 1.5708], // Kept horizontal by RobotPhysics
     boneName: 'LegR003',
     mass: 0.2,

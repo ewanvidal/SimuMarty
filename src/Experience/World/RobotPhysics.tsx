@@ -1,7 +1,7 @@
 /**
  * RobotPhysics.tsx
  * Simple physics for Marty robot using Cannon.js
- * 
+ *
  * The body is always DYNAMIC - gravity and collisions are handled by physics.
  * Each frame: physics steps, then we sync Three.js model to physics body.
  */
@@ -47,14 +47,14 @@ export default class RobotPhysics {
   isJumping: boolean = false;
   isGrounded: boolean = true;
   autoCalculatedOffset: number = 0;
-  
+
   // Nouvelle propriété pour communiquer la direction de la chute à Marty.tsx
   public fallDirection: 'none' | 'forward' | 'backward' = 'none';
-  
+
   // Raycasting for ground detection
   private groundRaycaster: THREE.Raycaster;
   private downDirection: THREE.Vector3 = new THREE.Vector3(0, -1, 0);
-  
+
   // Per-foot ground detection
   leftFootGrounded: boolean = false;
   rightFootGrounded: boolean = false;
@@ -70,12 +70,10 @@ export default class RobotPhysics {
     rightFootDist: number;
   };
 
-  constructor(
-    physics: Physics,
-    model: THREE.Group,
-    boneNodes: BoneNode[],
-  ) {
-    this.experience = (window as unknown as { experience: Experience }).experience;
+  constructor(physics: Physics, model: THREE.Group, boneNodes: BoneNode[]) {
+    this.experience = (
+      window as unknown as { experience: Experience }
+    ).experience;
     this.physics = physics;
     this.model = model;
     this.scene = this.experience.scene;
@@ -118,9 +116,18 @@ export default class RobotPhysics {
         }
       });
 
-    this.debugFolder.add(controls, 'isGrounded').name('Stable Footing').listen();
-    this.debugFolder.add(controls, 'leftFootGrounded').name('Left Foot').listen();
-    this.debugFolder.add(controls, 'rightFootGrounded').name('Right Foot').listen();
+    this.debugFolder
+      .add(controls, 'isGrounded')
+      .name('Stable Footing')
+      .listen();
+    this.debugFolder
+      .add(controls, 'leftFootGrounded')
+      .name('Left Foot')
+      .listen();
+    this.debugFolder
+      .add(controls, 'rightFootGrounded')
+      .name('Right Foot')
+      .listen();
     this.debugFolder.add(controls, 'leftFootDist').name('Left Dist').listen();
     this.debugFolder.add(controls, 'rightFootDist').name('Right Dist').listen();
     this.debugFolder.add(controls, 'jumpForce', 1, 15, 0.5).name('Jump Force');
@@ -137,7 +144,7 @@ export default class RobotPhysics {
     if (!this.body) return;
     // Allow jumping if grounded, even if there's small gravity velocity
     if (!this.isGrounded && Math.abs(this.body.velocity.y) > 0.2) return;
-    
+
     this.body.velocity.y = force;
     this.isJumping = true;
     console.log('🦘 Jump triggered!');
@@ -191,7 +198,11 @@ export default class RobotPhysics {
 
       const boneLength = this.getBoneLength(bone);
       const configQuat = new THREE.Quaternion().setFromEuler(
-        new THREE.Euler(config.localRotation[0], config.localRotation[1], config.localRotation[2])
+        new THREE.Euler(
+          config.localRotation[0],
+          config.localRotation[1],
+          config.localRotation[2],
+        ),
       );
 
       this.parts.set(partName, {
@@ -220,8 +231,8 @@ export default class RobotPhysics {
     this.body = new CANNON.Body({
       mass: totalMass,
       material: this.robotMaterial,
-      linearDamping: 0.8,   // Augmenté pour réduire le glissement (sliding)
-      angularDamping: 0.8,  // Réduit les micro-rotations (wobbling)
+      linearDamping: 0.8, // Augmenté pour réduire le glissement (sliding)
+      angularDamping: 0.8, // Réduit les micro-rotations (wobbling)
       fixedRotation: false, // Permet au corps de tourner physiquement
     });
 
@@ -249,7 +260,7 @@ export default class RobotPhysics {
       const partLocalOffset = new THREE.Vector3(
         part.config.localPosition[0] * ROBOT_SCALE,
         (part.config.localPosition[1] + part.boneLength / 2) * ROBOT_SCALE,
-        part.config.localPosition[2] * ROBOT_SCALE
+        part.config.localPosition[2] * ROBOT_SCALE,
       );
 
       // Orientation du bone dans le monde
@@ -274,14 +285,24 @@ export default class RobotPhysics {
       const shapeBodyQuat = inverseModelQuat.clone().multiply(shapeWorldQuat);
 
       // -- Conversion Three -> Cannon --
-      const cannonOffset = new CANNON.Vec3(shapeBodyOffset.x, shapeBodyOffset.y, shapeBodyOffset.z);
-      const cannonQuat = new CANNON.Quaternion(shapeBodyQuat.x, shapeBodyQuat.y, shapeBodyQuat.z, shapeBodyQuat.w);
+      const cannonOffset = new CANNON.Vec3(
+        shapeBodyOffset.x,
+        shapeBodyOffset.y,
+        shapeBodyOffset.z,
+      );
+      const cannonQuat = new CANNON.Quaternion(
+        shapeBodyQuat.x,
+        shapeBodyQuat.y,
+        shapeBodyQuat.z,
+        shapeBodyQuat.w,
+      );
 
       // Ajouter la forme au corps composite
       this.body.addShape(part.shape, cannonOffset, cannonQuat);
 
       // Track lowest point for auto-offset (halfHeight of the box)
-      const bottom = shapeBodyOffset.y - (part.config.dimensions[1] * ROBOT_SCALE) / 2;
+      const bottom =
+        shapeBodyOffset.y - (part.config.dimensions[1] * ROBOT_SCALE) / 2;
       if (bottom < minY) minY = bottom;
     }
 
@@ -307,11 +328,11 @@ export default class RobotPhysics {
         this.physics.groundBody.material,
         this.robotMaterial,
         {
-          friction: 1.0,           // Maximum friction pour éviter le glissement
+          friction: 1.0, // Maximum friction pour éviter le glissement
           restitution: 0.0,
           contactEquationStiffness: 1e7,
-          contactEquationRelaxation: 3
-        }
+          contactEquationRelaxation: 3,
+        },
       );
     }
   }
@@ -321,7 +342,7 @@ export default class RobotPhysics {
    */
   private getGroundTestObjects(): THREE.Object3D[] {
     const testable: THREE.Object3D[] = [];
-    
+
     // Get all debug mesh names to exclude
     const excludeNames = new Set<string>();
     for (const part of this.parts.values()) {
@@ -359,20 +380,24 @@ export default class RobotPhysics {
     this.model.updateMatrixWorld(true);
 
     // 1. Récupérer les bones des pieds
-    const leftFoot = this.parts.get('foot_left')?.bone || this.boneNodes.find(b => b.name === 'LegL003')?.object;
-    const rightFoot = this.parts.get('foot_right')?.bone || this.boneNodes.find(b => b.name === 'LegR003')?.object;
+    const leftFoot =
+      this.parts.get('foot_left')?.bone ||
+      this.boneNodes.find((b) => b.name === 'LegL003')?.object;
+    const rightFoot =
+      this.parts.get('foot_right')?.bone ||
+      this.boneNodes.find((b) => b.name === 'LegR003')?.object;
 
     if (!leftFoot || !rightFoot) {
-      console.warn("Bones des pieds introuvables pour la physique");
+      console.warn('Bones des pieds introuvables pour la physique');
       return true; // Sécurité
     }
 
     // 2. Définir les offsets locaux (Pointe, Milieu, Talon)
     // Ajustés pour l'échelle 0.05 (Edge Jitter Fix: Mid avancé vers 0.02)
     const rayPoints = [
-      { name: 'front', offset: new THREE.Vector3(0, 0, 0.05) },   // Orteils
-      { name: 'mid',   offset: new THREE.Vector3(0, 0, 0.02) },   // Coussinet (Juste devant la cheville)
-      { name: 'back',  offset: new THREE.Vector3(0, 0, -0.03) }   // Talon
+      { name: 'front', offset: new THREE.Vector3(0, 0, 0.05) }, // Orteils
+      { name: 'mid', offset: new THREE.Vector3(0, 0, 0.02) }, // Coussinet (Juste devant la cheville)
+      { name: 'back', offset: new THREE.Vector3(0, 0, -0.03) }, // Talon
     ];
 
     // Fonction helper pour tester un pied
@@ -380,7 +405,7 @@ export default class RobotPhysics {
       const results = { front: false, mid: false, back: false };
       const bonePos = new THREE.Vector3();
       const boneQuat = new THREE.Quaternion();
-      
+
       bone.getWorldPosition(bonePos);
       bone.getWorldQuaternion(boneQuat);
 
@@ -389,11 +414,14 @@ export default class RobotPhysics {
         const local = point.offset.clone().applyQuaternion(boneQuat);
         const origin = bonePos.clone().add(local);
         // On remonte un peu l'origine pour être sûr de ne pas partir de sous le sol
-        origin.y += 0.02; 
+        origin.y += 0.02;
 
         this.groundRaycaster.set(origin, this.downDirection);
         // On teste contre le décor
-        const intersects = this.groundRaycaster.intersectObjects(this.getGroundTestObjects(), true);
+        const intersects = this.groundRaycaster.intersectObjects(
+          this.getGroundTestObjects(),
+          true,
+        );
 
         // Si on touche à moins de 4cm (2cm offset + 2cm marge), c'est grounded
         if (intersects.length > 0 && intersects[0].distance < 0.04) {
@@ -408,10 +436,12 @@ export default class RobotPhysics {
     const right = checkFootState(rightFoot);
 
     // 4. Logique de décision (Chute ou Pas ?)
-    
+
     // Un pied est stable si au moins 2 points sur 3 touchent
-    const isLeftStable = (Number(left.front) + Number(left.mid) + Number(left.back)) >= 2;
-    const isRightStable = (Number(right.front) + Number(right.mid) + Number(right.back)) >= 2;
+    const isLeftStable =
+      Number(left.front) + Number(left.mid) + Number(left.back) >= 2;
+    const isRightStable =
+      Number(right.front) + Number(right.mid) + Number(right.back) >= 2;
 
     // Le robot est globalement stable si au moins UN pied est stable
     const isGrounded = isLeftStable || isRightStable;
@@ -424,7 +454,7 @@ export default class RobotPhysics {
       // Si on manque le sol devant et au milieu -> Chute Avant
       const leftFallFwd = !left.front && !left.mid;
       const rightFallFwd = !right.front && !right.mid;
-      
+
       // Si on manque le sol derrière et au milieu -> Chute Arrière
       const leftFallBwd = !left.back && !left.mid;
       const rightFallBwd = !right.back && !right.mid;
@@ -435,7 +465,7 @@ export default class RobotPhysics {
         this.fallDirection = 'backward';
       } else {
         // Cas par défaut
-        this.fallDirection = 'forward'; 
+        this.fallDirection = 'forward';
       }
     }
 
@@ -470,7 +500,7 @@ export default class RobotPhysics {
   updateDebugMeshes(): void {
     // Update world matrices for bone positions
     this.model.updateMatrixWorld(true);
-    
+
     for (const part of this.parts.values()) {
       part.bone.getWorldPosition(part.worldPos);
       part.bone.getWorldQuaternion(part.worldQuat);
