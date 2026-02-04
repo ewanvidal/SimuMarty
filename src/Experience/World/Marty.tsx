@@ -346,13 +346,17 @@ export default class Marty {
 
     // 2. Obstacle Detection Sensor
     // Positioned at foot level looking forward
-    this.sensors.obstacleSensor = new ObstacleSensor(this.model, this.scene, {
-      maxRange: 4.0, // 4 meters max range
-      sensorHeight: 0.02, // 2cm from ground (foot level)
-      forwardOffset: 0.05, // 5cm in front of robot center
-      minDistance: 0, // No blind zone
-      debug: false, // Debug visualization disabled
-    });
+    this.sensors.obstacleSensor = new ObstacleSensor(
+      this.model,
+      this.scene,
+      {
+        maxRange: 4.0,           // 4 meters max range
+        sensorHeight: 0.02,      // 2cm from ground (foot level)
+        forwardOffset: 0,        // Start from robot center (no offset)
+        minDistance: 0,          // No blind zone
+        debug: false,            // Debug visualization disabled
+      }
+    );
 
     // 3. Foot Light for ground color sensor illumination
     // Attached to the right foot bone (LegR003) - same location as color sensor
@@ -405,6 +409,16 @@ export default class Marty {
       return Infinity;
     }
     return this.sensors.obstacleSensor.getDistance();
+  }
+
+  /**
+   * Refresh obstacle sensor's ignored objects list
+   * Call this when the scene changes (e.g., loading a new level)
+   */
+  refreshObstacleSensor(): void {
+    if (this.sensors.obstacleSensor) {
+      this.sensors.obstacleSensor.refreshIgnoredObjects();
+    }
   }
 
   /**

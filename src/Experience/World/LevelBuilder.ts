@@ -683,7 +683,13 @@ export class LevelBuilder extends EventEmitter {
     this.goalReached = false;
     this.timeOnGoal = 0;
     this.lastTileKey = null;
-
+    
+    // Reset tile sizes and map dimensions to defaults
+    this.currentTileSize = TILE_SIZE;
+    this.editorTileSize = TILE_SIZE;
+    this.mapRows = 0;
+    this.mapCols = 0;
+    
     // Dispose obstacles
     for (const obs of this.obstacles) {
       if (obs instanceof THREE.Mesh) {
@@ -748,7 +754,8 @@ export class LevelBuilder extends EventEmitter {
       0x222222,
     );
     this.gridHelper.position.y = 0.002; // Slightly above floor
-    // Offset grid by half tile in labyrinth mode so grid lines align with tile edges
+    // Only offset grid in labyrinth mode (larger tiles) so grid lines align with tile edges
+    // In normal mode, grid stays at origin - Marty at (0.05, 0, 0.05) is already at tile center
     if (this.editorTileSize > TILE_SIZE) {
       const offset = this.editorTileSize / 2;
       this.gridHelper.position.x = offset;

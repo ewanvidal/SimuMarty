@@ -178,6 +178,11 @@ export default class World {
         this.marty.setRotationY(defaultRot);
       }
     }
+
+    // Refresh obstacle sensor after level changes (scene objects changed)
+    if (this.marty) {
+      this.marty.refreshObstacleSensor();
+    }
   }
 
   /**
@@ -259,6 +264,11 @@ export default class World {
       this.levelBuilder.on('goalReached', () => {
         console.log('🎉 Goal reached! Marty completed the level!');
       });
+    }
+
+    // Refresh obstacle sensor after tutorial lesson changes (scene objects changed)
+    if (this.marty) {
+      this.marty.refreshObstacleSensor();
     }
   }
 
