@@ -343,7 +343,7 @@ export default class Marty {
       {
         maxRange: 4.0,           // 4 meters max range
         sensorHeight: 0.02,      // 2cm from ground (foot level)
-        forwardOffset: 0.05,     // 5cm in front of robot center
+        forwardOffset: 0,        // Start from robot center (no offset)
         minDistance: 0,          // No blind zone
         debug: false,            // Debug visualization disabled
       }
@@ -404,6 +404,16 @@ export default class Marty {
       return Infinity;
     }
     return this.sensors.obstacleSensor.getDistance();
+  }
+
+  /**
+   * Refresh obstacle sensor's ignored objects list
+   * Call this when the scene changes (e.g., loading a new level)
+   */
+  refreshObstacleSensor(): void {
+    if (this.sensors.obstacleSensor) {
+      this.sensors.obstacleSensor.refreshIgnoredObjects();
+    }
   }
 
   /**
