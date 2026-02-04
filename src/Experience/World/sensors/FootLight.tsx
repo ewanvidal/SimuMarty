@@ -35,16 +35,16 @@ export class FootLight {
       heightOffset?: number;
       /** Show debug helper (default: false) */
       showHelper?: boolean;
-    }
+    },
   ) {
     this.parent = parent;
     this.scene = scene;
 
-    const intensity = options?.intensity ?? 0.03;  // Very low for diffuse-only
+    const intensity = options?.intensity ?? 0.03; // Very low for diffuse-only
     const color = options?.color ?? 0xffffff;
-    const angle = options?.angle ?? Math.PI;   // ~180 degrees - broad diffuse beam for the whole space below foot
-    const penumbra = options?.penumbra ?? 1.0;     // Maximum softness
-    const distance = options?.distance ?? 0.3;     // Short range
+    const angle = options?.angle ?? Math.PI; // ~180 degrees - broad diffuse beam for the whole space below foot
+    const penumbra = options?.penumbra ?? 1.0; // Maximum softness
+    const distance = options?.distance ?? 0.3; // Short range
     const heightOffset = options?.heightOffset ?? 0.0;
 
     // Create helper object to track position in world space
@@ -57,10 +57,16 @@ export class FootLight {
     scene.add(this.targetObject);
 
     // Create the spotlight with high decay for diffuse falloff
-    this.spotLight = new THREE.SpotLight(color, intensity, distance, angle, penumbra);
+    this.spotLight = new THREE.SpotLight(
+      color,
+      intensity,
+      distance,
+      angle,
+      penumbra,
+    );
     this.spotLight.target = this.targetObject;
     this.spotLight.decay = 2; // Physical light falloff for more natural diffuse look
-    
+
     // Disable shadow casting - this is a soft fill light for color detection
     this.spotLight.castShadow = false;
 
@@ -86,10 +92,10 @@ export class FootLight {
     // Get world position from helper object
     const worldPos = new THREE.Vector3();
     this.helperObject.getWorldPosition(worldPos);
-    
+
     // Position light at foot location
     this.spotLight.position.copy(worldPos);
-    
+
     // Position target directly below the light (on the ground)
     this.targetObject.position.set(worldPos.x, 0, worldPos.z);
 
@@ -149,7 +155,7 @@ export class FootLight {
     this.scene.remove(this.spotLight);
     this.scene.remove(this.targetObject);
     this.parent.remove(this.helperObject);
-    
+
     if (this.spotLightHelper) {
       this.scene.remove(this.spotLightHelper);
       this.spotLightHelper.dispose();

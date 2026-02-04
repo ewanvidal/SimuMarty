@@ -153,7 +153,9 @@ export const ENVIRONMENT_PRESETS: Record<EnvironmentId, EnvironmentPreset> = {
   },
 };
 
-export const getEnvironmentLevels = (environmentId: EnvironmentId): LevelOption[] => {
+export const getEnvironmentLevels = (
+  environmentId: EnvironmentId,
+): LevelOption[] => {
   return ENVIRONMENT_PRESETS[environmentId]?.levels ?? [];
 };
 
@@ -161,5 +163,7 @@ export const getLevelConfig = (
   environmentId: EnvironmentId,
   levelId: string,
 ): LevelOption | undefined => {
-  return getEnvironmentLevels(environmentId).find((level) => level.id === levelId);
+  return getEnvironmentLevels(environmentId).find(
+    (level) => level.id === levelId,
+  );
 };

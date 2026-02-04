@@ -32,11 +32,11 @@ export const TUTORIAL_LESSONS: Record<string, TutorialLesson> = {
     objectives: [
       'Use the `walk` command with a custom step count',
       'Chain two commands in the right order',
-      'Watch the debug grid to understand Marty\'s stride',
+      "Watch the debug grid to understand Marty's stride",
     ],
     steps: [
       'Write `marty.walk(x)` in the code editor or use the Blockly equivalent.',
-      'Run the code and observe Marty\'s movement and balance.',
+      "Run the code and observe Marty's movement and balance.",
     ],
     scenePresetId: 'tutorial-grid-basic',
     estimatedTime: '5 min',
@@ -59,7 +59,7 @@ export const TUTORIAL_LESSONS: Record<string, TutorialLesson> = {
       'Combine rotation and walking to reach the target',
     ],
     steps: [
-      'Combine `marty.turnRight/Left(x)` and `marty.walk(x)` to face and approach the green tile.',   
+      'Combine `marty.turnRight/Left(x)` and `marty.walk(x)` to face and approach the green tile.',
       'Experiment with smaller angles to understand partial rotations.',
     ],
     scenePresetId: 'tutorial-grid-basic',
@@ -76,7 +76,8 @@ export const TUTORIAL_LESSONS: Record<string, TutorialLesson> = {
   'sensors-and-obstacles': {
     id: 'sensors-and-obstacles',
     title: 'Lesson 3 · Sensors & Obstacles',
-    summary: 'Use the obstacle sensor to stop before barriers and plan a detour.',
+    summary:
+      'Use the obstacle sensor to stop before barriers and plan a detour.',
     goal: 'Approach the fence, detect it, and trigger a safe turn to avoid a collision.',
     objectives: [
       'Read distance data with `marty.getObstacleDistance()`',

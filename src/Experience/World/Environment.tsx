@@ -30,8 +30,12 @@ export default class Environment {
     intensity: number;
     texture: THREE.Texture;
   };
-  private initialSunState?: Required<NonNullable<EnvironmentPresetConfig['sunLight']>>;
-  private initialAmbientState?: Required<NonNullable<EnvironmentPresetConfig['ambientLight']>>;
+  private initialSunState?: Required<
+    NonNullable<EnvironmentPresetConfig['sunLight']>
+  >;
+  private initialAmbientState?: Required<
+    NonNullable<EnvironmentPresetConfig['ambientLight']>
+  >;
 
   constructor() {
     this.experience = (
@@ -106,7 +110,11 @@ export default class Environment {
       this.initialSunState = {
         intensity: this.sunLight.intensity,
         color: `#${this.sunLight.color.getHexString()}`,
-        position: [this.sunLight.position.x, this.sunLight.position.y, this.sunLight.position.z],
+        position: [
+          this.sunLight.position.x,
+          this.sunLight.position.y,
+          this.sunLight.position.z,
+        ],
       };
     }
 

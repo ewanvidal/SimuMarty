@@ -39,21 +39,36 @@ The server will run on `ws://localhost:8765`
 ### Example Code
 
 ```python
-# Simple walk
-marty.walk(2)
+# Walk forward 2 steps (matches real martypy API)
+marty.walk(num_steps=2)
 
-# Wave
-marty.wave()
+# Walk with turn (turn parameter in degrees)
+marty.walk(num_steps=2, turn=45)
 
-# Turn and walk
-marty.turn(90)
-marty.walk(3)
+# Kick with right foot
+marty.kick(side='right')
 
 # Dance
 marty.dance()
 
+# Sidestep left
+marty.sidestep('left', steps=2)
+
 # Stop
 marty.stop()
+
+# Get distance sensor reading (mm)
+distance = marty.get_distance_sensor()
+
+# Get ground color sensor reading (returns {r, g, b})
+color = marty.get_ground_sensor_reading('left')
+print(f"Color: R={color['r']}, G={color['g']}, B={color['b']}")
+
+# Check if foot is on ground
+on_ground = marty.foot_on_ground('left')
+
+# Move a specific joint
+marty.move_joint('left arm', 45, 1000)
 ```
 
 ## WebSocket Protocol
@@ -92,16 +107,17 @@ Based on the AsyncAPI specification in `docs/api-websocket.yaml`
 }
 ```
 
-### Supported Commands
+### Supported Commands (martypy compatible)
 
-- `walk` - Make Marty walk
-- `turn` - Turn Marty
-- `wave` - Wave hand
-- `dance` - Dance animation
-- `kick` - Kick motion
-- `sidestep` - Sidestep movement
+- `walk` - Make Marty walk (num_steps, turn, step_length, move_time)
+- `kick` - Kick with foot (side: 'left'/'right')
+- `dance` - Dance animation (side: 'left'/'right')
+- `sidestep` → `slideLeft`/`slideRight` - Sidestep movement
 - `stop` - Stop all motion
-- `get_ready` / `stand_straight` - Return to default pose
+- `move_joint` → `joint` - Move a specific joint
+- `get_distance_sensor` → `getObstacleDistance` - Get distance sensor reading (mm)
+- `get_ground_sensor_reading` → `getGroundColor` - Get color sensor RGB values
+- `foot_on_ground` - Check if foot is on surface
 - `execute_python` - Execute Python code block
 
 ## Development

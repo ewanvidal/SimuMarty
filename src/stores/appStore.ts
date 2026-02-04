@@ -78,54 +78,37 @@ const resolveLevelSelection = (
   requestedLevelId?: string,
 ) => {
   const environmentPreset =
-    ENVIRONMENT_PRESETS[environmentId] ?? ENVIRONMENT_PRESETS[DEFAULT_ENVIRONMENT_ID];
+    ENVIRONMENT_PRESETS[environmentId] ??
+    ENVIRONMENT_PRESETS[DEFAULT_ENVIRONMENT_ID];
 
-  const fallbackLevelId = requestedLevelId ?? environmentPreset.defaultLevelId ?? DEFAULT_LEVEL_ID;
+  const fallbackLevelId =
+    requestedLevelId ?? environmentPreset.defaultLevelId ?? DEFAULT_LEVEL_ID;
   const levelPreset =
     getLevelConfig(environmentId, fallbackLevelId) ??
     getLevelConfig(environmentId, environmentPreset.defaultLevelId) ??
     environmentPreset.levels[0];
 
   return {
-    levelId: levelPreset?.id ?? environmentPreset.defaultLevelId ?? DEFAULT_LEVEL_ID,
+    levelId:
+      levelPreset?.id ?? environmentPreset.defaultLevelId ?? DEFAULT_LEVEL_ID,
     scenePresetId: levelPreset?.scenePresetId ?? null,
     lessonId: levelPreset?.lessonId ?? null,
   };
 };
 
 const initialEnvironment: EnvironmentId = DEFAULT_ENVIRONMENT_ID;
-const initialLevel = resolveLevelSelection(initialEnvironment, DEFAULT_LEVEL_ID);
+const initialLevel = resolveLevelSelection(
+  initialEnvironment,
+  DEFAULT_LEVEL_ID,
+);
 
 const DEFAULT_CODE = `# Write your Python code here to control Marty
 # Click the "Run Code" button to execute
-# Example: Make Marty walk, turn and wave
+# See the settings for access to the commands and console
+# Don't forget to save your code !
 
-marty.walk(2)
-marty.turnRight(30)
-marty.wave()
-
-# Available commands:
-# marty.walk(steps)      # Walk a number of steps
-# marty.turnRight(angle) # Turn right by angle in degrees
-# marty.turnLeft(angle)  # Turn left by angle in degrees
-# marty.wave()           # Wave gesture
-# marty.kick()           # Kick
-# marty.dance()          # Dance animation
-# marty.slideLeft()      # Slide to the left
-# marty.slideRight()     # Slide to the right
-# marty.stop()           # Stop all motion
-
-# Examples:
-# marty.walk(4)
-# marty.turnRight(90)
-# marty.turnLeft(45)
-# marty.kick()
-# marty.dance()
-# marty.slideRight()
-# marty.set_joint('left_arm', 25)
-# marty.set_joint('left_eye', -10, move_time=800)
+marty.walk(num_steps=2, start_foot='auto', turn=0, step_length=25, move_time=1500)
 `;
-
 export const useAppStore = create<AppState>((set) => ({
   // Environment and Level
   selectedEnvironment: initialEnvironment,
@@ -147,7 +130,10 @@ export const useAppStore = create<AppState>((set) => ({
   },
   setLevel: (level) => {
     set((state) => {
-      const levelState = resolveLevelSelection(state.selectedEnvironment, level);
+      const levelState = resolveLevelSelection(
+        state.selectedEnvironment,
+        level,
+      );
       return {
         selectedLevel: levelState.levelId,
         scenePresetId: levelState.scenePresetId,
@@ -161,7 +147,8 @@ export const useAppStore = create<AppState>((set) => ({
 
   // Panel Layout
   experienceExpanded: false,
-  toggleExperienceExpanded: () => set((state) => ({ experienceExpanded: !state.experienceExpanded })),
+  toggleExperienceExpanded: () =>
+    set((state) => ({ experienceExpanded: !state.experienceExpanded })),
   // Editor State
   editorMode: 'monaco',
   monacoCode: DEFAULT_CODE,
@@ -229,7 +216,8 @@ export const useAppStore = create<AppState>((set) => ({
   // Level Editor
   levelEditorOpen: false,
   selectedTileColor: null,
-  toggleLevelEditor: () => set((state) => ({ levelEditorOpen: !state.levelEditorOpen })),
+  toggleLevelEditor: () =>
+    set((state) => ({ levelEditorOpen: !state.levelEditorOpen })),
   setSelectedTileColor: (color) => set({ selectedTileColor: color }),
 
   // WebSocket

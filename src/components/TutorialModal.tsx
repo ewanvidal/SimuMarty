@@ -21,7 +21,9 @@ const formatTutorialText = (text: string) => {
 
 export function TutorialModal() {
   const { t } = useTranslation();
-  const tutorialModalVisible = useAppStore((state) => state.tutorialModalVisible);
+  const tutorialModalVisible = useAppStore(
+    (state) => state.tutorialModalVisible,
+  );
   const activeLessonId = useAppStore((state) => state.activeLessonId);
   const closeTutorialModal = useAppStore((state) => state.closeTutorialModal);
 
@@ -30,22 +32,41 @@ export function TutorialModal() {
     const baseLesson = TUTORIAL_LESSONS[activeLessonId];
     if (!baseLesson) return undefined;
 
-    const media = baseLesson.media ? {
-        ...baseLesson.media,
-        caption: baseLesson.media.caption ? t(`lessons.${activeLessonId}.media.caption`, baseLesson.media.caption) : undefined
-    } : undefined;
+    const media = baseLesson.media
+      ? {
+          ...baseLesson.media,
+          caption: baseLesson.media.caption
+            ? t(
+                `lessons.${activeLessonId}.media.caption`,
+                baseLesson.media.caption,
+              )
+            : undefined,
+        }
+      : undefined;
 
     return {
       ...baseLesson,
       title: t(`lessons.${activeLessonId}.title`, baseLesson.title),
       summary: t(`lessons.${activeLessonId}.summary`, baseLesson.summary),
       goal: t(`lessons.${activeLessonId}.goal`, baseLesson.goal),
-      estimatedTime: t(`lessons.${activeLessonId}.estimatedTime`, baseLesson.estimatedTime),
+      estimatedTime: t(
+        `lessons.${activeLessonId}.estimatedTime`,
+        baseLesson.estimatedTime,
+      ),
       media,
-      objectives: t(`lessons.${activeLessonId}.objectives`, { returnObjects: true, defaultValue: baseLesson.objectives }) as string[],
-      steps: t(`lessons.${activeLessonId}.steps`, { returnObjects: true, defaultValue: baseLesson.steps }) as string[],
-      tips: baseLesson.tips 
-        ? (t(`lessons.${activeLessonId}.tips`, { returnObjects: true, defaultValue: baseLesson.tips }) as string[]) 
+      objectives: t(`lessons.${activeLessonId}.objectives`, {
+        returnObjects: true,
+        defaultValue: baseLesson.objectives,
+      }) as string[],
+      steps: t(`lessons.${activeLessonId}.steps`, {
+        returnObjects: true,
+        defaultValue: baseLesson.steps,
+      }) as string[],
+      tips: baseLesson.tips
+        ? (t(`lessons.${activeLessonId}.tips`, {
+            returnObjects: true,
+            defaultValue: baseLesson.tips,
+          }) as string[])
         : undefined,
     };
   }, [activeLessonId, t]);
@@ -65,7 +86,11 @@ export function TutorialModal() {
             <h2 className='tutorial-title'>{lesson.title}</h2>
             <p className='tutorial-summary'>{lesson.summary}</p>
           </div>
-          <button className='tutorial-close-button' onClick={closeTutorialModal} aria-label='Close tutorial'>
+          <button
+            className='tutorial-close-button'
+            onClick={closeTutorialModal}
+            aria-label='Close tutorial'
+          >
             ✕
           </button>
         </header>
@@ -92,9 +117,15 @@ export function TutorialModal() {
                 allowFullScreen
               />
             ) : (
-              <img src={media.src} alt={media.caption || lesson.title} className='tutorial-media-content' />
+              <img
+                src={media.src}
+                alt={media.caption || lesson.title}
+                className='tutorial-media-content'
+              />
             )}
-            {media.caption && <p className='tutorial-media-caption'>{media.caption}</p>}
+            {media.caption && (
+              <p className='tutorial-media-caption'>{media.caption}</p>
+            )}
           </div>
         )}
 

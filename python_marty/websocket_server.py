@@ -253,82 +253,62 @@ class MartyWebSocketServer:
                     logger.error(f"Error in _send_and_wait: {e}")
                     return float('inf') if action == "getObstacleDistance" else None
 
-            def walk(self, steps=1):
-                logger.info(f"  → Live: walk({steps})")
-                self._send_and_wait("walk", {"steps": steps})
+            def walk(self, num_steps=2, start_foot='auto', turn=0, step_length=25, move_time=1500):
+                """Make Marty walk"""
+                logger.info(f"  → Live: walk(num_steps={num_steps}, turn={turn})")
+                if turn != 0:
+                    direction = 'turn' if turn > 0 else 'turnLeft'
+                    self._send_and_wait(direction, {"angle": abs(turn)})
+                self._send_and_wait("walk", {"steps": num_steps})
 
-            def turn(self, angle):
-                direction = 'turn' if angle >= 0 else 'turnLeft'
-                magnitude = abs(angle)
-                logger.info(f"  → Live: turn({angle})")
-                self._send_and_wait(direction, {"angle": magnitude})
+            def kick(self, side='right', twist=0, move_time=2500):
+                """Kick one of Marty's feet"""
+                logger.info(f"  → Live: kick(side='{side}')")
+                self._send_and_wait("kick", {"side": side})
 
-            def turnRight(self, angle):
-                logger.info(f"  → Live: turnRight({angle})")
-                self._send_and_wait("turn", {"angle": angle})
+            def dance(self, side='right', move_time=3000):
+                """Boogie, Marty!"""
+                logger.info(f"  → Live: dance(side='{side}')")
+                self._send_and_wait("dance", {"side": side})
 
-            def turnLeft(self, angle):
-                logger.info(f"  → Live: turnLeft({angle})")
-                self._send_and_wait("turnLeft", {"angle": angle})
+            def wave(self, side='right'):
+                """Wave"""
+                logger.info(f"  → Live: wave(side='{side}')")
+                self._send_and_wait("wave", {"side": side})
 
-            def wave(self):
-                logger.info("  → Live: wave()")
-                self._send_and_wait("wave")
+            def sidestep(self, side='right', steps=1, step_length=35, move_time=1000):
+                """Take sidesteps"""
+                logger.info(f"  → Live: sidestep(side='{side}', steps={steps})")
+                action = "slideLeft" if side == 'left' else "slideRight"
+                for _ in range(steps):
+                    self._send_and_wait(action)
 
-            def kick(self):
-                logger.info("  → Live: kick()")
-                self._send_and_wait("kick")
-
-            def dance(self):
-                logger.info("  → Live: dance()")
-                self._send_and_wait("dance")
-
-            def slideLeft(self):
-                logger.info("  → Live: slideLeft()")
-                self._send_and_wait("slideLeft")
-
-            def slideRight(self):
-                logger.info("  → Live: slideRight()")
-                self._send_and_wait("slideRight")
-
-            def stop(self):
+            def stop(self, stop_type=None, stopCode=0):
+                """Stop Marty's movement"""
                 logger.info("  → Live: stop()")
                 self._send_and_wait("stop")
 
-            # --- Joint helpers -------------------------------------------------
-            def set_joint(self, joint, angle, move_time=None):
-                joint_id = self._normalize_joint_identifier(joint)
+            # --- Joint control -------------------------------------------------
+            def move_joint(self, joint_name_or_num=0, position=0, move_time=1000):
+                """Move a specific joint to a position"""
+                joint_id = self._normalize_joint_identifier(joint_name_or_num)
                 if joint_id is None:
-                    return
-
-                params = {"jointId": joint_id, "angle": angle}
-                if move_time is not None:
-                    params["moveTime"] = move_time
-
-                logger.info(f"  → Live: set_joint({joint}, {angle})")
+                    joint_id = joint_name_or_num
+                params = {"jointId": joint_id, "angle": position, "moveTime": move_time}
+                logger.info(f"  → Live: move_joint({joint_name_or_num}, {position}, {move_time})")
                 self._send_and_wait("joint", params)
 
-            def move_joint(self, joint, angle, move_time=None):
-                self.set_joint(joint, angle, move_time)
-
-            def set_joint_angle(self, joint, angle, move_time=None):
-                self.set_joint(joint, angle, move_time)
-
-            # --- Sensor helpers -------------------------------------------------
-            def getGroundColor(self):
-                logger.info("  → Live: getGroundColor()")
-                return self._send_and_wait("getGroundColor")
-            
-            def get_ground_color(self):
-                return self.getGroundColor()
-            
-            def getObstacleDistance(self):
-                logger.info("  → Live: getObstacleDistance()")
-                val = self._send_and_wait("getObstacleDistance")
-                return val if val is not None else float('inf')
-
+            # --- Sensor functions -------------------------------------------------
             def get_distance_sensor(self):
-                return self.getObstacleDistance()
+                """Get distance from obstacle sensor in mm"""
+                logger.info("  → Live: get_distance_sensor()")
+                val = self._send_and_wait("getObstacleDistance")
+                return val if val is not None else 0
+
+            def get_ground_sensor_reading(self, add_on_or_side='left'):
+                """Get RGB color from ground sensor (add_on_or_side accepted for API compatibility but ignored)"""
+                logger.info("  → Live: get_ground_sensor_reading()")
+                return self._send_and_wait("getGroundColor")
 
             def _normalize_joint_identifier(self, joint) -> Optional[int]:
                 if isinstance(joint, (int, float)):
@@ -349,7 +329,21 @@ class MartyWebSocketServer:
                     'range': range, 'len': len, 'print': print,
                     'int': int, 'float': float, 'str': str, 'bool': bool,
                     'True': True, 'False': False,
-                }
+                },
+                # Predefined parameter names so users can copy API docs directly
+                'side': 'right',
+                'num_steps': 2,
+                'start_foot': 'auto',
+                'turn': 0,
+                'step_length': 25,
+                'move_time': 1500,
+                'twist': 0,
+                'steps': 1,
+                'stop_type': None,
+                'stopCode': 0,
+                'joint_name_or_num': 0,
+                'position': 0,
+                'add_on_or_side': 'left',
             }
             try:
                 exec(code, exec_globals)

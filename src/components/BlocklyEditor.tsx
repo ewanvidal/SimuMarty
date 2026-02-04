@@ -174,7 +174,9 @@ const defineMartyBlocks = () => {
       this.appendDummyInput().appendField('marty.getObstacleDistance()');
       this.setOutput(true, 'Number');
       this.setColour(290);
-      this.setTooltip('Get distance to nearest obstacle (returns Infinity if no obstacle)');
+      this.setTooltip(
+        'Get distance to nearest obstacle (returns Infinity if no obstacle)',
+      );
       this.setHelpUrl('');
     },
   };
@@ -189,7 +191,9 @@ const defineMartyBlocks = () => {
       this.appendDummyInput().appendField('marty.getGroundColor()');
       this.setOutput(true, null);
       this.setColour(290);
-      this.setTooltip('Get ground color under Marty (returns {r, g, b} with values 0-255)');
+      this.setTooltip(
+        'Get ground color under Marty (returns {r, g, b} with values 0-255)',
+      );
       this.setHelpUrl('');
     },
   };
@@ -473,7 +477,7 @@ export const BlocklyEditor = ({
       try {
         const xml = Blockly.utils.xml.textToDom(initialXml);
         Blockly.Xml.domToWorkspace(xml, workspace);
-      } catch (e) {
+      } catch {
         // Silently ignore
       }
     }
@@ -511,7 +515,7 @@ export const BlocklyEditor = ({
           workspace.dispose();
         }
         workspaceRef.current = null;
-      } catch (error) {
+      } catch {
         // Silently ignore
       }
       if (resizeObserverRef.current) {
@@ -530,25 +534,25 @@ export const BlocklyEditor = ({
       if (currentXmlText === initialXml) {
         return;
       }
-    } catch (error) {
+    } catch {
       return;
     }
 
     try {
       // Clear workspace safely
       const blocks = workspaceRef.current.getTopBlocks(false);
-      blocks.forEach(block => {
+      blocks.forEach((block) => {
         try {
           block.dispose(false);
-        } catch (e) {
+        } catch {
           // Silently ignore
         }
       });
-      
+
       // Load new XML
       const xml = Blockly.utils.xml.textToDom(initialXml);
       Blockly.Xml.domToWorkspace(xml, workspaceRef.current);
-    } catch (error) {
+    } catch {
       // Silently ignore
     }
   }, [initialXml]);

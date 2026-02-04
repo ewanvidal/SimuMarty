@@ -35,7 +35,11 @@ import {
   createProceduralTurnController,
   type ProceduralTurnController,
 } from './marty/proceduralTurn.ts';
-import { GroundColorSensor, ObstacleSensor, FootLight } from './sensors/index.tsx';
+import {
+  GroundColorSensor,
+  ObstacleSensor,
+  FootLight,
+} from './sensors/index.tsx';
 import Physics from './Physics.tsx';
 import RobotPhysics from './RobotPhysics.tsx';
 
@@ -62,7 +66,9 @@ export default class Marty {
   model?: THREE.Group;
   controller?: MartyController;
   boneNodes: BoneNode[] = [];
-  boneDebugFolder?: ReturnType<typeof import('lil-gui').GUI.prototype.addFolder>;
+  boneDebugFolder?: ReturnType<
+    typeof import('lil-gui').GUI.prototype.addFolder
+  >;
   boneInitialRotations: Map<string, THREE.Euler> = new Map();
   jointController: JointController;
   proceduralTurnController: ProceduralTurnController;
@@ -194,7 +200,10 @@ export default class Marty {
    * Apply a transform preset (position and rotation) from scene configuration
    * @param transform - Optional transform with position [x, y, z] and rotationY in degrees
    */
-  applyTransformPreset(transform?: { position?: [number, number, number]; rotationY?: number }) {
+  applyTransformPreset(transform?: {
+    position?: [number, number, number];
+    rotationY?: number;
+  }) {
     if (!this.model) {
       return;
     }
@@ -219,7 +228,7 @@ export default class Marty {
         body.position.set(
           this.model.position.x,
           this.model.position.y + this.robotPhysics.autoCalculatedOffset,
-          this.model.position.z
+          this.model.position.z,
         );
         // Sync rotation from model to physics body
         body.quaternion.setFromEuler(0, this.model.rotation.y, 0);
@@ -316,7 +325,7 @@ export default class Marty {
     if (!this.model || !this.experience.renderer.instance) return;
 
     // Find the right foot bone - used for both color sensor and foot light
-    const rightFootBone = this.boneNodes.find(b => b.name === 'LegR003');
+    const rightFootBone = this.boneNodes.find((b) => b.name === 'LegR003');
 
     // 1. Ground Color Sensor
     // Attached to the right foot bone (LegR003) where the foot light is located
@@ -327,11 +336,11 @@ export default class Marty {
         this.scene,
         this.experience.renderer.instance,
         {
-          fov: 30,              // Wider FOV to see more ground area
-          sensorHeight: 0.0,    // At foot level (inside hollow sole)
+          fov: 30, // Wider FOV to see more ground area
+          sensorHeight: 0.0, // At foot level (inside hollow sole)
           nearPlane: 0.001,
-          farPlane: 0.5,        // Short range - just need to see the ground
-        }
+          farPlane: 0.5, // Short range - just need to see the ground
+        },
       );
     }
 
@@ -354,19 +363,15 @@ export default class Marty {
     // The GLB model has hollow soles to accommodate this light
     // Uses layer 1 so it's only visible to color sensor, not main camera
     if (rightFootBone) {
-      this.sensors.footLight = new FootLight(
-        rightFootBone.object,
-        this.scene,
-        {
-          intensity: 0.25,       // Good illumination for color sensor (only visible on layer 1)
-          color: 0xffffff,      // Pure white for accurate color detection
-          angle: Math.PI,       // ~180 degrees - broad diffuse beam for whole space below foot
-          penumbra: 1.0,        // Maximum softness for even diffuse lighting
-          distance: 0.3,        // Short range to avoid over-illumination
-          heightOffset: 0.0,    // Position at foot level (inside hollow sole)
-          showHelper: false,    // Set to true for debugging
-        }
-      );
+      this.sensors.footLight = new FootLight(rightFootBone.object, this.scene, {
+        intensity: 0.25, // Good illumination for color sensor (only visible on layer 1)
+        color: 0xffffff, // Pure white for accurate color detection
+        angle: Math.PI, // ~180 degrees - broad diffuse beam for whole space below foot
+        penumbra: 1.0, // Maximum softness for even diffuse lighting
+        distance: 0.3, // Short range to avoid over-illumination
+        heightOffset: 0.0, // Position at foot level (inside hollow sole)
+        showHelper: false, // Set to true for debugging
+      });
     }
   }
 
@@ -452,7 +457,9 @@ export default class Marty {
    * @param angle - Angle to turn in degrees (default 30)
    * @returns Promise that resolves when turn is complete
    */
-  async turnRight(angle: number = 30): Promise<{ success: boolean; message: string }> {
+  async turnRight(
+    angle: number = 30,
+  ): Promise<{ success: boolean; message: string }> {
     if (this.proceduralTurnController.isActive()) {
       return { success: false, message: 'Turn already in progress' };
     }
@@ -471,7 +478,9 @@ export default class Marty {
    * @param angle - Angle to turn in degrees (default 30)
    * @returns Promise that resolves when turn is complete
    */
-  async turnLeft(angle: number = 30): Promise<{ success: boolean; message: string }> {
+  async turnLeft(
+    angle: number = 30,
+  ): Promise<{ success: boolean; message: string }> {
     if (this.proceduralTurnController.isActive()) {
       return { success: false, message: 'Turn already in progress' };
     }
@@ -526,10 +535,10 @@ export default class Marty {
         if (!this.isFalling) {
           // --- DÉBUT DE CHUTE ---
           this.isFalling = true;
-          
+
           // PAUSE DES ANIMATIONS : Les jambes s'immobilisent
           if (this.animation.mixer) {
-            this.animation.mixer.timeScale = 0; 
+            this.animation.mixer.timeScale = 0;
           }
 
           // IMPULSION INITIALE (Forward/Backward)
@@ -538,19 +547,20 @@ export default class Marty {
           if (direction === 'forward') speed = FALL_SPEEDS.forward;
           if (direction === 'backward') speed = FALL_SPEEDS.backward;
 
-
-          const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(this.model.quaternion);
+          const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(
+            this.model.quaternion,
+          );
           body.velocity.x = forward.x * speed;
           body.velocity.z = forward.z * speed;
         }
         // Pendant la chute, le body évolue seul (gravité) -> on ne le force pas à la position du modèle
       } else {
         // --- LOGIQUE AU SOL (Stable) ou SAUT ---
-        
+
         if (this.isFalling) {
           // --- ATTERRISSAGE ---
           this.isFalling = false;
-          
+
           // RELANCE DES ANIMATIONS
           if (this.animation.mixer) {
             this.animation.mixer.timeScale = 1;
@@ -558,10 +568,17 @@ export default class Marty {
 
           // RESET ROTATION : Le robot se remet droit sur ses pieds
           // On garde l'orientation Y actuelle mais on annule X/Z (bascule)
-          const currentYRotation = new THREE.Euler().setFromQuaternion(this.model.quaternion).y;
+          const currentYRotation = new THREE.Euler().setFromQuaternion(
+            this.model.quaternion,
+          ).y;
           this.model.rotation.set(0, currentYRotation, 0);
-          body.quaternion.set(this.model.quaternion.x, this.model.quaternion.y, this.model.quaternion.z, this.model.quaternion.w);
-          
+          body.quaternion.set(
+            this.model.quaternion.x,
+            this.model.quaternion.y,
+            this.model.quaternion.z,
+            this.model.quaternion.w,
+          );
+
           body.velocity.set(0, 0, 0);
           body.angularVelocity.set(0, 0, 0);
         }
@@ -579,15 +596,18 @@ export default class Marty {
         // 2. SYNCHRO ANIMATION -> PHYSIQUE (Proposer la nouvelle position)
         body.position.x = this.model.position.x;
         body.position.z = this.model.position.z;
-        
+
         if (!isJumping) {
           body.position.y = this.model.position.y + offset;
           // Kill all micro-velocities to prevent "ghost sliding"
           body.velocity.set(0, 0, 0);
           body.angularVelocity.set(0, 0, 0);
-          
+
           // Force upright rotation to stop any tipping micro-forces
-          body.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), this.model.rotation.y);
+          body.quaternion.setFromAxisAngle(
+            new CANNON.Vec3(0, 1, 0),
+            this.model.rotation.y,
+          );
         }
         // En saut, on ne touche pas à Y du body, la physique gère
       }
@@ -600,9 +620,18 @@ export default class Marty {
       // 4. SYNCHRO PHYSIQUE -> MODÈLE (Appliquer les contraintes/collisions)
       if (!isGrounded && !isJumping) {
         // CHUTE : La Physique dicte tout
-        this.model.position.set(body.position.x, body.position.y, body.position.z);
+        this.model.position.set(
+          body.position.x,
+          body.position.y,
+          body.position.z,
+        );
         this.model.position.y -= offset;
-        this.model.quaternion.set(body.quaternion.x, body.quaternion.y, body.quaternion.z, body.quaternion.w); 
+        this.model.quaternion.set(
+          body.quaternion.x,
+          body.quaternion.y,
+          body.quaternion.z,
+          body.quaternion.w,
+        );
       } else {
         // SOL/SAUT : On récupère la position corrigée (si mur, on est repoussé)
         this.model.position.x = body.position.x;
@@ -626,9 +655,12 @@ export default class Marty {
             body.velocity.set(0, 0, 0);
             body.angularVelocity.set(0, 0, 0);
             body.position.y = this.model.position.y + offset;
-            
+
             // Force upright rotation on landing
-            body.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), this.model.rotation.y);
+            body.quaternion.setFromAxisAngle(
+              new CANNON.Vec3(0, 1, 0),
+              this.model.rotation.y,
+            );
           }
         }
       }
@@ -645,7 +677,7 @@ export default class Marty {
     if (this.sensors.footLight) {
       this.sensors.footLight.update();
     }
-    
+
     // Update obstacle sensor debug visualization
     if (this.sensors.obstacleSensor) {
       this.sensors.obstacleSensor.updateDebugVisualization();

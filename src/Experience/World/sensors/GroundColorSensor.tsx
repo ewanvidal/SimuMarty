@@ -22,7 +22,7 @@ export class GroundColorSensor {
       sensorHeight?: number;
       nearPlane?: number;
       farPlane?: number;
-    }
+    },
   ) {
     this.parent = parent;
     this.scene = scene;
@@ -42,16 +42,16 @@ export class GroundColorSensor {
       options?.fov ?? 10,
       1,
       options?.nearPlane ?? 0.01,
-      options?.farPlane ?? 1
+      options?.farPlane ?? 1,
     );
     this.camera.rotation.x = -Math.PI / 2; // Point down
-    
+
     // Configure camera layers:
     // - Only layer 2: sensor meshes (opaque tiles for accurate color detection)
     // - Layer 0 (floor/scene) and layer 1 (foot light) are excluded
     this.camera.layers.disableAll();
     this.camera.layers.enable(2); // Only see sensor meshes
-    
+
     // Add camera to scene (not parent) to avoid transform issues
     scene.add(this.camera);
   }
@@ -86,7 +86,7 @@ export class GroundColorSensor {
         0,
         1,
         1,
-        pixel
+        pixel,
       );
 
       // Reset render target to default
@@ -97,7 +97,7 @@ export class GroundColorSensor {
         g: pixel[1],
         b: pixel[2],
       };
-    } catch (error) {
+    } catch {
       return null;
     }
   }
@@ -149,7 +149,7 @@ export class GroundColorSensor {
    */
   isColorInRange(
     targetColor: { r: number; g: number; b: number },
-    tolerance = 50
+    tolerance = 50,
   ): boolean {
     const color = this.getColor();
     if (!color) return false;

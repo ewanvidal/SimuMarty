@@ -125,9 +125,12 @@ export const createSlideState = (): SlideState => ({
   duration: 1.7,
 });
 
-export const createAnimationState = (): AnimationState => ({ });
+export const createAnimationState = (): AnimationState => ({});
 
-export const syncMovementDurations = (movement: MovementState, turn: TurnState) => {
+export const syncMovementDurations = (
+  movement: MovementState,
+  turn: TurnState,
+) => {
   const { fps } = movement;
   const moveFrames = Math.max(movement.moveFrames, 0);
   const cycleFrames = Math.max(movement.cycleFrames, moveFrames);
@@ -224,21 +227,26 @@ export const setupAnimationSystem = ({
   const wavingClip =
     resource.animations.find((clip) =>
       clip.name.toLowerCase().includes('waving'),
-    ) || resource.animations[1] || walkingClip;
+    ) ||
+    resource.animations[1] ||
+    walkingClip;
 
-  const getReadyClip = resource.animations.find((clip) =>
-    clip.name.toLowerCase().includes('getready') ||
-    clip.name.toLowerCase().includes('get_ready'),
+  const getReadyClip = resource.animations.find(
+    (clip) =>
+      clip.name.toLowerCase().includes('getready') ||
+      clip.name.toLowerCase().includes('get_ready'),
   );
 
-  const turnRightClip = resource.animations.find((clip) =>
-    clip.name.toLowerCase().includes('turn_right') ||
-    clip.name.toLowerCase().includes('turnright'),
+  const turnRightClip = resource.animations.find(
+    (clip) =>
+      clip.name.toLowerCase().includes('turn_right') ||
+      clip.name.toLowerCase().includes('turnright'),
   );
 
-  const turnLeftClip = resource.animations.find((clip) =>
-    clip.name.toLowerCase().includes('turn_left') ||
-    clip.name.toLowerCase().includes('turnleft'),
+  const turnLeftClip = resource.animations.find(
+    (clip) =>
+      clip.name.toLowerCase().includes('turn_left') ||
+      clip.name.toLowerCase().includes('turnleft'),
   );
 
   const kickClip = resource.animations.find((clip) =>
@@ -249,14 +257,16 @@ export const setupAnimationSystem = ({
     clip.name.toLowerCase().includes('dance'),
   );
 
-  const slideLeftClip = resource.animations.find((clip) =>
-    clip.name.toLowerCase().includes('slide') &&
-    clip.name.toLowerCase().includes('left'),
+  const slideLeftClip = resource.animations.find(
+    (clip) =>
+      clip.name.toLowerCase().includes('slide') &&
+      clip.name.toLowerCase().includes('left'),
   );
 
-  const slideRightClip = resource.animations.find((clip) =>
-    clip.name.toLowerCase().includes('slide') &&
-    clip.name.toLowerCase().includes('right'),
+  const slideRightClip = resource.animations.find(
+    (clip) =>
+      clip.name.toLowerCase().includes('slide') &&
+      clip.name.toLowerCase().includes('right'),
   );
 
   animation.clips = {
@@ -355,7 +365,7 @@ export const setupAnimationSystem = ({
       configureMultiStepTiming(
         movement,
         [
-          { start: 35, end: 53 },   // First step: left foot lifts, right foot planted
+          { start: 35, end: 53 }, // First step: left foot lifts, right foot planted
           { start: 112, end: 132 }, // Second step: right foot lifts, left foot planted
         ],
         30,
@@ -365,7 +375,11 @@ export const setupAnimationSystem = ({
 
       const shouldAutoStop = options?.autoStop !== false;
       if (shouldAutoStop) {
-        const animationDuration = getAnimationDuration(animation, turn, 'walking');
+        const animationDuration = getAnimationDuration(
+          animation,
+          turn,
+          'walking',
+        );
 
         const onComplete = () => {
           movement.enabled = false;
@@ -401,7 +415,11 @@ export const setupAnimationSystem = ({
 
       const shouldAutoStop = options?.autoStop !== false;
       if (shouldAutoStop) {
-        const animationDuration = getAnimationDuration(animation, turn, 'waving');
+        const animationDuration = getAnimationDuration(
+          animation,
+          turn,
+          'waving',
+        );
 
         const onComplete = () => {
           if (animation.actions?.getReady) {
@@ -441,11 +459,14 @@ export const setupAnimationSystem = ({
       turn.elapsed = 0;
       turn.startAngle = model?.rotation.y ?? 0;
       turn.state = 'waiting';
-      turn.turnAction = name === 'turnRight'
-        ? animation.actions.turnRight || null
-        : animation.actions.turnLeft || null;
+      turn.turnAction =
+        name === 'turnRight'
+          ? animation.actions.turnRight || null
+          : animation.actions.turnLeft || null;
 
-      const angleDeg = THREE.MathUtils.radToDeg(animation.settings!.turnBaseAngle);
+      const angleDeg = THREE.MathUtils.radToDeg(
+        animation.settings!.turnBaseAngle,
+      );
       const absAngleDeg = Math.max(Math.abs(angleDeg), 1);
       const baseSpeedDegPerSec = 60;
 
@@ -474,7 +495,14 @@ export const setupAnimationSystem = ({
       slide.elapsed = 0;
     }
 
-    const animationsWithGetReady = ['turnRight', 'turnLeft', 'kick', 'dance', 'slideLeft', 'slideRight'] as const;
+    const animationsWithGetReady = [
+      'turnRight',
+      'turnLeft',
+      'kick',
+      'dance',
+      'slideLeft',
+      'slideRight',
+    ] as const;
     type AnimationWithGetReady = (typeof animationsWithGetReady)[number];
     const requiresGetReady = (value: string): value is AnimationWithGetReady =>
       animationsWithGetReady.includes(value as AnimationWithGetReady);
@@ -482,7 +510,11 @@ export const setupAnimationSystem = ({
     if (requiresGetReady(name)) {
       const shouldAutoStop = options?.autoStop !== false;
       if (shouldAutoStop) {
-        const animationDuration = getAnimationDuration(animation, turn, name as AnimationName);
+        const animationDuration = getAnimationDuration(
+          animation,
+          turn,
+          name as AnimationName,
+        );
 
         const onComplete = () => {
           slide.enabled = false;
@@ -523,19 +555,26 @@ export const setupAnimationSystem = ({
     const debugObject = {
       timeScale: animation.settings.timeScale,
       crossFadeDuration: animation.settings.crossFadeDuration,
-      turnBaseAngleDeg: THREE.MathUtils.radToDeg(animation.settings.turnBaseAngle),
+      turnBaseAngleDeg: THREE.MathUtils.radToDeg(
+        animation.settings.turnBaseAngle,
+      ),
       moveSpeed: movement.speed,
       moveFrames: movement.moveFrames,
       cycleFrames: movement.cycleFrames,
       playWalking: () => animation.play?.('walking'),
       playWaving: () => animation.play?.('waving'),
-      playTurnRight: () => animation.actions?.turnRight && animation.play?.('turnRight'),
-      playTurnLeft: () => animation.actions?.turnLeft && animation.play?.('turnLeft'),
+      playTurnRight: () =>
+        animation.actions?.turnRight && animation.play?.('turnRight'),
+      playTurnLeft: () =>
+        animation.actions?.turnLeft && animation.play?.('turnLeft'),
       playKick: () => animation.actions?.kick && animation.play?.('kick'),
       playDance: () => animation.actions?.dance && animation.play?.('dance'),
-      playSlideLeft: () => animation.actions?.slideLeft && animation.play?.('slideLeft'),
-      playSlideRight: () => animation.actions?.slideRight && animation.play?.('slideRight'),
-      playGetReady: () => animation.actions?.getReady && animation.play?.('getReady'),
+      playSlideLeft: () =>
+        animation.actions?.slideLeft && animation.play?.('slideLeft'),
+      playSlideRight: () =>
+        animation.actions?.slideRight && animation.play?.('slideRight'),
+      playGetReady: () =>
+        animation.actions?.getReady && animation.play?.('getReady'),
       stopAnimation: () => animation.stop?.(),
     };
 
@@ -625,8 +664,12 @@ export const getAnimationDuration = (
     return 2000;
   }
 
-  if ((name === 'turnRight' || name === 'turnLeft') && options?.angle !== undefined) {
-    const baseAnimationDuration = (clip.duration * 1000) / animation.settings.timeScale;
+  if (
+    (name === 'turnRight' || name === 'turnLeft') &&
+    options?.angle !== undefined
+  ) {
+    const baseAnimationDuration =
+      (clip.duration * 1000) / animation.settings.timeScale;
     const absAngle = Math.abs(options.angle);
     const baseSpeedDegPerSec = 60;
 
@@ -634,7 +677,10 @@ export const getAnimationDuration = (
     const delayMs = turn.delay * 1000;
     const resumeDelayMs = rotationDuration * 0.2;
 
-    return Math.max(baseAnimationDuration, delayMs + rotationDuration + resumeDelayMs);
+    return Math.max(
+      baseAnimationDuration,
+      delayMs + rotationDuration + resumeDelayMs,
+    );
   }
 
   return (clip.duration * 1000) / animation.settings.timeScale;

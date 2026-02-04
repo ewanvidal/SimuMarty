@@ -14,7 +14,10 @@ export class TutorialManager {
   /**
    * Load a tutorial lesson by ID
    */
-  loadLessonById(lessonId: string, lessons: Record<string, TutorialLesson>): void {
+  loadLessonById(
+    lessonId: string,
+    lessons: Record<string, TutorialLesson>,
+  ): void {
     const lesson = lessons[lessonId];
     if (lesson) {
       this.currentLessonId = lessonId;

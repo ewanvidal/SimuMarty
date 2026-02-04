@@ -20,7 +20,9 @@ export default class Physics {
   groundBody?: CANNON.Body;
 
   constructor() {
-    this.experience = (window as unknown as { experience: Experience }).experience;
+    this.experience = (
+      window as unknown as { experience: Experience }
+    ).experience;
     this.debug = this.experience.debug;
 
     // Create physics world
@@ -84,7 +86,11 @@ export default class Physics {
   /**
    * Create a physics material with custom properties
    */
-  createMaterial(name: string, friction?: number, restitution?: number): CANNON.Material {
+  createMaterial(
+    name: string,
+    friction?: number,
+    restitution?: number,
+  ): CANNON.Material {
     const material = new CANNON.Material(name);
     material.friction = friction ?? PHYSICS_CONFIG.robotFriction;
     material.restitution = restitution ?? PHYSICS_CONFIG.robotRestitution;
@@ -111,14 +117,14 @@ export default class Physics {
   createContactMaterial(
     material1: CANNON.Material,
     material2: CANNON.Material,
-    options?: CANNON.IContactMaterialOptions
+    options?: CANNON.IContactMaterialOptions,
   ): CANNON.ContactMaterial {
     const contactMaterial = new CANNON.ContactMaterial(material1, material2, {
       friction: options?.friction ?? 0.5,
       restitution: options?.restitution ?? 0.1,
       contactEquationStiffness: options?.contactEquationStiffness ?? 1e6,
       contactEquationRelaxation: options?.contactEquationRelaxation ?? 3,
-      ...options
+      ...options,
     });
     this.world.addContactMaterial(contactMaterial);
     return contactMaterial;

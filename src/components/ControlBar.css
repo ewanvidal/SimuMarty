@@ -110,6 +110,8 @@
   top: 60px;
   right: 10px;
   width: 300px;
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
   background: #2d2d2d;
   border: 1px solid #444;
   border-radius: 8px;
@@ -234,4 +236,39 @@
   border-radius: 50%;
   cursor: pointer;
   border: none;
+}
+
+/* API Documentation Styles */
+.api-documentation details {
+  background: #252525;
+  border-radius: 4px;
+  padding: 8px;
+  margin-bottom: 6px;
+}
+
+.api-documentation details summary {
+  user-select: none;
+}
+
+.api-documentation details[open] summary {
+  margin-bottom: 8px;
+}
+
+.api-documentation ul {
+  list-style: none;
+  padding-left: 10px;
+}
+
+.api-documentation li {
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+.api-documentation code {
+  background: #333;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 11px;
+  color: #9cdcfe;
 }

@@ -68,7 +68,7 @@ export default class Camera {
   /**
    * Set the OrbitControls target (point the camera orbits around)
    * @param x - X coordinate
-   * @param y - Y coordinate  
+   * @param y - Y coordinate
    * @param z - Z coordinate
    */
   setTarget(x: number, y: number, z: number) {

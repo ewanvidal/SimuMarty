@@ -107,16 +107,20 @@ export const JOINT_CONTROL_TARGETS: JointControlTarget[] = [
     invert: true,
     clamp: { min: -45, max: 125 },
   },
-  { id: JointID.LEFT_EYE,
+  {
+    id: JointID.LEFT_EYE,
     name: JointName.LEFT_EYE,
     boneNames: ['EyeL'],
     axis: 'z',
-    clamp: {min: -45, max: 10} },
-  { id: JointID.RIGHT_EYE,
+    clamp: { min: -45, max: 10 },
+  },
+  {
+    id: JointID.RIGHT_EYE,
     name: JointName.RIGHT_EYE,
     boneNames: ['EyeR'],
     axis: 'z',
-    clamp: {min: -10, max: 45} },
+    clamp: { min: -10, max: 45 },
+  },
 ];
 
 export function createJointController({
@@ -215,14 +219,14 @@ export function createJointController({
       const baseValue = initialRotation
         ? initialRotation[target.axis]
         : boneEntry.object.rotation[target.axis];
-      
+
       // Calculate goal for this specific bone
       // If invertBone is true, we flip the sign of the movement relative to the joint command
       // target.invert flips the joint command itself
       // Total inversion = target.invert XOR invertBone
-      const totalInvert = (target.invert ? !invertBone : invertBone);
+      const totalInvert = target.invert ? !invertBone : invertBone;
       const rawGoal = baseValue + signedRadians * (totalInvert ? -1 : 1);
-      
+
       const animationKey = `${boneName}:${target.axis}`;
 
       let startValue: number;
@@ -232,7 +236,7 @@ export function createJointController({
         // For clamped joints, we normalize angles around the baseValue (rest position).
         const currentRotation = boneEntry.object.rotation[target.axis];
         const twoPi = 2 * Math.PI;
-        
+
         const normalizeAround = (val: number, center: number) => {
           const diff = val - center;
           return center + (diff - twoPi * Math.round(diff / twoPi));
@@ -275,7 +279,9 @@ export function createJointController({
 
     // Process counter-rotating bones (inverted movement)
     if (target.counterRotateBones) {
-      target.counterRotateBones.forEach((boneName) => processBone(boneName, true));
+      target.counterRotateBones.forEach((boneName) =>
+        processBone(boneName, true),
+      );
     }
 
     if (affectedBones === 0) {
@@ -298,9 +304,10 @@ export function createJointController({
 
     jointAnimations.forEach((animation, key) => {
       animation.elapsed += deltaSeconds;
-      const progress = animation.duration > 0
-        ? Math.min(animation.elapsed / animation.duration, 1)
-        : 1;
+      const progress =
+        animation.duration > 0
+          ? Math.min(animation.elapsed / animation.duration, 1)
+          : 1;
       const nextValue = THREE.MathUtils.lerp(
         animation.start,
         animation.target,

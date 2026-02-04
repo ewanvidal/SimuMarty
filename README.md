@@ -152,31 +152,71 @@ MartyStudio
     ✅ Mode sombre/clair
     ✅ Interface responsive (desktop/tablette)
 
-🛠️ Installation
+## 🚀 Quick Start
 
-Installation bash
+### Méthode 1 : Script de lancement (recommandé)
 
+**Linux/macOS** :
+```bash
+./start.sh
+```
+
+**Windows** :
+```cmd
+start.bat
+```
+
+Ces scripts lancent automatiquement le serveur WebSocket Python et l'application web.
+
+**Prérequis** :
+- Node.js 18+
+- Python 3.9+
+- `pip install websockets`
+
+---
+
+### Méthode 2 : Exécutable Windows (.exe)
+
+Si une release est disponible, téléchargez `SimuMarty-1.0.0-portable.exe` depuis les [Releases](https://github.com/ewanvidal/SimuMarty/releases).
+
+> ⚠️ **Windows Smart App Control** : L'application n'est pas signée numériquement. Si Windows bloque l'exécution :
+> - Cliquez sur **"Plus d'infos"** puis **"Exécuter quand même"**
+> - Ou : Clic droit sur le fichier → **Propriétés** → cochez **"Débloquer"** → **Appliquer**
+> - Ou : Désactivez Smart App Control dans `Sécurité Windows → Contrôle des applications`
+
+**Prérequis** : Python 3.9+ avec le module `websockets` (`pip install websockets`)
+
+---
+
+## 🔧 Installation Développeur
+
+```bash
 # Cloner le repository
-
-git clone https://github.com/votre-username/simumarty.git cd simumarty
+git clone https://github.com/ewanvidal/SimuMarty.git
+cd SimuMarty
 
 # Installer les dépendances
-
 npm install
 
 # Lancer en mode développement
-
 npm run dev
-
-# Build pour production
-
-npm run build
-
-# Preview de production
-
-npm run preview
+```
 
 L'application sera accessible sur http://localhost:5173
+
+---
+
+## 📦 Build
+
+```bash
+# Build web pour production
+npm run build
+
+# Build Electron (.exe Windows)
+npm run electron:build
+```
+
+L'exécutable sera généré dans `release/SimuMarty-1.0.0-portable.exe`
 
 🎓 Contexte Académique
 

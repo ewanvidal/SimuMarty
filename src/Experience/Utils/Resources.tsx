@@ -46,20 +46,44 @@ export default class Resources extends EventEmitter {
     // Load each source
     for (const source of this.sources) {
       if (source.type === 'gltfModel' && this.loaders.gltfLoader) {
-        this.loaders.gltfLoader.load(source.path as string, (file) => {
-          this.sourceLoaded(source, file);
-        });
+        this.loaders.gltfLoader.load(
+          source.path as string,
+          (file) => {
+            this.sourceLoaded(source, file);
+          },
+          undefined,
+          (error) => {
+            console.error(`Failed to load GLTF model ${source.name}:`, error);
+            this.sourceLoaded(source, null as unknown as GLTF);
+          },
+        );
       } else if (source.type === 'texture' && this.loaders.textureLoader) {
-        this.loaders.textureLoader.load(source.path as string, (file) => {
-          this.sourceLoaded(source, file);
-        });
+        this.loaders.textureLoader.load(
+          source.path as string,
+          (file) => {
+            this.sourceLoaded(source, file);
+          },
+          undefined,
+          (error) => {
+            console.error(`Failed to load texture ${source.name}:`, error);
+            this.sourceLoaded(source, null as unknown as THREE.Texture);
+          },
+        );
       } else if (
         source.type === 'cubeTexture' &&
         this.loaders.cubeTextureLoader
       ) {
-        this.loaders.cubeTextureLoader.load(source.path as string[], (file) => {
-          this.sourceLoaded(source, file);
-        });
+        this.loaders.cubeTextureLoader.load(
+          source.path as string[],
+          (file) => {
+            this.sourceLoaded(source, file);
+          },
+          undefined,
+          (error) => {
+            console.error(`Failed to load cube texture ${source.name}:`, error);
+            this.sourceLoaded(source, null as unknown as THREE.CubeTexture);
+          },
+        );
       }
     }
   }
