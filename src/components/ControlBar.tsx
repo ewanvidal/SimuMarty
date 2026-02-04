@@ -388,6 +388,19 @@ export function ControlBar() {
                   'Functions compatible with the real Marty robot (martypy):',
                 )}
               </p>
+              <p
+                style={{
+                  fontSize: '11px',
+                  color: '#f0ad4e',
+                  marginBottom: '10px',
+                  fontStyle: 'italic',
+                }}
+              >
+                {t(
+                  'settings.apiNote',
+                  "💡 Replace parameter names with actual values (e.g., side='left', num_steps=4). All parameters have defaults and are optional.",
+                )}
+              </p>
 
               {/* Movement Functions */}
               <details style={{ marginBottom: '8px' }}>
@@ -439,7 +452,7 @@ export function ControlBar() {
                     <code>marty.sidestep(side, steps, step_length, move_time)</code>
                     <br />
                     <span style={{ color: '#888', marginLeft: '10px' }}>
-                      Take sidesteps. side: 'left' or 'right'
+                      Take sidesteps. side: 'left' or 'right' (default: 'right')
                     </span>
                   </li>
                   <li>

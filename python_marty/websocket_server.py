@@ -276,7 +276,7 @@ class MartyWebSocketServer:
                 logger.info(f"  → Live: wave(side='{side}')")
                 self._send_and_wait("wave", {"side": side})
 
-            def sidestep(self, side, steps=1, step_length=35, move_time=1000):
+            def sidestep(self, side='right', steps=1, step_length=35, move_time=1000):
                 """Take sidesteps"""
                 logger.info(f"  → Live: sidestep(side='{side}', steps={steps})")
                 action = "slideLeft" if side == 'left' else "slideRight"
@@ -289,7 +289,7 @@ class MartyWebSocketServer:
                 self._send_and_wait("stop")
 
             # --- Joint control -------------------------------------------------
-            def move_joint(self, joint_name_or_num, position, move_time):
+            def move_joint(self, joint_name_or_num=0, position=0, move_time=1000):
                 """Move a specific joint to a position"""
                 joint_id = self._normalize_joint_identifier(joint_name_or_num)
                 if joint_id is None:
@@ -329,7 +329,21 @@ class MartyWebSocketServer:
                     'range': range, 'len': len, 'print': print,
                     'int': int, 'float': float, 'str': str, 'bool': bool,
                     'True': True, 'False': False,
-                }
+                },
+                # Predefined parameter names so users can copy API docs directly
+                'side': 'right',
+                'num_steps': 2,
+                'start_foot': 'auto',
+                'turn': 0,
+                'step_length': 25,
+                'move_time': 1500,
+                'twist': 0,
+                'steps': 1,
+                'stop_type': None,
+                'stopCode': 0,
+                'joint_name_or_num': 0,
+                'position': 0,
+                'add_on_or_side': 'left',
             }
             try:
                 exec(code, exec_globals)
