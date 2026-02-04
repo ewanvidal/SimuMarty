@@ -164,6 +164,26 @@ export class ObstacleSensor {
   }
 
   /**
+   * Refresh the ignored objects list (call this when scene changes)
+   * Clears previous ground objects and re-scans the scene
+   */
+  refreshIgnoredObjects(): void {
+    // Keep debug line in ignored list if it exists
+    const debugLineToKeep = this.debugLine;
+    
+    // Clear current ignored objects
+    this.ignoredObjects.clear();
+    
+    // Re-add debug line if it exists
+    if (debugLineToKeep) {
+      this.ignoredObjects.add(debugLineToKeep);
+    }
+    
+    // Re-scan for ground objects
+    this.findAndIgnoreGround();
+  }
+
+  /**
    * Check if object is part of the robot (should be ignored)
    */
   private isPartOfRobot(obj: THREE.Object3D): boolean {
